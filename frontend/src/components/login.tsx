@@ -86,7 +86,7 @@ const Login: React.FC = () => {
         <p className="register">
           ¿No tienes una cuenta? <Link to="/register">Regístrate</Link>
           <br />
-          <a href="/#">Olvidé mi contraseña</a>
+          <a href="/forgot-password">Olvidé mi contraseña</a>
         </p>
       </div>
     </div>

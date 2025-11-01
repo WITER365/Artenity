@@ -1,6 +1,7 @@
-// context/AuthContext.tsx
+//frontend/context/AuthContext.tsx
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { getPerfil } from "../services/api";
+import { solicitarRecuperacion } from "../services/api";
 
 export interface Usuario {
   id_usuario: number;
@@ -128,3 +129,26 @@ export const useAuth = () => {
   if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return ctx;
 };
+
+export default function OlvidasteContrasena() {
+  const [correo, setCorreo] = useState("");
+  const [mensaje, setMensaje] = useState("");
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    try {
+      const res = await solicitarRecuperacion(correo);
+      setMensaje(res.mensaje);
+    } catch (err: any) {
+      setMensaje(err.detail || "Error al enviar correo");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="email" value={correo} onChange={e => setCorreo(e.target.value)} placeholder="Tu correo" required />
+      <button type="submit">Enviar enlace</button>
+      {mensaje && <p>{mensaje}</p>}
+    </form>
+  );
+}

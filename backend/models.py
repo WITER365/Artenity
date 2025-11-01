@@ -1,8 +1,9 @@
 # backend/models.py
 from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from .database import Base
+
 
 
 # ------------------ USUARIO ------------------
@@ -122,3 +123,14 @@ class Amistad(Base):
     id_usuario1 = Column(Integer, ForeignKey("usuarios.id_usuario"))
     id_usuario2 = Column(Integer, ForeignKey("usuarios.id_usuario"))
     estado = Column(String)  # pendiente / aceptada / rechazada
+
+
+class ResetPasswordToken(Base):
+    __tablename__ = "reset_password_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario"))
+    token = Column(String, unique=True, index=True)
+    expiracion = Column(DateTime)
+
+    usuario = relationship("Usuario")
+    

@@ -1,4 +1,4 @@
-// services/api.ts
+// frontend/services/api.ts
 import axios from "axios";
 import { Usuario } from "../context/AuthContext";
 
@@ -250,5 +250,15 @@ export async function obtenerSiguiendoUsuario(id_usuario: number) {
   const res = await api.get(`/siguiendo/${id_usuario}`, {
     headers: { token: getToken(), id_usuario: getUsuarioId() },
   });
+  return res.data;
+}
+// ================ RECUPERACIÓN DE CONTRASEÑA ================
+export async function solicitarRecuperacion(correo: string) {
+  const res = await api.post("/olvidaste-contrasena", { correo });
+  return res.data;
+}
+
+export async function restablecerContrasena(token: string, nueva_contrasena: string) {
+  const res = await api.post("/restablecer-contrasena", { token, nueva_contrasena });
   return res.data;
 }

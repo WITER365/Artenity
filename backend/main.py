@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Header
+# backend/main.py
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
@@ -6,9 +7,17 @@ from backend import models, database, schemas
 from backend.database import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
+from uuid import uuid4
+from backend.models import ResetPasswordToken
+from backend.schemas import ResetPasswordRequest, ForgotPasswordRequest
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from fastapi.responses import JSONResponse
 import os
 import shutil
+from backend.config import settings
+
+
 
 app = FastAPI()
 
@@ -20,7 +29,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# ------------------ CONFIGURACIÓN DE CORREO ------------------
 
+conf = ConnectionConfig(
+    MAIL_USERNAME=settings.MAIL_USERNAME,
+    MAIL_PASSWORD=settings.MAIL_PASSWORD,
+    MAIL_FROM=settings.MAIL_FROM,
+    MAIL_FROM_NAME=settings.MAIL_FROM_NAME,
+    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_SERVER=settings.MAIL_SERVER,
+    MAIL_STARTTLS=settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
+    USE_CREDENTIALS=settings.USE_CREDENTIALS,
+    VALIDATE_CERTS=settings.VALIDATE_CERTS,
+
+)
 # ------------------ STATIC FILES ------------------
 os.makedirs("static/perfiles", exist_ok=True)
 os.makedirs("static/posts", exist_ok=True)
@@ -699,6 +722,103 @@ def obtener_siguiendo(id_usuario: int, db: Session = Depends(get_db)):
         })
 
     return resultado
+
+
+# ------------------ OLVIDASTE TU CONTRASEÑA ------------------
+@app.post("/olvidaste-contrasena")
+async def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        usuario = db.query(models.Usuario).filter(models.Usuario.correo_electronico == data.correo).first()
+        if not usuario:
+            # Por seguridad, no reveles si el correo existe o no
+            return JSONResponse(
+                status_code=200,
+                content={"mensaje": "Si el correo existe, se ha enviado un enlace de recuperación"}
+            )
+
+        # Eliminar tokens previos
+        db.query(models.ResetPasswordToken).filter(
+            models.ResetPasswordToken.id_usuario == usuario.id_usuario
+        ).delete()
+
+        # Generar token único con expiración de 1 hora
+        token = str(uuid4())
+        expiracion = datetime.utcnow() + timedelta(hours=1)
+        
+        nuevo_token = models.ResetPasswordToken(
+            id_usuario=usuario.id_usuario, 
+            token=token, 
+            expiracion=expiracion
+        )
+        db.add(nuevo_token)
+        db.commit()
+
+        # URL del frontend
+        frontend_url = f"http://localhost:5173/reset-password/{token}"
+
+        # Enviar correo con manejo de errores
+        mensaje = MessageSchema(
+            subject="Recupera tu contraseña - Artiverse",
+            recipients=[usuario.correo_electronico],
+            body=f"""
+            <h3>Hola {usuario.nombre_usuario},</h3>
+            <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+            <p>Haz clic en el siguiente enlace para restablecerla (válido por 1 hora):</p>
+            <a href="{frontend_url}" target="_blank" style="
+                background-color: #007bff; 
+                color: white; 
+                padding: 10px 20px; 
+                text-decoration: none; 
+                border-radius: 5px;
+                display: inline-block;
+                margin: 10px 0;">
+                Restablecer Contraseña
+            </a>
+            <p>O copia y pega este enlace en tu navegador:</p>
+            <p style="word-break: break-all; color: #666;">{frontend_url}</p>
+            <p>Si no solicitaste este cambio, ignora este correo.</p>
+            <br>
+            <p>Saludos,<br>El equipo de Artiverse</p>
+            """,
+            subtype="html"
+        )
+
+        fm = FastMail(conf)
+        await fm.send_message(mensaje)
+        
+        return {
+            "mensaje": "Si el correo existe, se ha enviado un enlace de recuperación"
+        }
+
+    except Exception as e:
+        print(f"Error enviando correo: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Error al enviar el correo de recuperación. Por favor, intenta más tarde."
+        )
+
+
+@app.post("/restablecer-contrasena")
+async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    token_entry = db.query(models.ResetPasswordToken).filter(models.ResetPasswordToken.token == data.token).first()
+    if not token_entry:
+        raise HTTPException(status_code=400, detail="Token inválido o inexistente")
+
+    if token_entry.expiracion < datetime.utcnow():
+        db.delete(token_entry)
+        db.commit()
+        raise HTTPException(status_code=400, detail="El token ha expirado")
+
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == token_entry.id_usuario).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Actualizar contraseña
+    usuario.contrasena = data.nueva_contrasena
+    db.delete(token_entry)
+    db.commit()
+
+    return {"mensaje": "Contraseña restablecida correctamente"}
 
 # ------------------ HOME ------------------
 @app.get("/home")

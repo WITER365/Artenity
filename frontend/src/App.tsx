@@ -1,3 +1,4 @@
+/*frontend/App.tsx*/
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Artenity from "./components/artenity";
@@ -8,7 +9,8 @@ import Perfil from "./components/perfil";
 import Busqueda from "./components/busqueda";
 import Messages from "./components/Messages";
 import PerfilUsuario from "./components/PerfilUsuario";
-
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 
 function App() {
   const { token } = useAuth();
@@ -51,6 +53,11 @@ function App() {
       />
       {/* 🔹 Cualquier otra ruta redirige al login */}
       <Route path="*" element={<Navigate to="/login" />} />
+   
+      {/* Otras rutas */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+    
     </Routes>
   );
 }

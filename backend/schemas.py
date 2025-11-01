@@ -2,6 +2,9 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date, datetime
 from typing import Optional, List
+from pydantic_settings import BaseSettings 
+from fastapi_mail import ConnectionConfig
+from backend.config import settings
 
 # ------------------ PERFIL ------------------
 class PerfilBase(BaseModel):
@@ -94,3 +97,29 @@ class EstadisticasPerfilResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+
+ # ------------------ RECUPERACIÓN DE CONTRASEÑA ------------------
+class ResetPasswordRequest(BaseModel):
+    token: str
+    nueva_contrasena: str
+
+class ForgotPasswordRequest(BaseModel):
+    correo: EmailStr
+
+class ForgotPasswordRequest(BaseModel):
+    correo: EmailStr
+
+
+conf = ConnectionConfig(
+    MAIL_USERNAME=settings.MAIL_USERNAME,
+    MAIL_PASSWORD=settings.MAIL_PASSWORD,
+    MAIL_FROM=settings.MAIL_FROM,
+    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_SERVER=settings.MAIL_SERVER,
+    MAIL_STARTTLS=settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
+    USE_CREDENTIALS=settings.USE_CREDENTIALS,
+    VALIDATE_CERTS=settings.VALIDATE_CERTS,
+)
