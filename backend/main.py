@@ -215,12 +215,50 @@ async def actualizar_perfil(
 
 
 # ------------------ PUBLICACIONES ------------------
-@app.get("/publicaciones", response_model=List[schemas.PublicacionResponse])
-def obtener_publicaciones(db: Session = Depends(get_db)):
-    return db.query(models.Publicacion)\
-        .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))\
-        .order_by(models.Publicacion.fecha_creacion.desc()).all()
+# ------------------ PUBLICACIONES ------------------
+from sqlalchemy.orm import joinedload
+from typing import List
 
+@app.get("/publicaciones", response_model=List[schemas.PublicacionResponse])
+def obtener_publicaciones(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    # Obtener usuarios que el usuario actual ha bloqueado
+    usuarios_bloqueados = db.query(models.BloqueoUsuario.id_bloqueado).filter(
+        models.BloqueoUsuario.id_bloqueador == user_id
+    ).all()
+    ids_usuarios_bloqueados = [ub[0] for ub in usuarios_bloqueados]
+
+    # Obtener usuarios que han bloqueado al usuario actual
+    usuarios_que_me_bloquearon = db.query(models.BloqueoUsuario.id_bloqueador).filter(
+        models.BloqueoUsuario.id_bloqueado == user_id
+    ).all()
+    ids_usuarios_que_me_bloquearon = [ub[0] for ub in usuarios_que_me_bloquearon]
+
+    # Obtener publicaciones marcadas como "No me interesa"
+    no_me_interesa = db.query(models.NoMeInteresa.id_publicacion).filter(
+        models.NoMeInteresa.id_usuario == user_id
+    ).all()
+    ids_no_me_interesa = [nmi[0] for nmi in no_me_interesa]
+
+    # Consulta base con filtros combinados
+    publicaciones = (
+        db.query(models.Publicacion)
+        .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
+        .filter(
+            # Excluir publicaciones de usuarios bloqueados por mí
+            ~models.Publicacion.id_usuario.in_(ids_usuarios_bloqueados),
+            # Excluir publicaciones de usuarios que me han bloqueado
+            ~models.Publicacion.id_usuario.in_(ids_usuarios_que_me_bloquearon),
+            # Excluir publicaciones marcadas como "No me interesa"
+            ~models.Publicacion.id_publicacion.in_(ids_no_me_interesa)
+        )
+        .order_by(models.Publicacion.fecha_creacion.desc())
+        .all()
+    )
+
+    return publicaciones
 @app.post("/publicaciones", response_model=schemas.PublicacionResponse)
 async def crear_publicacion(
     id_usuario: int = Form(...),
