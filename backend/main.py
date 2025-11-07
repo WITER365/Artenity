@@ -1,23 +1,22 @@
 # backend/main.py
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Header, Body
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session, joinedload
-from backend import models, database, schemas
-from backend.database import get_db
-from pydantic import BaseModel, EmailStr
-from typing import List
-from datetime import datetime, timedelta
-from uuid import uuid4
-from backend.models import ResetPasswordToken
-from backend.schemas import ResetPasswordRequest, ForgotPasswordRequest
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from fastapi.responses import JSONResponse
 import os
 import shutil
+from datetime import datetime, timedelta
+from typing import List
+from uuid import uuid4
+
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session, joinedload
+
+from backend import database, models, schemas
 from backend.config import settings
-
-
+from backend.database import get_db
+from backend.schemas import ForgotPasswordRequest, ResetPasswordRequest
 
 app = FastAPI()
 
@@ -42,7 +41,6 @@ conf = ConnectionConfig(
     MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
     USE_CREDENTIALS=settings.USE_CREDENTIALS,
     VALIDATE_CERTS=settings.VALIDATE_CERTS,
-
 )
 # ------------------ STATIC FILES ------------------
 os.makedirs("static/perfiles", exist_ok=True)
@@ -74,7 +72,7 @@ def get_current_user_id(
 # ------------------ USUARIOS ------------------
 @app.post("/usuarios", response_model=schemas.UsuarioResponse)
 def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    nuevo_usuario = models.Usuario(**usuario.dict())
+    nuevo_usuario = models.Usuario(**usuario.model_dump())
     db.add(nuevo_usuario)
     db.commit()
     db.refresh(nuevo_usuario)
@@ -213,12 +211,7 @@ async def actualizar_perfil(
     db.refresh(perfil)
     return perfil
 
-
 # ------------------ PUBLICACIONES ------------------
-# ------------------ PUBLICACIONES ------------------
-from sqlalchemy.orm import joinedload
-from typing import List
-
 @app.get("/publicaciones", response_model=List[schemas.PublicacionResponse])
 def obtener_publicaciones(
     db: Session = Depends(get_db),
@@ -259,6 +252,7 @@ def obtener_publicaciones(
     )
 
     return publicaciones
+
 @app.post("/publicaciones", response_model=schemas.PublicacionResponse)
 async def crear_publicacion(
     id_usuario: int = Form(...),
@@ -596,7 +590,7 @@ def obtener_notificaciones(db: Session = Depends(get_db), user_id: int = Depends
     
 @app.put("/notificaciones/leidas")
 def marcar_notificaciones_leidas(
-    db: Session = Depends(database.get_db),
+    db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id)
 ):
     notificaciones = db.query(models.Notificacion).filter(
@@ -1530,7 +1524,7 @@ def obtener_publicaciones_guardadas(
         .all()
 
     return [guardado.publicacion for guardado in guardados]
-    return {"mensaje": "Publicación removida de 'No me interesa'"}
+
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():
