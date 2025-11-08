@@ -397,3 +397,10 @@ export async function obtenerPublicacionesGuardadas() {
 export const getSolicitudesAmistad = obtenerSolicitudesPendientes;
 export const getAmigos = obtenerAmigos;
 export const getCategorias = obtenerCategorias;
+
+
+//--------- estadisticasMeGustas---------------------
+export const obtenerEstadisticasMeGustas = async (idusuario: number) => {
+  const res = await api.get(`/estadisticas-me-gustas/${idusuario}`);
+  return res.data;
+};

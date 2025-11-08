@@ -20,6 +20,7 @@ import {
   quitarMeGusta,
   guardarPublicacion,
   quitarGuardado,
+  obtenerEstadisticasMeGustas,
 } from "../services/api";
 import "../styles/perfil.css";
 
@@ -47,9 +48,8 @@ interface PublicacionConEstadisticas {
   };
 }
 
-const Perfil: React.FC = () => {
+ const Perfil: React.FC = () => {
   const { usuario, actualizarFotoPerfil, forzarActualizacionPerfil } = useAuth();
-
   const [descripcion, setDescripcion] = useState("");
   const [biografia, setBiografia] = useState("");
   const [imagen, setImagen] = useState<File | null>(null);
@@ -67,6 +67,10 @@ const Perfil: React.FC = () => {
     seguidores: 0,
     siguiendo: 0,
     publicaciones: 0,
+  });
+  const [estadisticasMeGustas, setEstadisticasMeGustas] = useState({
+  me_gustas_recibidos: 0,
+  me_gustas_dados: 0
   });
   const [publicaciones, setPublicaciones] = useState<PublicacionConEstadisticas[]>([]);
   const [publicacionesGuardadas, setPublicacionesGuardadas] = useState<PublicacionConEstadisticas[]>([]);
@@ -99,6 +103,16 @@ const Perfil: React.FC = () => {
       console.error("Error cargando estadísticas:", error);
     }
   }, [usuario?.id_usuario]);
+
+  const cargarEstadisticasMeGustas = useCallback(async () => {
+  if (!usuario?.id_usuario) return;
+  try {
+    const stats = await obtenerEstadisticasMeGustas(usuario.id_usuario);
+    setEstadisticasMeGustas(stats);
+  } catch (error) {
+    console.error("Error cargando estadísticas de me gustas:", error);
+  }
+}, [usuario?.id_usuario]);
 
   // ✅ Cargar publicaciones del usuario con estadísticas
   const cargarPublicaciones = useCallback(async () => {
@@ -173,12 +187,11 @@ const Perfil: React.FC = () => {
     }
   }, []);
 
-  // ✅ Cargar publicaciones con like
+  
   const cargarPublicacionesConLike = useCallback(async () => {
     if (!usuario?.id_usuario) return;
     try {
-      // Para simplificar, vamos a filtrar las publicaciones que tienen like del usuario
-      // En una implementación real, necesitarías un endpoint específico para esto
+      
       const todasLasPublicaciones = await obtenerPublicacionesUsuario(usuario.id_usuario);
       
       const postsConLike = await Promise.all(
@@ -313,6 +326,7 @@ const Perfil: React.FC = () => {
     cargarPublicacionesConLike();
     cargarUsuariosBloqueados();
     cargarNoMeInteresa();
+    cargarEstadisticasMeGustas(); 
   }, [
     cargarPerfil,
     cargarAmigos,
@@ -324,6 +338,7 @@ const Perfil: React.FC = () => {
     cargarPublicacionesConLike,
     cargarUsuariosBloqueados,
     cargarNoMeInteresa,
+    cargarEstadisticasMeGustas,
   ]);
 
   // 📸 Seleccionar imagen
@@ -562,21 +577,31 @@ const Perfil: React.FC = () => {
           <h1 className="perfil-nombre">{usuario.nombre_usuario}</h1>
           <p className="perfil-correo">{usuario.correo_electronico}</p>
 
-          {/* Estadísticas */}
-          <div className="estadisticas-perfil">
-            <div className="estadistica-item">
-              <span className="estadistica-numero">{estadisticas.publicaciones}</span>
-              <span className="estadistica-label">Publicaciones</span>
-            </div>
-            <div className="estadistica-item">
-              <span className="estadistica-numero">{estadisticas.seguidores}</span>
-              <span className="estadistica-label">Seguidores</span>
-            </div>
-            <div className="estadistica-item">
-              <span className="estadistica-numero">{estadisticas.siguiendo}</span>
-              <span className="estadistica-label">Siguiendo</span>
-            </div>
-          </div>
+      
+         {/* Estadísticas */}
+<div className="estadisticas-perfil">
+  <div className="estadistica-item">
+    <span className="estadistica-numero">{estadisticas.publicaciones}</span>
+    <span className="estadistica-label">Publicaciones</span>
+  </div>
+  <div className="estadistica-item">
+    <span className="estadistica-numero">{estadisticas.seguidores}</span>
+    <span className="estadistica-label">Seguidores</span>
+  </div>
+  <div className="estadistica-item">
+    <span className="estadistica-numero">{estadisticas.siguiendo}</span>
+    <span className="estadistica-label">Siguiendo</span>
+  </div>
+  {/* Nuevas estadísticas de me gustas */}
+  <div className="estadistica-item">
+    <span className="estadistica-numero">{estadisticasMeGustas.me_gustas_recibidos}</span>
+    <span className="estadistica-label">Me Gusta Recibidos</span>
+  </div>
+  <div className="estadistica-item">
+    <span className="estadistica-numero">{estadisticasMeGustas.me_gustas_dados}</span>
+    <span className="estadistica-label">Me Gusta Dados</span>
+  </div>
+</div>
 
           {/* Pestañas de navegación */}
           <div className="perfil-pestanas">
