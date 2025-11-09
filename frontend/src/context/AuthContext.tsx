@@ -13,6 +13,11 @@ export interface Usuario {
   nombre_usuario: string;
   correo_electronico: string;
   foto_perfil?: string | null;
+  perfil?: {
+    foto_perfil?: string | null;
+    descripcion?: string;
+    biografia?: string;
+  };
 }
 
 interface AuthContextType {
@@ -42,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [actualizacion, setActualizacion] = useState(0);
   const [usuariosBloqueados, setUsuariosBloqueados] = useState<number[]>([]);
   const [publicacionesNoMeInteresa, setPublicacionesNoMeInteresa] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true); // 👈 nuevo estado
 
   // -------------------- Cargar listas --------------------
   const cargarBloqueados = async () => {
@@ -89,6 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUsuario = localStorage.getItem("usuario");
 
     if (storedToken) setToken(storedToken);
+
     if (storedUsuario) {
       const parsedUser = JSON.parse(storedUsuario);
       setUsuario(parsedUser);
@@ -104,8 +111,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             cargarBloqueados();
             cargarNoMeInteresa();
           })
-          .catch((err) => console.error("Error al cargar perfil:", err));
+          .catch((err) => console.error("Error al cargar perfil:", err))
+          .finally(() => setLoading(false)); // 👈 importante
+      } else {
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
   }, [actualizacion]);
 
@@ -164,6 +176,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .catch((err) => console.error("Error al forzar actualización:", err));
     }
   };
+
+  // -------------------- Mientras carga --------------------
+  if (loading) {
+    return <div className="text-center p-4">Cargando sesión...</div>; // o spinner
+  }
 
   // -------------------- Provider --------------------
   return (
@@ -226,17 +243,4 @@ export default function OlvidasteContrasena() {
       {mensaje && <p>{mensaje}</p>}
     </form>
   );
-}
-
-// frontend/context/AuthContext.tsx
-export interface Usuario {
-  id_usuario: number;
-  nombre_usuario: string;
-  correo_electronico: string;
-  foto_perfil?: string | null;
-  perfil?: {
-    foto_perfil?: string | null;
-    descripcion?: string;
-    biografia?: string;
-  };
 }
