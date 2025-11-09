@@ -28,6 +28,8 @@ class Usuario(Base):
     reportes_recibidos = relationship("ReporteUsuario", foreign_keys="ReporteUsuario.id_reportado", back_populates="reportado")
     amistades_enviadas = relationship("SolicitudAmistad", foreign_keys="SolicitudAmistad.id_emisor", back_populates="emisor")
     amistades_recibidas = relationship("SolicitudAmistad", foreign_keys="SolicitudAmistad.id_receptor", back_populates="receptor")
+    amistades_como_usuario1 = relationship("Amistad", foreign_keys="Amistad.id_usuario1", back_populates="usuario1", cascade="all, delete-orphan")
+    amistades_como_usuario2 = relationship("Amistad", foreign_keys="Amistad.id_usuario2", back_populates="usuario2", cascade="all, delete-orphan")
     notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
     bloqueos_realizados = relationship("BloqueoUsuario", foreign_keys="BloqueoUsuario.id_bloqueador", back_populates="bloqueador")
     bloqueos_recibidos = relationship("BloqueoUsuario", foreign_keys="BloqueoUsuario.id_bloqueado", back_populates="bloqueado")
@@ -38,7 +40,6 @@ class Usuario(Base):
     me_gusta_comentarios = relationship("MeGustaComentario", back_populates="usuario", cascade="all, delete-orphan")
     compartidos = relationship("Compartido", back_populates="usuario", cascade="all, delete-orphan")
     reset_tokens = relationship("ResetPasswordToken", back_populates="usuario", cascade="all, delete-orphan")
-
 
 # ------------------ PERFIL ------------------
 class Perfil(Base):
@@ -52,6 +53,19 @@ class Perfil(Base):
 
     usuario = relationship("Usuario", back_populates="perfil")
 
+# ------------------ AMISTAD ------------------
+class Amistad(Base):
+    __tablename__ = "amistades"
+
+    id_amistad = Column(Integer, primary_key=True, index=True)
+    id_usuario1 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
+    id_usuario2 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
+    estado = Column(String(50), default="aceptada")  # aceptada / eliminada
+    fecha_amistad = Column(DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    usuario1 = relationship("Usuario", foreign_keys=[id_usuario1], back_populates="amistades_como_usuario1")
+    usuario2 = relationship("Usuario", foreign_keys=[id_usuario2], back_populates="amistades_como_usuario2")
 
 # ------------------ PUBLICACIÓN ------------------
 class Publicacion(Base):
@@ -70,7 +84,6 @@ class Publicacion(Base):
     comentarios = relationship("Comentario", back_populates="publicacion", cascade="all, delete-orphan")
     compartidos = relationship("Compartido", back_populates="publicacion", cascade="all, delete-orphan")
 
-
 # ------------------ SEGUIR USUARIO ------------------
 class SeguirUsuario(Base):
     __tablename__ = "seguir_usuario"
@@ -82,7 +95,6 @@ class SeguirUsuario(Base):
 
     seguidor = relationship("Usuario", foreign_keys=[id_seguidor], back_populates="siguiendo")
     seguido = relationship("Usuario", foreign_keys=[id_seguido], back_populates="seguidores")
-
 
 # ------------------ REPORTAR USUARIO ------------------
 class ReporteUsuario(Base):
@@ -98,7 +110,6 @@ class ReporteUsuario(Base):
     reportante = relationship("Usuario", foreign_keys=[id_reportante], back_populates="reportes_enviados")
     reportado = relationship("Usuario", foreign_keys=[id_reportado], back_populates="reportes_recibidos")
 
-
 # ------------------ SOLICITUD DE AMISTAD ------------------
 class SolicitudAmistad(Base):
     __tablename__ = "solicitud_de_amistad"
@@ -111,7 +122,6 @@ class SolicitudAmistad(Base):
 
     emisor = relationship("Usuario", foreign_keys=[id_emisor], back_populates="amistades_enviadas")
     receptor = relationship("Usuario", foreign_keys=[id_receptor], back_populates="amistades_recibidas")
-
 
 # ------------------ NOTIFICACIONES ------------------
 class Notificacion(Base):
@@ -127,7 +137,6 @@ class Notificacion(Base):
 
     usuario = relationship("Usuario", back_populates="notificaciones")
 
-
 # ------------------ BLOQUEO DE USUARIO ------------------
 class BloqueoUsuario(Base):
     __tablename__ = "bloqueos_usuarios"
@@ -139,7 +148,6 @@ class BloqueoUsuario(Base):
 
     bloqueador = relationship("Usuario", foreign_keys=[id_bloqueador], back_populates="bloqueos_realizados")
     bloqueado = relationship("Usuario", foreign_keys=[id_bloqueado], back_populates="bloqueos_recibidos")
-
 
 # ------------------ NO ME INTERESA ------------------
 class NoMeInteresa(Base):
@@ -153,7 +161,6 @@ class NoMeInteresa(Base):
     usuario = relationship("Usuario", back_populates="no_me_interesa")
     publicacion = relationship("Publicacion", back_populates="no_me_interesa")
 
-
 # ------------------ ME GUSTA PUBLICACIÓN ------------------
 class MeGusta(Base):
     __tablename__ = "me_gusta"
@@ -166,7 +173,6 @@ class MeGusta(Base):
     usuario = relationship("Usuario", back_populates="me_gusta")
     publicacion = relationship("Publicacion", back_populates="me_gusta")
 
-
 # ------------------ GUARDAR PUBLICACIÓN ------------------
 class Guardado(Base):
     __tablename__ = "guardados"
@@ -178,7 +184,6 @@ class Guardado(Base):
 
     usuario = relationship("Usuario", back_populates="guardados")
     publicacion = relationship("Publicacion", back_populates="guardados")
-
 
 # ------------------ COMENTARIO ------------------
 class Comentario(Base):
@@ -196,7 +201,6 @@ class Comentario(Base):
     comentario_padre = relationship("Comentario", remote_side=[id_comentario], backref="respuestas")
     me_gusta_comentarios = relationship("MeGustaComentario", back_populates="comentario", cascade="all, delete-orphan")
 
-
 # ------------------ ME GUSTA COMENTARIO ------------------
 class MeGustaComentario(Base):
     __tablename__ = "me_gusta_comentarios"
@@ -208,7 +212,6 @@ class MeGustaComentario(Base):
 
     usuario = relationship("Usuario", back_populates="me_gusta_comentarios")
     comentario = relationship("Comentario", back_populates="me_gusta_comentarios")
-
 
 # ------------------ COMPARTIR PUBLICACIÓN ------------------
 class Compartido(Base):
@@ -223,7 +226,6 @@ class Compartido(Base):
 
     usuario = relationship("Usuario", back_populates="compartidos")
     publicacion = relationship("Publicacion", back_populates="compartidos")
-
 
 # ------------------ TOKEN DE RECUPERACIÓN ------------------
 class ResetPasswordToken(Base):
