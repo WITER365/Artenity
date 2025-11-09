@@ -11,10 +11,40 @@ import {
   obtenerPublicacionesUsuario,
   obtenerSeguidoresUsuario,
   obtenerSiguiendoUsuario,
+  obtenerEstadisticasMeGustas,
+  obtenerEstadisticasPublicacion,
+  darMeGusta,
+  quitarMeGusta,
+  guardarPublicacion,
+  quitarGuardado,
 } from "../services/api";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import { useAuth } from "../context/AuthContext";
 import "../styles/perfil.css";
+
+// Interface para publicaciones con estadísticas
+interface PublicacionConEstadisticas {
+  id_publicacion: number;
+  id_usuario: number;
+  contenido: string;
+  imagen?: string;
+  fecha_creacion: string;
+  usuario: {
+    id_usuario: number;
+    nombre_usuario: string;
+    nombre: string;
+    perfil?: {
+      foto_perfil?: string;
+    };
+  };
+  estadisticas?: {
+    total_me_gusta: number;
+    total_comentarios: number;
+    total_guardados: number;
+    me_gusta_dado: boolean;
+    guardado: boolean;
+  };
+}
 
 export default function PerfilUsuario() {
   const { id } = useParams();
@@ -29,14 +59,36 @@ export default function PerfilUsuario() {
     siguiendo: 0,
     publicaciones: 0,
   });
-  const [publicaciones, setPublicaciones] = useState<any[]>([]);
+  const [estadisticasMeGustas, setEstadisticasMeGustas] = useState({
+    me_gustas_recibidos: 0,
+    me_gustas_dados: 0
+  });
+  const [publicaciones, setPublicaciones] = useState<PublicacionConEstadisticas[]>([]);
   const [seguidores, setSeguidores] = useState<any[]>([]);
   const [siguiendo, setSiguiendo] = useState<any[]>([]);
   const [evidencia, setEvidencia] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [sigueUsuario, setSigueUsuario] = useState(false);
 
-  const esAmigo = perfil ? amigos.some((a) => a.id_usuario === perfil.id_usuario) : false;
-  const esMiPerfil = usuarioActual?.id_usuario === perfil?.id_usuario;
+  // ✅ DETECCIÓN ROBUSTA DE SI ES EL PERFIL PROPIO
+  const esMiPerfil = usuarioActual && perfil && 
+                    usuarioActual.id_usuario?.toString() === perfil.id_usuario?.toString();
+  
+  const esAmigo = perfil ? amigos.some((a) => 
+    a.id_usuario?.toString() === perfil.id_usuario?.toString()
+  ) : false;
+
+  // ✅ DEPURACIÓN
+  useEffect(() => {
+    console.log("=== DEPURACIÓN PERFIL USUARIO ===");
+    console.log("ID parámetro:", id);
+    console.log("Usuario actual ID:", usuarioActual?.id_usuario);
+    console.log("Perfil ID:", perfil?.id_usuario);
+    console.log("¿Es mi perfil?:", esMiPerfil);
+    console.log("¿Sigue usuario?:", sigueUsuario);
+    console.log("¿Es amigo?:", esAmigo);
+    console.log("=== FIN DEPURACIÓN ===");
+  }, [usuarioActual, perfil, esMiPerfil, sigueUsuario, esAmigo, id]);
 
   useEffect(() => {
     if (id) {
@@ -47,6 +99,8 @@ export default function PerfilUsuario() {
       cargarPublicaciones(userId);
       cargarSeguidores(userId);
       cargarSiguiendo(userId);
+      cargarEstadisticasMeGustas(userId);
+      verificarSeguimiento(userId);
     }
   }, [id]);
 
@@ -60,6 +114,24 @@ export default function PerfilUsuario() {
       alert("Error al cargar el perfil del usuario");
     } finally {
       setCargando(false);
+    }
+  };
+
+  const verificarSeguimiento = async (idUsuario: number) => {
+    if (!usuarioActual?.id_usuario) {
+      setSigueUsuario(false);
+      return;
+    }
+
+    try {
+      const siguiendoData = await obtenerSiguiendoUsuario(usuarioActual.id_usuario);
+      const sigue = siguiendoData.some((s: any) =>
+        s.id_seguido?.toString() === idUsuario.toString()
+      );
+      setSigueUsuario(sigue);
+    } catch (err) {
+      console.error("Error verificando seguimiento:", err);
+      setSigueUsuario(false);
     }
   };
 
@@ -81,10 +153,45 @@ export default function PerfilUsuario() {
     }
   };
 
+  const cargarEstadisticasMeGustas = async (idUsuario: number) => {
+    try {
+      const stats = await obtenerEstadisticasMeGustas(idUsuario);
+      setEstadisticasMeGustas(stats);
+    } catch (error) {
+      console.error("Error cargando estadísticas de me gustas:", error);
+    }
+  };
+
   const cargarPublicaciones = async (idUsuario: number) => {
     try {
       const posts = await obtenerPublicacionesUsuario(idUsuario);
-      setPublicaciones(posts);
+      
+      // Cargar estadísticas para cada publicación
+      const postsConEstadisticas = await Promise.all(
+        posts.map(async (post: any) => {
+          try {
+            const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
+            return {
+              ...post,
+              estadisticas: stats
+            };
+          } catch (error) {
+            console.error(`Error cargando estadísticas para publicación ${post.id_publicacion}:`, error);
+            return {
+              ...post,
+              estadisticas: {
+                total_me_gusta: 0,
+                total_comentarios: 0,
+                total_guardados: 0,
+                me_gusta_dado: false,
+                guardado: false
+              }
+            };
+          }
+        })
+      );
+      
+      setPublicaciones(postsConEstadisticas);
     } catch (error) {
       console.error("Error cargando publicaciones:", error);
     }
@@ -114,7 +221,7 @@ export default function PerfilUsuario() {
     try {
       await seguirUsuario(parseInt(id));
       alert("¡Ahora sigues a este usuario!");
-      cargarPerfilUsuario(parseInt(id));
+      setSigueUsuario(true);
       cargarEstadisticas(parseInt(id));
       cargarSeguidores(parseInt(id));
     } catch (error: any) {
@@ -127,7 +234,7 @@ export default function PerfilUsuario() {
     try {
       await dejarDeSeguirUsuario(parseInt(id));
       alert("Has dejado de seguir a este usuario");
-      cargarPerfilUsuario(parseInt(id));
+      setSigueUsuario(false);
       cargarEstadisticas(parseInt(id));
       cargarSeguidores(parseInt(id));
     } catch (error: any) {
@@ -142,6 +249,40 @@ export default function PerfilUsuario() {
       alert("¡Solicitud de amistad enviada!");
     } catch (error: any) {
       alert(error.response?.data?.detail || "Error al enviar solicitud");
+    }
+  };
+
+  // ❤️ Manejar me gusta
+  const handleMeGusta = async (publicacion: PublicacionConEstadisticas) => {
+    try {
+      if (publicacion.estadisticas?.me_gusta_dado) {
+        await quitarMeGusta(publicacion.id_publicacion);
+      } else {
+        await darMeGusta(publicacion.id_publicacion);
+      }
+      
+      // Recargar las publicaciones para actualizar estadísticas
+      await cargarPublicaciones(parseInt(id!));
+    } catch (error) {
+      console.error("Error con me gusta:", error);
+      alert("Error al procesar me gusta");
+    }
+  };
+
+  // 📥 Manejar guardar
+  const handleGuardar = async (publicacion: PublicacionConEstadisticas) => {
+    try {
+      if (publicacion.estadisticas?.guardado) {
+        await quitarGuardado(publicacion.id_publicacion);
+      } else {
+        await guardarPublicacion(publicacion.id_publicacion);
+      }
+      
+      // Recargar las publicaciones para actualizar estadísticas
+      await cargarPublicaciones(parseInt(id!));
+    } catch (error) {
+      console.error("Error con guardar:", error);
+      alert("Error al procesar guardado");
     }
   };
 
@@ -181,6 +322,54 @@ export default function PerfilUsuario() {
     setPreview(null);
   };
 
+  // Componente para mostrar publicaciones con botones funcionales
+  const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisticas }) => (
+    <div key={publicacion.id_publicacion} className="publicacion-card">
+      <div className="publicacion-header">
+        <img
+          src={publicacion.usuario?.perfil?.foto_perfil || defaultProfile}
+          alt="Foto perfil"
+          className="publicacion-foto-perfil"
+        />
+        <div className="publicacion-info-usuario">
+          <span className="publicacion-usuario">
+            {publicacion.usuario?.nombre_usuario || "Usuario"}
+          </span>
+          <span className="publicacion-fecha">
+            {new Date(publicacion.fecha_creacion).toLocaleString()}
+          </span>
+        </div>
+      </div>
+      <div className="publicacion-contenido">
+        <p className="publicacion-texto">{publicacion.contenido}</p>
+        {publicacion.imagen && (
+          <img
+            src={publicacion.imagen}
+            alt="Publicación"
+            className="publicacion-imagen"
+          />
+        )}
+      </div>
+      <div className="publicacion-acciones">
+        <button 
+          className={`accion-btn ${publicacion.estadisticas?.me_gusta_dado ? 'liked' : ''}`}
+          onClick={() => handleMeGusta(publicacion)}
+        >
+          ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
+        </button>
+        <button className="accion-btn">
+          💬 {publicacion.estadisticas?.total_comentarios || 0}
+        </button>
+        <button 
+          className={`accion-btn ${publicacion.estadisticas?.guardado ? 'saved' : ''}`}
+          onClick={() => handleGuardar(publicacion)}
+        >
+          📤
+        </button>
+      </div>
+    </div>
+  );
+
   if (cargando) return <div className="cargando">Cargando perfil...</div>;
   if (!perfil) return <div className="error">Usuario no encontrado</div>;
 
@@ -216,12 +405,21 @@ export default function PerfilUsuario() {
               <span className="estadistica-numero">{estadisticas.siguiendo}</span>
               <span className="estadistica-label">Siguiendo</span>
             </div>
+            <div className="estadistica-item">
+              <span className="estadistica-numero">{estadisticasMeGustas.me_gustas_recibidos}</span>
+              <span className="estadistica-label">Me Gusta Recibidos</span>
+            </div>
+            <div className="estadistica-item">
+              <span className="estadistica-numero">{estadisticasMeGustas.me_gustas_dados}</span>
+              <span className="estadistica-label">Me Gusta Dados</span>
+            </div>
           </div>
 
-          {/* Botones de Acción */}
-          {!esMiPerfil && (
+          {/* ✅ BOTONES DE ACCIÓN - VERSIÓN MEJORADA */}
+          {usuarioActual && !esMiPerfil && (
             <div className="acciones-perfil">
-              {perfil.sigo ? (
+              <h4>Acciones</h4>
+              {sigueUsuario ? (
                 <button onClick={handleDejarSeguir} className="btn-dejar-seguir">
                   🚫 Dejar de seguir
                 </button>
@@ -236,12 +434,30 @@ export default function PerfilUsuario() {
                 className="btn-amistad" 
                 disabled={esAmigo}
               >
-                🤝 {esAmigo ? "Ya son amigos" : "Enviar solicitud"}
+                🤝 {esAmigo ? "Ya son amigos" : "Enviar solicitud de amistad"}
               </button>
               
               <button onClick={() => setReporteModal(true)} className="btn-reportar">
-                ⚠️ Reportar
+                ⚠️ Reportar usuario
               </button>
+            </div>
+          )}
+
+          {/* ✅ MOSTRAR SI ES EL PROPIO PERFIL */}
+          {esMiPerfil && (
+            <div className="acciones-perfil">
+              <p style={{ color: '#666', fontStyle: 'italic' }}>
+                Este es tu perfil. Puedes editarlo desde tu página de perfil principal.
+              </p>
+            </div>
+          )}
+
+          {/* ✅ MOSTRAR SI NO HAY USUARIO AUTENTICADO */}
+          {!usuarioActual && (
+            <div className="acciones-perfil">
+              <p style={{ color: '#666', fontStyle: 'italic' }}>
+                Inicia sesión para seguir, enviar solicitud de amistad o reportar a este usuario.
+              </p>
             </div>
           )}
         </div>
@@ -267,7 +483,7 @@ export default function PerfilUsuario() {
           </div>
         )}
 
-        {/* Publicaciones del Usuario */}
+        {/* Publicaciones del Usuario CON BOTONES FUNCIONALES */}
         <div className="perfil-section">
           <div className="section-header">
             <h3 className="section-title">
@@ -278,38 +494,7 @@ export default function PerfilUsuario() {
           {publicaciones.length > 0 ? (
             <div className="publicaciones-lista">
               {publicaciones.map((post) => (
-                <div key={post.id_publicacion} className="publicacion-card">
-                  <div className="publicacion-header">
-                    <img
-                      src={post.usuario?.perfil?.foto_perfil || defaultProfile}
-                      alt="Foto perfil"
-                      className="publicacion-foto-perfil"
-                    />
-                    <div className="publicacion-info-usuario">
-                      <span className="publicacion-usuario">
-                        {post.usuario?.nombre_usuario || "Usuario"}
-                      </span>
-                      <span className="publicacion-fecha">
-                        {new Date(post.fecha_creacion).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="publicacion-contenido">
-                    <p className="publicacion-texto">{post.contenido}</p>
-                    {post.imagen && (
-                      <img
-                        src={post.imagen}
-                        alt="Publicación"
-                        className="publicacion-imagen"
-                      />
-                    )}
-                  </div>
-                  <div className="publicacion-acciones">
-                    <button className="accion-btn">💬 Comentar</button>
-                    <button className="accion-btn">🔄 Compartir</button>
-                    <button className="accion-btn">❤️ Me gusta</button>
-                  </div>
-                </div>
+                <PublicacionCard key={post.id_publicacion} publicacion={post} />
               ))}
             </div>
           ) : (
@@ -451,7 +636,7 @@ export default function PerfilUsuario() {
             <div className="contenedor-evidencia">
               {preview ? (
                 <div className="preview-wrapper">
-                  <img src={preview} alt="Evidencia subida" className="preview-img" />
+                  <img src={preview || ""} alt="Evidencia subida" className="preview-img" />
                   <div className="botones-evidencia">
                     <label className="btn-cambiar">
                       Cambiar imagen
