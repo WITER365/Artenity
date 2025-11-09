@@ -188,36 +188,61 @@ interface PublicacionConEstadisticas {
   }, []);
 
   
-  const cargarPublicacionesConLike = useCallback(async () => {
-    if (!usuario?.id_usuario) return;
-    try {
-      
-      const todasLasPublicaciones = await obtenerPublicacionesUsuario(usuario.id_usuario);
-      
-      const postsConLike = await Promise.all(
-        todasLasPublicaciones
-          .filter(async (post: any) => {
-            try {
-              const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
-              return stats.me_gusta_dado;
-            } catch (error) {
-              return false;
-            }
-          })
-          .map(async (post: any) => {
-            const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
-            return {
-              ...post,
-              estadisticas: stats
-            };
-          })
-      );
-      
-      setPublicacionesConLike(postsConLike);
-    } catch (error) {
-      console.error("Error cargando publicaciones con like:", error);
+ const cargarPublicacionesConLike = useCallback(async () => {
+  if (!usuario?.id_usuario) return;
+  try {
+    const token = localStorage.getItem("token");
+    const usuarioStorage = localStorage.getItem("usuario");
+    
+    if (!token || !usuarioStorage) {
+      throw new Error("No hay usuario autenticado");
     }
-  }, [usuario?.id_usuario]);
+    
+    const parsedUsuario = JSON.parse(usuarioStorage);
+    
+    // Obtener TODAS las publicaciones a las que el usuario dio like
+    const response = await fetch(`http://localhost:8000/usuarios/${usuario.id_usuario}/megusta-dados`, {
+      headers: {
+        'token': token,
+        'id_usuario': parsedUsuario.id_usuario.toString(),
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) throw new Error('Error al cargar me gustas');
+    
+    const data = await response.json();
+    
+    // Cargar estadísticas para cada publicación
+    const postsConEstadisticas = await Promise.all(
+      data.map(async (item: any) => {
+        try {
+          const stats = await obtenerEstadisticasPublicacion(item.publicacion.id_publicacion);
+          return {
+            ...item.publicacion,
+            estadisticas: stats
+          };
+        } catch (error) {
+          console.error(`Error cargando estadísticas para publicación ${item.publicacion.id_publicacion}:`, error);
+          return {
+            ...item.publicacion,
+            estadisticas: {
+              total_me_gusta: 0,
+              total_comentarios: 0,
+              total_guardados: 0,
+              me_gusta_dado: true,
+              guardado: false
+            }
+          };
+        }
+      })
+    );
+    
+    setPublicacionesConLike(postsConEstadisticas);
+  } catch (error) {
+    console.error("Error cargando publicaciones con like:", error);
+  }
+}, [usuario?.id_usuario]);
 
   // ✅ Cargar amigos
   const cargarAmigos = useCallback(async () => {
