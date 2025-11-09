@@ -6,15 +6,18 @@ import { Usuario } from "../context/AuthContext";
 const API_URL = "http://localhost:8000";
 
 const api = axios.create({
-  baseURL: API_URL,
-  headers: { "Content-Type": "application/json" },
+    baseURL: API_URL,
+    headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    },
 });
 
 // ======== UTILIDADES ========
 function getToken(): string {
   const token = localStorage.getItem("token");
-  if (!token) throw new Error("No hay token de sesión");
-  return token;
+  // Si no hay token, no lances error, devuelve string vacío
+  return token || "";
 }
 
 function getUsuarioId(): number {
@@ -25,9 +28,12 @@ function getUsuarioId(): number {
 }
 
 function getAuthHeaders() {
+  const token = getToken();
+  const usuarioId = getUsuarioId();
+  
   return {
-    token: getToken(),
-    id_usuario: getUsuarioId().toString(),
+    "token": token,
+    "id_usuario": usuarioId.toString(),
   };
 }
 
@@ -52,17 +58,31 @@ export async function registerUsuario(usuario: any): Promise<Usuario> {
 }
 
 // ================== LOGIN / SESIÓN ==================
+// ================== LOGIN / SESIÓN ==================
 export async function loginUsuario(correo_electronico: string, contrasena: string) {
-  const res = await api.post("/login", { correo_electronico, contrasena });
-  const { token, usuario } = res.data;
-  localStorage.setItem("token", token);
-  localStorage.setItem("usuario", JSON.stringify(usuario));
-  return { token, usuario };
-}
-
-export function logoutUsuario() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("usuario");
+  try {
+    const res = await api.post("/login", { correo_electronico, contrasena });
+    
+    if (res.data && res.data.token && res.data.usuario) {
+      const { token, usuario } = res.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("usuario", JSON.stringify(usuario));
+      return { token, usuario };
+    } else {
+      throw new Error("Respuesta del servidor inválida");
+    }
+  } catch (error: any) {
+    if (error.response) {
+      // El servidor respondió con un código de error
+      throw new Error(error.response.data.detail || "Error en el inicio de sesión");
+    } else if (error.request) {
+      // La solicitud fue hecha pero no se recibió respuesta
+      throw new Error("No se pudo conectar con el servidor");
+    } else {
+      // Algo pasó al configurar la solicitud
+      throw new Error("Error al configurar la solicitud");
+    }
+  }
 }
 
 // ================== PERFILES ==================

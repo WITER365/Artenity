@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 from typing import List
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI,Request, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 from pydantic import BaseModel, EmailStr
@@ -23,7 +23,7 @@ app = FastAPI()
 # ------------------ CORS ------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,13 +43,18 @@ if settings.MAIL_USERNAME and settings.MAIL_PASSWORD and settings.MAIL_FROM:
         USE_CREDENTIALS=settings.USE_CREDENTIALS,
         VALIDATE_CERTS=settings.VALIDATE_CERTS,
     )
-# ------------------ STATIC FILES ------------------
+# ------------------ DIRECTORIOS ------------------
 os.makedirs("static/perfiles", exist_ok=True)
 os.makedirs("static/posts", exist_ok=True)
+
+# ------------------ STATIC FILES ------------------
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 # ------------------ CREAR TABLAS ------------------
 models.Base.metadata.create_all(bind=database.engine)
+
 
 # ------------------ AUTENTICACIÓN SIMPLIFICADA ------------------
 def get_current_user_id(
@@ -59,15 +64,20 @@ def get_current_user_id(
 ) -> int:
     if not token:
         raise HTTPException(status_code=401, detail="Token requerido")
-    if token != "fake-token":
-        raise HTTPException(status_code=401, detail="Token inválido")
+    
+    # En lugar de verificar contra un token fijo, verifica si el token existe
+    # y si el usuario_id corresponde a un usuario válido
     if not user_id:
         raise HTTPException(status_code=400, detail="ID de usuario no proporcionado")
-
+    
     usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
+    
+    # Verificación básica del token (puedes hacerla más robusta)
+    if token == "null" or token == "undefined":
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
     return usuario.id_usuario
 
 # ------------------ USUARIOS ------------------
@@ -109,13 +119,28 @@ class LoginRequest(BaseModel):
 
 @app.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(
-        models.Usuario.correo_electronico == data.correo_electronico
-    ).first()
-    if not usuario or usuario.contrasena != data.contrasena:
-        raise HTTPException(status_code=400, detail="Credenciales incorrectas")
+    # Buscar usuario por correo
+    usuario = (
+        db.query(models.Usuario)
+        .options(joinedload(models.Usuario.perfil))
+        .filter(models.Usuario.correo_electronico == data.correo_electronico)
+        .first()
+    )
 
-    perfil = db.query(models.Perfil).filter(models.Perfil.id_usuario == usuario.id_usuario).first()
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    
+    # Comparar contraseña
+    if usuario.contrasena != data.contrasena:
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+
+    # Asegurarse de que existe un perfil
+    if not usuario.perfil:
+        perfil = models.Perfil(id_usuario=usuario.id_usuario)
+        db.add(perfil)
+        db.commit()
+        db.refresh(usuario)
+
     return {
         "token": "fake-token",
         "usuario": {
@@ -129,10 +154,11 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             "telefono": usuario.telefono,
             "nombre_usuario": usuario.nombre_usuario,
             "perfil": {
-                "descripcion": perfil.descripcion if perfil else None,
-                "biografia": perfil.biografia if perfil else None,
-                "foto_perfil": perfil.foto_perfil if perfil else None
-            }
+                "id_perfil": usuario.perfil.id_perfil if usuario.perfil else None,
+                "descripcion": usuario.perfil.descripcion if usuario.perfil else None,
+                "biografia": usuario.perfil.biografia if usuario.perfil else None,
+                "foto_perfil": usuario.perfil.foto_perfil if usuario.perfil else None
+            } if usuario.perfil else None
         }
     }
 
@@ -605,7 +631,7 @@ def marcar_notificaciones_leidas(
     db.commit()
     return {"mensaje": f"{len(notificaciones)} notificaciones marcadas como leídas"}
 
-# Agregar después del endpoint de seguidores existente
+
 
 # ------------------ OBTENER USUARIOS SEGUIDOS ------------------
 @app.get("/siguiendo")
@@ -1610,6 +1636,7 @@ def obtener_estadisticas_me_gustas(id_usuario: int, db: Session = Depends(get_db
         "me_gustas_recibidos": me_gustas_recibidos,
         "me_gustas_dados": me_gustas_dados
     }
+
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

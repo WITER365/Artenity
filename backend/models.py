@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -9,15 +9,15 @@ class Usuario(Base):
     __tablename__ = "usuarios"
 
     id_usuario = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String)
-    apellido = Column(String)
-    correo_electronico = Column(String, unique=True, index=True)
-    contrasena = Column(String)
+    nombre = Column(String, nullable=False)
+    apellido = Column(String, nullable=False)
+    correo_electronico = Column(String, unique=True, index=True, nullable=False)
+    contrasena = Column(String, nullable=False)
     fecha_nacimiento = Column(Date)
     genero = Column(String)
     tipo_arte_preferido = Column(String)
     telefono = Column(String)
-    nombre_usuario = Column(String)
+    nombre_usuario = Column(String, unique=True)
 
     # Relaciones
     perfil = relationship("Perfil", back_populates="usuario", uselist=False)
@@ -32,12 +32,12 @@ class Usuario(Base):
     bloqueos_realizados = relationship("BloqueoUsuario", foreign_keys="BloqueoUsuario.id_bloqueador", back_populates="bloqueador")
     bloqueos_recibidos = relationship("BloqueoUsuario", foreign_keys="BloqueoUsuario.id_bloqueado", back_populates="bloqueado")
     no_me_interesa = relationship("NoMeInteresa", back_populates="usuario", cascade="all, delete-orphan")
-
-    # Nuevas relaciones
     me_gusta = relationship("MeGusta", back_populates="usuario", cascade="all, delete-orphan")
     guardados = relationship("Guardado", back_populates="usuario", cascade="all, delete-orphan")
     comentarios = relationship("Comentario", back_populates="usuario", cascade="all, delete-orphan")
     me_gusta_comentarios = relationship("MeGustaComentario", back_populates="usuario", cascade="all, delete-orphan")
+    compartidos = relationship("Compartido", back_populates="usuario", cascade="all, delete-orphan")
+    reset_tokens = relationship("ResetPasswordToken", back_populates="usuario", cascade="all, delete-orphan")
 
 
 # ------------------ PERFIL ------------------
@@ -59,17 +59,16 @@ class Publicacion(Base):
 
     id_publicacion = Column(Integer, primary_key=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    contenido = Column(String, nullable=False)
+    contenido = Column(Text, nullable=False)
     imagen = Column(String, nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     usuario = relationship("Usuario", back_populates="publicaciones")
     no_me_interesa = relationship("NoMeInteresa", back_populates="publicacion", cascade="all, delete-orphan")
-
-    # Nuevas relaciones
     me_gusta = relationship("MeGusta", back_populates="publicacion", cascade="all, delete-orphan")
     guardados = relationship("Guardado", back_populates="publicacion", cascade="all, delete-orphan")
     comentarios = relationship("Comentario", back_populates="publicacion", cascade="all, delete-orphan")
+    compartidos = relationship("Compartido", back_populates="publicacion", cascade="all, delete-orphan")
 
 
 # ------------------ SEGUIR USUARIO ------------------
@@ -120,35 +119,13 @@ class Notificacion(Base):
 
     id_notificacion = Column(Integer, primary_key=True, autoincrement=True)
     id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    mensaje = Column(String(255))
+    tipo = Column(String(100), nullable=False)
+    mensaje = Column(Text, nullable=False)
     leido = Column(Boolean, default=False)
     fecha = Column(DateTime, default=datetime.utcnow)
-    tipo = Column(String(100))
     id_referencia = Column(Integer, nullable=True)
 
     usuario = relationship("Usuario", back_populates="notificaciones")
-
-
-# ------------------ AMISTADES ------------------
-class Amistad(Base):
-    __tablename__ = "amistades"
-
-    id_amistad = Column(Integer, primary_key=True, index=True)
-    id_usuario1 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    id_usuario2 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    estado = Column(String)  # pendiente / aceptada / rechazada
-
-
-# ------------------ TOKEN DE RECUPERACIÓN ------------------
-class ResetPasswordToken(Base):
-    __tablename__ = "reset_password_tokens"
-
-    id = Column(Integer, primary_key=True, index=True)
-    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    token = Column(String, unique=True, index=True)
-    expiracion = Column(DateTime)
-
-    usuario = relationship("Usuario")
 
 
 # ------------------ BLOQUEO DE USUARIO ------------------
@@ -232,3 +209,29 @@ class MeGustaComentario(Base):
     usuario = relationship("Usuario", back_populates="me_gusta_comentarios")
     comentario = relationship("Comentario", back_populates="me_gusta_comentarios")
 
+
+# ------------------ COMPARTIR PUBLICACIÓN ------------------
+class Compartido(Base):
+    __tablename__ = "compartidos"
+
+    id_compartido = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+    id_publicacion = Column(Integer, ForeignKey("publicaciones.id_publicacion", ondelete="CASCADE"), nullable=False)
+    tipo = Column(String(50), nullable=False)  # 'perfil', 'mensaje', 'externo', etc.
+    mensaje = Column(Text, nullable=False)
+    fecha = Column(DateTime, default=datetime.utcnow)
+
+    usuario = relationship("Usuario", back_populates="compartidos")
+    publicacion = relationship("Publicacion", back_populates="compartidos")
+
+
+# ------------------ TOKEN DE RECUPERACIÓN ------------------
+class ResetPasswordToken(Base):
+    __tablename__ = "reset_password_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
+    token = Column(String, unique=True, index=True)
+    expiracion = Column(DateTime)
+
+    usuario = relationship("Usuario", back_populates="reset_tokens")

@@ -195,3 +195,26 @@ class EstadisticasMeGustasResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class CompartidoBase(BaseModel):
+    id_publicacion: int
+    mensaje: Optional[str] = None
+
+class CompartidoResponse(BaseModel):
+    id_compartido: int
+    id_usuario: int
+    id_publicacion: int
+    mensaje: Optional[str]
+    fecha: datetime
+
+    class Config:
+        from_attributes = True
+
+class CompartidoConPublicacionResponse(BaseModel):
+    id_compartido: int
+    fecha: datetime
+    mensaje: Optional[str]
+    publicacion: PublicacionResponse
+
+    class Config:
+        from_attributes = True
