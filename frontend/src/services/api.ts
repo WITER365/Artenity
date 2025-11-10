@@ -390,6 +390,30 @@ export async function obtenerPublicacionesGuardadas() {
   return res.data;
 }
 
+// ================== COMPARTIR PUBLICACIONES ==================
+export async function compartirPublicacion(idPublicacion: number, mensaje?: string) {
+  const formData = new FormData();
+  if (mensaje) formData.append("mensaje", mensaje);
+
+  const res = await api.post(`/compartir/${idPublicacion}`, formData, {
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+}
+
+export async function obtenerPublicacionesCompartidas() {
+  const res = await api.get("/compartidos", { headers: getAuthHeaders() });
+  return res.data;
+}
+
+export async function eliminarCompartido(idCompartido: number) {
+  const res = await api.delete(`/compartidos/${idCompartido}`, { headers: getAuthHeaders() });
+  return res.data;
+}
+
 // ======== ALIASES COMPATIBILIDAD ========
 export const getSolicitudesAmistad = obtenerSolicitudesPendientes;
 export const getAmigos = obtenerAmigos;
