@@ -141,25 +141,34 @@ export default function NotificacionesPanel({ usuario }: { usuario: any }) {
             </section>
           )}
 
-          {/* 📨 Otras notificaciones */}
-          <section>
-            <h4>Otras notificaciones</h4>
-            {notificaciones.length > 0 ? (
-              notificaciones.map((n) => (
-                <div
-                  key={n.id_notificacion}
-                  className={`notificacion ${n.leida ? "leida" : "no-leida"}`}
-                >
-                  <p>{n.mensaje}</p>
-                  <span className="fecha">
-                    {new Date(n.fecha_creacion).toLocaleString()}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="sin-notificaciones">No hay notificaciones recientes</p>
-            )}
-          </section>
+       <section>
+  <h4>Otras notificaciones</h4>
+  {notificaciones.length > 0 ? (
+    notificaciones.map((n) => (
+      <div
+        key={n.id_notificacion}
+        className={`notificacion ${n.leida ? "leida" : "no-leida"}`}
+      >
+        <p>{n.mensaje}</p>
+        <span className="fecha">
+          {new Date(n.fecha_creacion).toLocaleString()}
+        </span>
+        {/* Mostrar tipo de notificación */}
+        {n.tipo && (
+          <span className={`tipo-notificacion ${n.tipo}`}>
+            {n.tipo === 'compartido' && '📤'}
+            {n.tipo === 'compartido_amigo' && '👥'}
+            {n.tipo === 'me_gusta' && '❤️'}
+            {n.tipo === 'comentario' && '💬'}
+            {n.tipo === 'nuevo_seguidor' && '👤'}
+          </span>
+        )}
+      </div>
+    ))
+  ) : (
+    <p className="sin-notificaciones">No hay notificaciones recientes</p>
+  )}
+</section>
         </div>
       )}
     </div>

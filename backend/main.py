@@ -1657,15 +1657,17 @@ def obtener_estadisticas_me_gustas(id_usuario: int, db: Session = Depends(get_db
         "me_gustas_dados": me_gustas_dados
     }
 
+
 # ------------------ COMPARTIR PUBLICACIÓN ------------------
 @app.post("/compartir/{id_publicacion}")
 def compartir_publicacion(
     id_publicacion: int,
     mensaje: str = Form(None),
-    tipo: str = Form("perfil"),  # 'perfil', 'mensaje', 'amigos'
-    id_amigo: int = Form(None),  # Para compartir con un amigo específico
+    tipo: str = Form("perfil"),
+    amigos_ids: str = Form(None),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id)
+
 ):
     try:
         # Verificar si la publicación existe
@@ -1676,7 +1678,17 @@ def compartir_publicacion(
         if not publicacion:
             raise HTTPException(status_code=404, detail="Publicación no encontrada")
         
-        # Crear el compartido
+        # Verificar si ya se compartió esta publicación (evitar duplicados)
+        compartido_existente = db.query(models.Compartido).filter(
+            models.Compartido.id_usuario == user_id,
+            models.Compartido.id_publicacion == id_publicacion,
+            models.Compartido.tipo == tipo
+        ).first()
+        
+        if compartido_existente:
+            raise HTTPException(status_code=400, detail="Ya compartiste esta publicación")
+        
+        # Crear el compartido principal
         nuevo_compartido = models.Compartido(
             id_usuario=user_id,
             id_publicacion=id_publicacion,
@@ -1688,48 +1700,63 @@ def compartir_publicacion(
         db.commit()
         db.refresh(nuevo_compartido)
         
-        # Crear notificaciones según el tipo de compartido
+        # Crear notificación para el dueño de la publicación (si no es el mismo usuario)
         if publicacion.id_usuario != user_id:
             usuario_actual = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
+            notificacion = models.Notificacion(
+                id_usuario=publicacion.id_usuario,
+                tipo="compartido",
+                mensaje=f"@{usuario_actual.nombre_usuario} compartió tu publicación",
+                leido=False,
+                id_referencia=id_publicacion
+            )
+            db.add(notificacion)
+        
+        # Si es compartir con amigos específicos, crear notificaciones para cada amigo
+        if tipo == "amigos" and amigos_ids:
+            amigos_ids_list = [int(id_str) for id_str in amigos_ids.split(",") if id_str.strip()]
+            usuario_actual = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
             
-            if tipo == "perfil":
-                # Notificación para el dueño de la publicación
-                notificacion = models.Notificacion(
-                    id_usuario=publicacion.id_usuario,
-                    tipo="compartido",
-                    mensaje=f"@{usuario_actual.nombre_usuario} compartió tu publicación en su perfil",
-                    leido=False,
-                    id_referencia=id_publicacion
-                )
-                db.add(notificacion)
-            
-            elif tipo == "mensaje" and id_amigo:
-                # Notificación para el amigo específico
-                notificacion = models.Notificacion(
-                    id_usuario=id_amigo,
-                    tipo="compartido_mensaje",
-                    mensaje=f"@{usuario_actual.nombre_usuario} te compartió una publicación",
-                    leido=False,
-                    id_referencia=id_publicacion
-                )
-                db.add(notificacion)
+            for amigo_id in amigos_ids_list:
+                # Verificar que realmente son amigos
+                amistad = db.query(models.Amistad).filter(
+                    ((models.Amistad.id_usuario1 == user_id) & (models.Amistad.id_usuario2 == amigo_id)) |
+                    ((models.Amistad.id_usuario1 == amigo_id) & (models.Amistad.id_usuario2 == user_id)),
+                    models.Amistad.estado == "aceptada"
+                ).first()
+                
+                if amistad:
+                    notificacion_amigo = models.Notificacion(
+                        id_usuario=amigo_id,
+                        tipo="compartido_amigo",
+                        mensaje=f"@{usuario_actual.nombre_usuario} te compartió una publicación",
+                        leido=False,
+                        id_referencia=id_publicacion
+                    )
+                    db.add(notificacion_amigo)
         
         db.commit()
         
-        return {"mensaje": "Publicación compartida exitosamente", "id_compartido": nuevo_compartido.id_compartido}
+        return {
+            "mensaje": "Publicación compartida exitosamente", 
+            "id_compartido": nuevo_compartido.id_compartido,
+            "tipo": tipo
+        }
     
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al compartir publicación: {str(e)}")
 
 @app.get("/compartidos")
 def obtener_publicaciones_compartidas(
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
     try:
         compartidos = db.query(models.Compartido).filter(
-            models.Compartido.id_usuario == user_id
+            models.Compartido.id_usuario == current_user_id
         ).options(
             joinedload(models.Compartido.publicacion).joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil)
         ).order_by(models.Compartido.fecha.desc()).all()
@@ -1766,13 +1793,13 @@ def obtener_publicaciones_compartidas(
 @app.delete("/compartidos/{id_compartido}")
 def eliminar_compartido(
     id_compartido: int,
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
     try:
         compartido = db.query(models.Compartido).filter(
             models.Compartido.id_compartido == id_compartido,
-            models.Compartido.id_usuario == user_id
+            models.Compartido.id_usuario == current_user_id
         ).first()
         
         if not compartido:

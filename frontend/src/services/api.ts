@@ -395,17 +395,21 @@ export const getSolicitudesAmistad = obtenerSolicitudesPendientes;
 export const getAmigos = obtenerAmigos;
 export const getCategorias = obtenerCategorias;
 
+
 // ================== COMPARTIR PUBLICACIONES ==================
 export async function compartirPublicacion(
   idPublicacion: number, 
   mensaje?: string, 
   tipo: string = "perfil", 
-  idAmigo?: number
+  amigosIds?: number[]
 ) {
   const formData = new FormData();
   if (mensaje) formData.append("mensaje", mensaje);
   formData.append("tipo", tipo);
-  if (idAmigo) formData.append("id_amigo", idAmigo.toString());
+  
+  if (tipo === "amigos" && amigosIds && amigosIds.length > 0) {
+    formData.append("amigos_ids", amigosIds.join(","));
+  }
 
   const res = await api.post(`/compartir/${idPublicacion}`, formData, {
     headers: {

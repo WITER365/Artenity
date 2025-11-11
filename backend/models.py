@@ -213,19 +213,7 @@ class MeGustaComentario(Base):
     usuario = relationship("Usuario", back_populates="me_gusta_comentarios")
     comentario = relationship("Comentario", back_populates="me_gusta_comentarios")
 
-# ------------------ COMPARTIR PUBLICACIÓN ------------------
-class Compartido(Base):
-    __tablename__ = "compartidos"
 
-    id_compartido = Column(Integer, primary_key=True, index=True)
-    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
-    id_publicacion = Column(Integer, ForeignKey("publicaciones.id_publicacion", ondelete="CASCADE"), nullable=False)
-    tipo = Column(String(50), nullable=False)  # 'perfil', 'mensaje', 'externo', etc.
-    mensaje = Column(Text, nullable=False)
-    fecha = Column(DateTime, default=datetime.utcnow)
-
-    usuario = relationship("Usuario", back_populates="compartidos")
-    publicacion = relationship("Publicacion", back_populates="compartidos")
 
 # ------------------ TOKEN DE RECUPERACIÓN ------------------
 class ResetPasswordToken(Base):
@@ -237,3 +225,19 @@ class ResetPasswordToken(Base):
     expiracion = Column(DateTime)
 
     usuario = relationship("Usuario", back_populates="reset_tokens")
+
+
+# ------------------ COMPARTIR PUBLICACIÓN ------------------
+class Compartido(Base):
+    __tablename__ = "compartidos"
+
+    id_compartido = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+    id_publicacion = Column(Integer, ForeignKey("publicaciones.id_publicacion", ondelete="CASCADE"), nullable=False)
+    # Elimina o comenta la columna 'tipo' si no existe en la BD
+    # tipo = Column(String(50), nullable=False)
+    mensaje = Column(Text, nullable=True)  # Cambia a nullable=True si es necesario
+    fecha = Column(DateTime, default=datetime.utcnow)
+
+    usuario = relationship("Usuario", back_populates="compartidos")
+    publicacion = relationship("Publicacion", back_populates="compartidos")

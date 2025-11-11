@@ -138,7 +138,8 @@ export default function PaginaPrincipal() {
   const [mostrarCompartidos, setMostrarCompartidos] = useState(false);
   const [publicacionesCompartidas, setPublicacionesCompartidas] = useState<Compartido[]>([]);
   const [amigos, setAmigos] = useState<Amigo[]>([]);
-  const [compartirConAmigo, setCompartirConAmigo] = useState<number | null>(null);
+  const [amigosSeleccionados, setAmigosSeleccionados] = useState<number[]>([]);
+  const [mostrarSeleccionAmigos, setMostrarSeleccionAmigos] = useState(false);
 
   // ✅ Añadir clase al body
   useEffect(() => {
@@ -311,35 +312,48 @@ export default function PaginaPrincipal() {
     }));
   };
 
-  // ✅ Función para compartir publicación
-  const handleCompartir = async (idPublicacion: number, tipo: string = "perfil", idAmigo?: number) => {
-    try {
-      await compartirPublicacion(idPublicacion, mensajeCompartir, tipo, idAmigo);
-      
-      // Mostrar notificación
-      let mensajeNotificacion = 'Publicación compartida exitosamente';
-      if (tipo === 'mensaje' && idAmigo) {
-        const amigo = amigos.find(a => a.id_usuario === idAmigo);
-        mensajeNotificacion = `Publicación compartida con ${amigo?.nombre_usuario || 'tu amigo'}`;
-      }
-      
-      const notificacionEvent = new CustomEvent('nuevaNotificacion', {
-        detail: { mensaje: mensajeNotificacion, tipo: 'exito' }
-      });
-      window.dispatchEvent(notificacionEvent);
-      
-      setCompartirAbierto(null);
-      setMensajeCompartir("");
-      setCompartirConAmigo(null);
-    } catch (error) {
-      console.error("Error compartiendo publicación:", error);
-      const notificacionEvent = new CustomEvent('nuevaNotificacion', {
-        detail: { mensaje: 'Error al compartir publicación', tipo: 'error' }
-      });
-      window.dispatchEvent(notificacionEvent);
-    }
-  };
 
+  // ✅ Función para compartir publicación
+// ✅ Función para compartir publicación
+const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") => {
+  try {
+    await compartirPublicacion(idPublicacion, mensajeCompartir, tipo, amigosSeleccionados);
+    
+    // Mostrar notificación
+    const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+      detail: { 
+        mensaje: tipo === 'amigos' 
+          ? `Publicación compartida con ${amigosSeleccionados.length} amigos` 
+          : 'Publicación compartida exitosamente', 
+        tipo: 'exito' 
+      }
+    });
+    window.dispatchEvent(notificacionEvent);
+    
+    setCompartirAbierto(null);
+    setMensajeCompartir("");
+    setAmigosSeleccionados([]);
+    setMostrarSeleccionAmigos(false);
+    
+    // Recargar notificaciones si el panel está abierto
+    if (document.querySelector('.notificaciones-panel')) {
+      window.dispatchEvent(new Event('recargarNotificaciones'));
+    }
+    
+  } catch (error: any) {
+    console.error("Error compartiendo publicación:", error);
+    let mensajeError = 'Error al compartir publicación';
+    
+    if (error.response?.data?.detail) {
+      mensajeError = error.response.data.detail;
+    }
+    
+    const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+      detail: { mensaje: mensajeError, tipo: 'error' }
+    });
+    window.dispatchEvent(notificacionEvent);
+  }
+};
   // ✅ Función para compartir en redes sociales
   const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
     const texto = `Mira esta publicación de ${publicacion.usuario.nombre_usuario} en Artenity: ${publicacion.contenido.substring(0, 100)}...`;
@@ -377,6 +391,24 @@ export default function PaginaPrincipal() {
     }
   };
 
+  // ✅ Función para manejar selección de amigos
+  const toggleAmigoSeleccionado = (idAmigo: number) => {
+    setAmigosSeleccionados(prev => 
+      prev.includes(idAmigo)
+        ? prev.filter(id => id !== idAmigo)
+        : [...prev, idAmigo]
+    );
+  };
+
+  // ✅ Función para seleccionar/deseleccionar todos los amigos
+  const toggleTodosAmigos = () => {
+    if (amigosSeleccionados.length === amigos.length) {
+      setAmigosSeleccionados([]);
+    } else {
+      setAmigosSeleccionados(amigos.map(amigo => amigo.id_usuario));
+    }
+  };
+
   // Efecto para cargar publicaciones compartidas cuando se muestre el panel
   useEffect(() => {
     if (mostrarCompartidos) {
@@ -384,12 +416,12 @@ export default function PaginaPrincipal() {
     }
   }, [mostrarCompartidos]);
 
-  // Cargar amigos cuando se abre el panel de compartir
+  // Efecto para cargar amigos cuando se abre el panel de compartir con amigos
   useEffect(() => {
-    if (compartirAbierto) {
+    if (mostrarSeleccionAmigos) {
       cargarAmigos();
     }
-  }, [compartirAbierto]);
+  }, [mostrarSeleccionAmigos]);
 
   // ✅ Componente para mostrar comentarios recursivamente
   const ComentarioComponent = ({ comentario, nivel = 0, idPublicacion }: { comentario: Comentario, nivel?: number, idPublicacion: number }) => {
@@ -883,14 +915,15 @@ export default function PaginaPrincipal() {
                       className="cerrar-compartir"
                       onClick={() => {
                         setCompartirAbierto(null);
-                        setCompartirConAmigo(null);
-                        setMensajeCompartir("");
+                        setMostrarSeleccionAmigos(false);
+                        setAmigosSeleccionados([]);
                       }}
                     >
                       <X size={16} />
                     </button>
                   </div>
                   
+                  {/* Redes sociales externas */}
                   <div className="redes-sociales">
                     <button 
                       className="red-social-btn whatsapp"
@@ -924,70 +957,86 @@ export default function PaginaPrincipal() {
                       Instagram
                     </button>
                   </div>
-                  
+
+                  {/* Compartir dentro de la aplicación */}
                   <div className="compartir-interno">
-                    <h4>Compartir dentro de Artenity</h4>
+                    <h4>Compartir en Artenity</h4>
                     
+                    {/* Botón para compartir con amigos */}
+                    <button 
+                      className="btn-compartir-amigos"
+                      onClick={() => setMostrarSeleccionAmigos(!mostrarSeleccionAmigos)}
+                    >
+                      <Users size={16} />
+                      Compartir con amigos
+                    </button>
+
+                    {/* Selección de amigos */}
+                    {mostrarSeleccionAmigos && (
+                      <div className="seleccion-amigos">
+                        <div className="seleccion-amigos-header">
+                          <h5>Seleccionar amigos</h5>
+                          <button 
+                            className="btn-seleccionar-todos"
+                            onClick={toggleTodosAmigos}
+                          >
+                            {amigosSeleccionados.length === amigos.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                          </button>
+                        </div>
+                        
+                        <div className="lista-amigos">
+                          {amigos.length > 0 ? (
+                            amigos.map(amigo => (
+                              <div key={amigo.id_usuario} className="amigo-item">
+                                <label className="amigo-checkbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={amigosSeleccionados.includes(amigo.id_usuario)}
+                                    onChange={() => toggleAmigoSeleccionado(amigo.id_usuario)}
+                                  />
+                                  <img
+                                    src={amigo.foto_perfil || defaultProfile}
+                                    alt={amigo.nombre_usuario}
+                                    className="foto-amigo"
+                                  />
+                                  <span className="nombre-amigo">{amigo.nombre_usuario}</span>
+                                </label>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="sin-amigos">No tienes amigos agregados</p>
+                          )}
+                        </div>
+
+                        {amigosSeleccionados.length > 0 && (
+                          <div className="acciones-amigos">
+                            <button 
+                              className="btn-compartir-seleccionados"
+                              onClick={() => handleCompartir(post.id_publicacion, "amigos")}
+                            >
+                              <Share2 size={16} />
+                              Compartir con {amigosSeleccionados.length} amigo{amigosSeleccionados.length !== 1 ? 's' : ''}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Compartir en perfil */}
-                    <div className="opcion-compartir">
+                    <div className="compartir-perfil">
+                      <textarea
+                        placeholder="Añade un mensaje (opcional)"
+                        value={mensajeCompartir}
+                        onChange={(e) => setMensajeCompartir(e.target.value)}
+                        rows={3}
+                      />
                       <button 
-                        className="btn-compartir-opcion"
+                        className="btn-compartir-interno"
                         onClick={() => handleCompartir(post.id_publicacion, "perfil")}
                       >
                         <User size={16} />
                         Compartir en mi perfil
                       </button>
-                    </div>
-                    
-                    {/* Compartir con amigos */}
-                    <div className="opcion-compartir">
-                      <div className="amigos-lista">
-                        <h5>Compartir con amigos:</h5>
-                        {amigos.length > 0 ? (
-                          <div className="lista-amigos">
-                            {amigos.map(amigo => (
-                              <button
-                                key={amigo.id_usuario}
-                                className={`btn-amigo ${compartirConAmigo === amigo.id_usuario ? 'seleccionado' : ''}`}
-                                onClick={() => {
-                                  if (compartirConAmigo === amigo.id_usuario) {
-                                    setCompartirConAmigo(null);
-                                  } else {
-                                    setCompartirConAmigo(amigo.id_usuario);
-                                  }
-                                }}
-                              >
-                                <img
-                                  src={amigo.foto_perfil || defaultProfile}
-                                  alt={amigo.nombre_usuario}
-                                  className="foto-amigo"
-                                />
-                                <span>{amigo.nombre_usuario}</span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="sin-amigos">No tienes amigos agregados</p>
-                        )}
-                        
-                        {compartirConAmigo && (
-                          <div className="compartir-amigo-seleccionado">
-                            <textarea
-                              placeholder={`Escribe un mensaje para tu amigo...`}
-                              value={mensajeCompartir}
-                              onChange={(e) => setMensajeCompartir(e.target.value)}
-                              rows={2}
-                            />
-                            <button 
-                              className="btn-compartir-amigo"
-                              onClick={() => handleCompartir(post.id_publicacion, "mensaje", compartirConAmigo)}
-                            >
-                              <Send size={16} />
-                              Enviar a amigo
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1057,7 +1106,9 @@ export default function PaginaPrincipal() {
 
       {/* 🔹 Sidebar derecha */}
       <aside className="right-sidebar">
-        
+        <div className="card">
+          <h2>COMUNIDADES A SEGUIR</h2>
+        </div>
         <div className="card">
           <h2>LO QUE SUCEDE CON EL MUNDO DEL ARTE</h2>
         </div>
@@ -1085,13 +1136,12 @@ export default function PaginaPrincipal() {
                 publicacionesCompartidas.map((compartido) => (
                   <div key={compartido.id_compartido} className="compartido-item">
                     <div className="compartido-header">
-                      <div>
+                      <div className="compartido-info">
                         <span className="fecha-compartido">
                           Compartido el {new Date(compartido.fecha).toLocaleString()}
                         </span>
                         <span className="tipo-compartido">
-                          {compartido.tipo === 'perfil' ? 'En tu perfil' : 
-                           compartido.tipo === 'mensaje' ? 'Con un amigo' : 'Compartido'}
+                          {compartido.tipo === 'amigos' ? 'Compartido con amigos' : 'Compartido en perfil'}
                         </span>
                       </div>
                       <button 
