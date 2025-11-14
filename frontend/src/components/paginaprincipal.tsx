@@ -712,7 +712,7 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
               <li>
                 <button 
                   className="nav-btn" 
-                  onClick={() => setMostrarCompartidos(!mostrarCompartidos)}
+                  onClick={() => navigate("/compartidos")} 
                 >
                   <Share2 /> Compartidos
                 </button>
@@ -1098,7 +1098,9 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
         </div>
       </section>
 
-      {/* 🔹 Sidebar derecha */}
+    
+
+     {/* 🔹 Sidebar derecha */}
       <aside className="right-sidebar">
         <div className="card">
           <h2>COMUNIDADES A SEGUIR</h2>
@@ -1111,93 +1113,6 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
         </div>
       </aside>
 
-      {/* Panel de publicaciones compartidas */}
-      {mostrarCompartidos && (
-        <div className="panel-compartidos-overlay" onClick={() => setMostrarCompartidos(false)}>
-          <div className="panel-compartidos" onClick={(e) => e.stopPropagation()}>
-            <div className="panel-compartidos-header">
-              <h2>Publicaciones Compartidas</h2>
-              <button 
-                className="cerrar-panel"
-                onClick={() => setMostrarCompartidos(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="lista-compartidos">
-              {publicacionesCompartidas.length > 0 ? (
-                publicacionesCompartidas.map((compartido) => (
-                  <div key={compartido.id_compartido} className="compartido-item">
-                    <div className="compartido-header">
-                      <div className="compartido-info">
-                        <span className="fecha-compartido">
-                          Compartido el {new Date(compartido.fecha).toLocaleString()}
-                        </span>
-                        <span className="tipo-compartido">
-                          {compartido.tipo === 'amigos' ? 'Compartido con amigos' : 'Compartido en perfil'}
-                        </span>
-                      </div>
-                      <button 
-                        className="eliminar-compartido"
-                        onClick={async () => {
-                          try {
-                            await eliminarCompartido(compartido.id_compartido);
-                            cargarPublicacionesCompartidas();
-                          } catch (error) {
-                            console.error("Error eliminando compartido:", error);
-                          }
-                        }}
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                    
-                    {compartido.mensaje && (
-                      <p className="mensaje-compartido">"{compartido.mensaje}"</p>
-                    )}
-                    
-                    <div className="publicacion-compartida">
-                      <div className="post-header">
-                        <img
-                          src={
-                            compartido.publicacion.usuario?.perfil?.foto_perfil &&
-                            compartido.publicacion.usuario.perfil.foto_perfil.trim() !== ""
-                              ? compartido.publicacion.usuario.perfil.foto_perfil
-                              : defaultProfile
-                          }
-                          alt="foto de perfil"
-                          className="foto-perfil-post"
-                        />
-                        <div className="user-info">
-                          <span className="username">
-                            {compartido.publicacion.usuario?.nombre_usuario || "Usuario"}
-                          </span>
-                          <span className="timestamp">
-                            {new Date(compartido.publicacion.fecha_creacion).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="post-content">
-                        <p>{compartido.publicacion.contenido}</p>
-                        {compartido.publicacion.imagen && (
-                          <img src={compartido.publicacion.imagen} alt="post" className="post-image" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="sin-compartidos">
-                  <Share2 size={48} />
-                  <p>No has compartido ninguna publicación aún</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

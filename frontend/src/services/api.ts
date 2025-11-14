@@ -397,35 +397,123 @@ export const getCategorias = obtenerCategorias;
 
 
 // ================== COMPARTIR PUBLICACIONES ==================
+export async function obtenerPublicacionesCompartidas() {
+  try {
+    const res = await api.get("/compartidos", { 
+      headers: getAuthHeaders() 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo publicaciones compartidas:", error);
+    throw error;
+  }
+}
+
+export async function obtenerPublicacionesCompartidasAmigos() {
+  try {
+    const res = await api.get("/compartidos/amigos", {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo compartidos de amigos:", error);
+    throw error;
+  }
+}
+
+export async function obtenerMisCompartidos() {
+  try {
+    const res = await api.get("/compartidos/mis-compartidos", {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo mis compartidos:", error);
+    throw error;
+  }
+}
+
+export async function obtenerCompartidoPorId(idCompartido: number) {
+  if (!idCompartido || isNaN(idCompartido)) {
+    throw new Error("ID de compartido inválido");
+  }
+  
+  try {
+    const res = await api.get(`/compartidos/detalle/${idCompartido}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error(`Error obteniendo compartido ${idCompartido}:`, error);
+    throw error;
+  }
+}
+
 export async function compartirPublicacion(
   idPublicacion: number, 
   mensaje?: string, 
   tipo: string = "perfil", 
   amigosIds?: number[]
 ) {
-  const formData = new FormData();
-  if (mensaje) formData.append("mensaje", mensaje);
-  formData.append("tipo", tipo);
-  
-  if (tipo === "amigos" && amigosIds && amigosIds.length > 0) {
-    formData.append("amigos_ids", amigosIds.join(","));
+  try {
+    const formData = new FormData();
+    if (mensaje) formData.append("mensaje", mensaje);
+    formData.append("tipo", tipo);
+    
+    if (tipo === "amigos" && amigosIds && amigosIds.length > 0) {
+      formData.append("amigos_ids", amigosIds.join(","));
+    }
+
+    const res = await api.post(`/compartir/${idPublicacion}`, formData, {
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error compartiendo publicación:", error);
+    throw error;
   }
-
-  const res = await api.post(`/compartir/${idPublicacion}`, formData, {
-    headers: {
-      ...getAuthHeaders(),
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return res.data;
-}
-
-export async function obtenerPublicacionesCompartidas() {
-  const res = await api.get("/compartidos", { headers: getAuthHeaders() });
-  return res.data;
 }
 
 export async function eliminarCompartido(idCompartido: number) {
-  const res = await api.delete(`/compartidos/${idCompartido}`, { headers: getAuthHeaders() });
-  return res.data;
+  try {
+    const res = await api.delete(`/compartidos/${idCompartido}`, { 
+      headers: getAuthHeaders() 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error eliminando compartido:", error);
+    throw error;
+  }
+}
+
+// ================== DIAGNÓSTICO DE CONEXIÓN ==================
+export async function diagnosticoConexion() {
+  console.log("🔍 Iniciando diagnóstico de conexión...");
+  
+  try {
+    // 1. Verificar si el backend responde
+    console.log("1. Probando conexión con el backend...");
+    const health = await fetch("http://127.0.0.1:8000/health");
+    console.log("✅ Backend responde:", health.status);
+    
+    // 2. Verificar autenticación
+    console.log("2. Verificando autenticación...");
+    const token = localStorage.getItem("token");
+    const usuario = localStorage.getItem("usuario");
+    console.log("✅ Token:", token ? "PRESENTE" : "FALTANTE");
+    console.log("✅ Usuario:", usuario ? "PRESENTE" : "FALTANTE");
+    
+    // 3. Probar endpoint de compartidos
+    console.log("3. Probando endpoint de compartidos...");
+    const compartidos = await obtenerPublicacionesCompartidasAmigos();
+    console.log("✅ Compartidos cargados:", compartidos.length);
+    
+    return { exito: true, mensaje: "Conexión exitosa" };
+  } catch (error: any) {
+    console.error("❌ Error en diagnóstico:", error);
+    return { exito: false, mensaje: error.message };
+  }
 }

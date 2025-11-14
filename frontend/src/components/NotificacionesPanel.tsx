@@ -1,20 +1,57 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getNotificaciones,
   responderSolicitudAmistad,
   obtenerSolicitudesPendientes as getSolicitudesAmistad,
   obtenerSeguidores,
   marcarNotificacionesLeidas,
+  obtenerCompartidoPorId
 } from "../services/api";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import "../styles/notificaciones.css";
 
 export default function NotificacionesPanel({ usuario }: { usuario: any }) {
+  const navigate = useNavigate();
   const [notificaciones, setNotificaciones] = useState<any[]>([]);
   const [solicitudesPendientes, setSolicitudesPendientes] = useState<any[]>([]);
   const [seguidores, setSeguidores] = useState<any[]>([]);
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [cantidadNoLeidas, setCantidadNoLeidas] = useState(0);
+
+  
+const handleNotificacionClick = async (notificacion: any) => {
+  try {
+    console.log("Notificación clickeada:", notificacion);
+    
+    if ((notificacion.tipo === "compartido_amigo" || notificacion.tipo === "compartido") && notificacion.id_referencia) {
+      if (!notificacion.id_referencia || isNaN(notificacion.id_referencia)) {
+        throw new Error("ID de compartido inválido");
+      }
+
+      const compartido = await obtenerCompartidoPorId(notificacion.id_referencia);
+      console.log("Compartido obtenido:", compartido);
+      
+      // Navegar a la página de compartidos con parámetros de URL
+      navigate(`/compartidos?compartido=${notificacion.id_referencia}`, { 
+        state: { 
+          compartidoEspecifico: compartido,
+          fromNotification: true 
+        }
+      });
+      
+    } else if (notificacion.tipo === "me_gusta" || notificacion.tipo === "comentario") {
+      navigate(`/publicacion/${notificacion.id_referencia}`);
+    }
+    
+    setMostrarPanel(false);
+    
+  } catch (error) {
+    console.error("Error al manejar notificación:", error);
+    // Mostrar error al usuario
+    alert("No se pudo cargar el contenido de la notificación. Puede que haya expirado.");
+  }
+};
 
   // ✅ Cargar todo (notificaciones, solicitudes, seguidores)
   const cargarTodo = useCallback(async () => {
@@ -114,8 +151,8 @@ export default function NotificacionesPanel({ usuario }: { usuario: any }) {
                     <strong>{s.emisor?.nombre_usuario}</strong> te envió una solicitud
                   </p>
                   <div>
-                  <button onClick={() => handleResponder(s.id_solicitud, "aceptada")}>Aceptar</button>
-                  <button onClick={() => handleResponder(s.id_solicitud, "rechazada")}>Rechazar</button>
+                    <button onClick={() => handleResponder(s.id_solicitud, "aceptada")}>Aceptar</button>
+                    <button onClick={() => handleResponder(s.id_solicitud, "rechazada")}>Rechazar</button>
                   </div>
                 </div>
               ))}
@@ -141,47 +178,50 @@ export default function NotificacionesPanel({ usuario }: { usuario: any }) {
             </section>
           )}
 
-    <section>
-  <h4>Actividad reciente</h4>
-  {notificaciones.length > 0 ? (
-    notificaciones.map((n) => (
-      <div
-        key={n.id_notificacion}
-        className={`notificacion ${n.leida ? "leida" : "no-leida"}`}
-      >
-        <div className="notificacion-contenido">
-          {/* Icono según el tipo */}
-          <span className="notificacion-icono">
-            {n.tipo === 'compartido' && '📤'}
-            {n.tipo === 'compartido_amigo' && '👥'}
-            {n.tipo === 'me_gusta' && '❤️'}
-            {n.tipo === 'comentario' && '💬'}
-            {n.tipo === 'comentario_respuesta' && '💬'}
-            {n.tipo === 'solicitud_amistad' && '👋'}
-            {n.tipo === 'amistad_aceptada' && '✅'}
-            {n.tipo === 'amistad_rechazada' && '❌'}
-            {n.tipo === 'nuevo_seguidor' && '👤'}
-            {!['compartido', 'compartido_amigo', 'me_gusta', 'comentario', 'comentario_respuesta', 'solicitud_amistad', 'amistad_aceptada', 'amistad_rechazada', 'nuevo_seguidor'].includes(n.tipo) && '🔔'}
-          </span>
-          
-          <div className="notificacion-texto">
-            <p>{n.mensaje}</p>
-            <span className="fecha-notificacion">
-              {new Date(n.fecha_creacion).toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </span>
-          </div>
-        </div>
-      </div>
-    ))
-  ) : (
-    <p className="sin-notificaciones">No hay notificaciones recientes</p>
-  )}
-</section>
+          {/* 🔔 Notificaciones con manejo de clic */}
+          <section>
+            <h4>Actividad reciente</h4>
+            {notificaciones.length > 0 ? (
+              notificaciones.map((n) => (
+                <div
+                  key={n.id_notificacion}
+                  className={`notificacion ${n.leida ? "leida" : "no-leida"}`}
+                  onClick={() => handleNotificacionClick(n)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="notificacion-contenido">
+                    {/* Icono según el tipo */}
+                    <span className="notificacion-icono">
+                      {n.tipo === 'compartido' && '📤'}
+                      {n.tipo === 'compartido_amigo' && '👥'}
+                      {n.tipo === 'me_gusta' && '❤️'}
+                      {n.tipo === 'comentario' && '💬'}
+                      {n.tipo === 'comentario_respuesta' && '💬'}
+                      {n.tipo === 'solicitud_amistad' && '👋'}
+                      {n.tipo === 'amistad_aceptada' && '✅'}
+                      {n.tipo === 'amistad_rechazada' && '❌'}
+                      {n.tipo === 'nuevo_seguidor' && '👤'}
+                      {!['compartido', 'compartido_amigo', 'me_gusta', 'comentario', 'comentario_respuesta', 'solicitud_amistad', 'amistad_aceptada', 'amistad_rechazada', 'nuevo_seguidor'].includes(n.tipo) && '🔔'}
+                    </span>
+                    
+                    <div className="notificacion-texto">
+                      <p>{n.mensaje}</p>
+                      <span className="fecha-notificacion">
+                        {new Date(n.fecha_creacion).toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="sin-notificaciones">No hay notificaciones recientes</p>
+            )}
+          </section>
         </div>
       )}
     </div>

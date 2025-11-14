@@ -23,7 +23,7 @@ app = FastAPI()
 # ------------------ CORS ------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1658,131 +1658,8 @@ def obtener_estadisticas_me_gustas(id_usuario: int, db: Session = Depends(get_db
     }
 
 
-# ------------------ COMPARTIR PUBLICACIÓN ------------------
-# ------------------ COMPARTIR PUBLICACIÓN ------------------
-@app.post("/compartir/{id_publicacion}")
-def compartir_publicacion(
-    id_publicacion: int,
-    mensaje: str = Form(None),
-    tipo: str = Form("perfil"),
-    amigos_ids: str = Form(None),
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
-):
-    try:
-        # Verificar si la publicación existe
-        publicacion = db.query(models.Publicacion).filter(
-            models.Publicacion.id_publicacion == id_publicacion
-        ).first()
-        
-        if not publicacion:
-            raise HTTPException(status_code=404, detail="Publicación no encontrada")
-        
-        # Crear el compartido principal
-        nuevo_compartido = models.Compartido(
-            id_usuario=user_id,
-            id_publicacion=id_publicacion,
-            tipo=tipo,
-            mensaje=mensaje or ""
-        )
-        
-        db.add(nuevo_compartido)
-        db.commit()
-        db.refresh(nuevo_compartido)
-        
-        # Obtener usuario actual
-        usuario_actual = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
-        
-        # 🔥 CREAR NOTIFICACIONES - CORREGIDO
-        
-        # 1. Notificación para el dueño de la publicación (si no es el mismo usuario)
-        if publicacion.id_usuario != user_id:
-            notificacion_propietario = models.Notificacion(
-                id_usuario=publicacion.id_usuario,
-                tipo="compartido",
-                mensaje=f"@{usuario_actual.nombre_usuario} compartió tu publicación",
-                leido=False,
-                id_referencia=id_publicacion
-            )
-            db.add(notificacion_propietario)
-        
-        # 2. Si es compartir con amigos específicos, crear notificaciones para cada amigo
-        if tipo == "amigos" and amigos_ids:
-            amigos_ids_list = [int(id_str) for id_str in amigos_ids.split(",") if id_str.strip()]
-            
-            for amigo_id in amigos_ids_list:
-                # Verificar que realmente son amigos
-                amistad = db.query(models.Amistad).filter(
-                    ((models.Amistad.id_usuario1 == user_id) & (models.Amistad.id_usuario2 == amigo_id)) |
-                    ((models.Amistad.id_usuario1 == amigo_id) & (models.Amistad.id_usuario2 == user_id)),
-                    models.Amistad.estado == "aceptada"
-                ).first()
-                
-                if amistad:
-                    notificacion_amigo = models.Notificacion(
-                        id_usuario=amigo_id,
-                        tipo="compartido_amigo", 
-                        mensaje=f"@{usuario_actual.nombre_usuario} te compartió una publicación",
-                        leido=False,
-                        id_referencia=id_publicacion
-                    )
-                    db.add(notificacion_amigo)
-        
-        db.commit()
-        
-        return {
-            "mensaje": "Publicación compartida exitosamente", 
-            "id_compartido": nuevo_compartido.id_compartido,
-            "tipo": tipo
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al compartir publicación: {str(e)}")
 
-@app.get("/compartidos")
-def obtener_publicaciones_compartidas(
-    current_user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
-):
-    try:
-        compartidos = db.query(models.Compartido).filter(
-            models.Compartido.id_usuario == current_user_id
-        ).options(
-            joinedload(models.Compartido.publicacion).joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil)
-        ).order_by(models.Compartido.fecha.desc()).all()
-        
-        resultado = []
-        for compartido in compartidos:
-            if compartido.publicacion:
-                resultado.append({
-                    "id_compartido": compartido.id_compartido,
-                    "fecha": compartido.fecha,
-                    "mensaje": compartido.mensaje,
-                    "tipo": compartido.tipo,
-                    "publicacion": {
-                        "id_publicacion": compartido.publicacion.id_publicacion,
-                        "contenido": compartido.publicacion.contenido,
-                        "imagen": compartido.publicacion.imagen,
-                        "fecha_creacion": compartido.publicacion.fecha_creacion,
-                        "usuario": {
-                            "id_usuario": compartido.publicacion.usuario.id_usuario,
-                            "nombre": compartido.publicacion.usuario.nombre,
-                            "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
-                            "perfil": {
-                                "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
-                            } if compartido.publicacion.usuario.perfil else None
-                        }
-                    }
-                })
-        
-        return resultado
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener publicaciones compartidas: {str(e)}")
-
+# ------------------ COMPARTIR PUBLICACIÓN ------------------
 @app.delete("/compartidos/{id_compartido}")
 def eliminar_compartido(
     id_compartido: int,
@@ -1806,6 +1683,500 @@ def eliminar_compartido(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar compartido: {str(e)}")
+
+# ------------------ OBTENER PUBLICACIONES COMPARTIDAS POR AMIGOS ------------------
+@app.post("/compartir/{id_publicacion}")
+def compartir_publicacion(
+    id_publicacion: int,
+    mensaje: str = Form(None),
+    tipo: str = Form("perfil"),
+    amigos_ids: str = Form(None),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    try:
+        # Verificar si la publicación existe
+        publicacion = db.query(models.Publicacion).filter(
+            models.Publicacion.id_publicacion == id_publicacion
+        ).first()
+        
+        if not publicacion:
+            raise HTTPException(status_code=404, detail="Publicación no encontrada")
+        
+        # Crear el compartido principal con expiración
+        nuevo_compartido = models.Compartido(
+            id_usuario=user_id,
+            id_publicacion=id_publicacion,
+            tipo=tipo,
+            mensaje=mensaje or "",
+            expiracion=datetime.utcnow() + timedelta(minutes=3)  # 🔥 3 minutos de expiración
+        )
+        
+        db.add(nuevo_compartido)
+        db.commit()
+        db.refresh(nuevo_compartido)
+        
+        # Obtener usuario actual
+        usuario_actual = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
+        
+        # 🔥 CREAR NOTIFICACIONES MEJORADAS
+        
+        # 1. Notificación para el dueño de la publicación (si no es el mismo usuario)
+        if publicacion.id_usuario != user_id:
+            notificacion_propietario = models.Notificacion(
+                id_usuario=publicacion.id_usuario,
+                tipo="compartido",
+                mensaje=f"@{usuario_actual.nombre_usuario} compartió tu publicación",
+                leido=False,
+                id_referencia=nuevo_compartido.id_compartido  # 🔥 Referencia al COMPARTIDO, no a la publicación
+            )
+            db.add(notificacion_propietario)
+        
+        # 2. Si es compartir con amigos específicos, crear notificaciones para cada amigo
+        if tipo == "amigos" and amigos_ids:
+            amigos_ids_list = [int(id_str) for id_str in amigos_ids.split(",") if id_str.strip()]
+            
+            for amigo_id in amigos_ids_list:
+                # Verificar que realmente son amigos
+                amistad = db.query(models.Amistad).filter(
+                    ((models.Amistad.id_usuario1 == user_id) & (models.Amistad.id_usuario2 == amigo_id)) |
+                    ((models.Amistad.id_usuario1 == amigo_id) & (models.Amistad.id_usuario2 == user_id)),
+                    models.Amistad.estado == "aceptada"
+                ).first()
+                
+                if amistad:
+                    notificacion_amigo = models.Notificacion(
+                        id_usuario=amigo_id,
+                        tipo="compartido_amigo", 
+                        mensaje=f"@{usuario_actual.nombre_usuario} te compartió una publicación",
+                        leido=False,
+                        id_referencia=nuevo_compartido.id_compartido  # 🔥 Referencia al COMPARTIDO
+                    )
+                    db.add(notificacion_amigo)
+        
+        db.commit()
+        
+        return {
+            "mensaje": "Publicación compartida exitosamente", 
+            "id_compartido": nuevo_compartido.id_compartido,
+            "tipo": tipo,
+            "expiracion": nuevo_compartido.expiracion
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al compartir publicación: {str(e)}")
+
+# ------------------ OBTENER PUBLICACIÓN POR ID ------------------
+@app.get("/publicaciones/{id_publicacion}", response_model=schemas.PublicacionResponse)
+def obtener_publicacion_por_id(
+    id_publicacion: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener una publicación específica por ID"""
+    # Obtener usuarios que el usuario actual ha bloqueado
+    usuarios_bloqueados = db.query(models.BloqueoUsuario.id_bloqueado).filter(
+        models.BloqueoUsuario.id_bloqueador == user_id
+    ).all()
+    ids_usuarios_bloqueados = [ub[0] for ub in usuarios_bloqueados]
+
+    # Obtener usuarios que han bloqueado al usuario actual
+    usuarios_que_me_bloquearon = db.query(models.BloqueoUsuario.id_bloqueador).filter(
+        models.BloqueoUsuario.id_bloqueado == user_id
+    ).all()
+    ids_usuarios_que_me_bloquearon = [ub[0] for ub in usuarios_que_me_bloquearon]
+
+    publicacion = (
+        db.query(models.Publicacion)
+        .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
+        .filter(
+            models.Publicacion.id_publicacion == id_publicacion,
+            # Excluir publicaciones de usuarios bloqueados por mí
+            ~models.Publicacion.id_usuario.in_(ids_usuarios_bloqueados),
+            # Excluir publicaciones de usuarios que me han bloqueado
+            ~models.Publicacion.id_usuario.in_(ids_usuarios_que_me_bloquearon)
+        )
+        .first()
+    )
+    
+    if not publicacion:
+        raise HTTPException(status_code=404, detail="Publicación no encontrada")
+    
+    return publicacion
+
+# En backend/main.py - Agrega esta función para limpiar compartidos expirados
+def limpiar_compartidos_expirados(db: Session):
+    """Función para eliminar compartidos expirados"""
+    try:
+        ahora = datetime.utcnow()
+        compartidos_expirados = db.query(models.Compartido).filter(
+            models.Compartido.expiracion <= ahora
+        ).all()
+        
+        for compartido in compartidos_expirados:
+            db.delete(compartido)
+        
+        db.commit()
+        print(f"Eliminados {len(compartidos_expirados)} compartidos expirados")
+    except Exception as e:
+        print(f"Error limpiando compartidos expirados: {e}")
+        db.rollback()
+
+# ------------------ COMPARTIDOS - ENDPOINTS FALTANTES ------------------
+
+@app.get("/compartidos/mis-compartidos")
+def obtener_mis_compartidos(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener las publicaciones que el usuario actual ha compartido"""
+    # Primero limpiar compartidos expirados
+    limpiar_compartidos_expirados(db)
+    
+    compartidos = (
+        db.query(models.Compartido)
+        .options(
+            joinedload(models.Compartido.publicacion)
+            .joinedload(models.Publicacion.usuario)
+            .joinedload(models.Usuario.perfil)
+        )
+        .filter(models.Compartido.id_usuario == user_id)
+        .order_by(models.Compartido.fecha_compartido.desc())
+        .all()
+    )
+    
+    resultado = []
+    for compartido in compartidos:
+        resultado.append({
+            "id_compartido": compartido.id_compartido,
+            "fecha_compartido": compartido.fecha_compartido,
+            "mensaje": compartido.mensaje,
+            "tipo": compartido.tipo,
+            "usuario_compartio": {
+                "id_usuario": user_id,
+                "nombre_usuario": compartido.usuario.nombre_usuario if hasattr(compartido, 'usuario') else "Usuario",
+                "foto_perfil": compartido.usuario.perfil.foto_perfil if hasattr(compartido, 'usuario') and compartido.usuario.perfil else None
+            },
+            "publicacion": {
+                "id_publicacion": compartido.publicacion.id_publicacion,
+                "contenido": compartido.publicacion.contenido,
+                "imagen_url": compartido.publicacion.imagen,
+                "fecha_creacion": compartido.publicacion.fecha_creacion,
+                "usuario": {
+                    "id_usuario": compartido.publicacion.usuario.id_usuario,
+                    "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
+                    "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
+                }
+            }
+        })
+    
+    return resultado
+
+@app.get("/compartidos/amigos")
+def obtener_compartidos_amigos(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener publicaciones compartidas por amigos del usuario"""
+    # Primero limpiar compartidos expirados
+    limpiar_compartidos_expirados(db)
+    
+    # Obtener IDs de amigos
+    amistades = db.query(models.Amistad).filter(
+        ((models.Amistad.id_usuario1 == user_id) | (models.Amistad.id_usuario2 == user_id)),
+        models.Amistad.estado == "aceptada"
+    ).all()
+    
+    amigos_ids = []
+    for amistad in amistades:
+        if amistad.id_usuario1 == user_id:
+            amigos_ids.append(amistad.id_usuario2)
+        else:
+            amigos_ids.append(amistad.id_usuario1)
+    
+    if not amigos_ids:
+        return []
+    
+    # Obtener compartidos de amigos
+    compartidos = (
+        db.query(models.Compartido)
+        .options(
+            joinedload(models.Compartido.publicacion)
+            .joinedload(models.Publicacion.usuario)
+            .joinedload(models.Usuario.perfil),
+            joinedload(models.Compartido.usuario)  # Usuario que compartió
+        )
+        .filter(
+            models.Compartido.id_usuario.in_(amigos_ids),
+            models.Compartido.tipo.in_(["perfil", "amigos"])  # Solo compartidos públicos o para amigos
+        )
+        .order_by(models.Compartido.fecha_compartido.desc())
+        .all()
+    )
+    
+    resultado = []
+    for compartido in compartidos:
+        resultado.append({
+            "id_compartido": compartido.id_compartido,
+            "fecha_compartido": compartido.fecha_compartido,
+            "mensaje": compartido.mensaje,
+            "tipo": compartido.tipo,
+            "usuario_compartio": {
+                "id_usuario": compartido.usuario.id_usuario,
+                "nombre_usuario": compartido.usuario.nombre_usuario,
+                "foto_perfil": compartido.usuario.perfil.foto_perfil if compartido.usuario.perfil else None
+            },
+            "publicacion": {
+                "id_publicacion": compartido.publicacion.id_publicacion,
+                "contenido": compartido.publicacion.contenido,
+                "imagen_url": compartido.publicacion.imagen,
+                "fecha_creacion": compartido.publicacion.fecha_creacion,
+                "usuario": {
+                    "id_usuario": compartido.publicacion.usuario.id_usuario,
+                    "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
+                    "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
+                }
+            }
+        })
+    
+    return resultado
+
+@app.get("/compartidos/detalle/{id_compartido}")
+def obtener_compartido_por_id(
+    id_compartido: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener un compartido específico por ID"""
+    # Primero limpiar compartidos expirados
+    limpiar_compartidos_expirados(db)
+    
+    compartido = (
+        db.query(models.Compartido)
+        .options(
+            joinedload(models.Compartido.publicacion)
+            .joinedload(models.Publicacion.usuario)
+            .joinedload(models.Usuario.perfil),
+            joinedload(models.Compartido.usuario)  # Usuario que compartió
+        )
+        .filter(models.Compartido.id_compartido == id_compartido)
+        .first()
+    )
+    
+    if not compartido:
+        raise HTTPException(status_code=404, detail="Compartido no encontrado")
+    
+    # Verificar permisos de visibilidad
+    if compartido.tipo == "privado" and compartido.id_usuario != user_id:
+        raise HTTPException(status_code=403, detail="No tienes acceso a este compartido")
+    
+    return {
+        "id_compartido": compartido.id_compartido,
+        "fecha_compartido": compartido.fecha_compartido,
+        "mensaje": compartido.mensaje,
+        "tipo": compartido.tipo,
+        "usuario_compartio": {
+            "id_usuario": compartido.usuario.id_usuario,
+            "nombre_usuario": compartido.usuario.nombre_usuario,
+            "foto_perfil": compartido.usuario.perfil.foto_perfil if compartido.usuario.perfil else None
+        },
+        "publicacion": {
+            "id_publicacion": compartido.publicacion.id_publicacion,
+            "contenido": compartido.publicacion.contenido,
+            "imagen_url": compartido.publicacion.imagen,
+            "fecha_creacion": compartido.publicacion.fecha_creacion,
+            "usuario": {
+                "id_usuario": compartido.publicacion.usuario.id_usuario,
+                "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
+                "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
+            }
+        }
+    }
+
+def limpiar_compartidos_expirados(db: Session):
+    """Función para eliminar compartidos expirados y sus notificaciones"""
+    try:
+        ahora = datetime.utcnow()
+        compartidos_expirados = db.query(models.Compartido).filter(
+            models.Compartido.expiracion <= ahora
+        ).all()
+        
+        for compartido in compartidos_expirados:
+            # Eliminar notificaciones relacionadas con este compartido
+            notificaciones = db.query(models.Notificacion).filter(
+                models.Notificacion.id_referencia == compartido.id_compartido,
+                models.Notificacion.tipo.in_(["compartido", "compartido_amigo"])
+            ).all()
+            
+            for notificacion in notificaciones:
+                db.delete(notificacion)
+            
+            # Eliminar el compartido
+            db.delete(compartido)
+        
+        if compartidos_expirados:
+            db.commit()
+            print(f"✅ Eliminados {len(compartidos_expirados)} compartidos expirados")
+    except Exception as e:
+        print(f"❌ Error limpiando compartidos expirados: {e}")
+        db.rollback()
+
+# También necesitas agregar este endpoint general para compatibilidad
+@app.get("/compartidos")
+def obtener_compartidos_general(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Endpoint general para compatibilidad - redirige a mis compartidos"""
+    return obtener_mis_compartidos(db, user_id)
+
+# Puedes llamar esta función periódicamente con un scheduler como APScheduler
+
+# ------------------ ENDPOINTS FALTANTES PARA COMPARTIDOS ------------------
+
+@app.get("/compartidos/amigos")
+def obtener_compartidos_amigos(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener publicaciones compartidas por amigos - ENDPOINT FALTANTE"""
+    try:
+        print("🔍 Solicitando compartidos de amigos para usuario:", user_id)
+        
+        # Obtener IDs de amigos
+        amistades = db.query(models.Amistad).filter(
+            ((models.Amistad.id_usuario1 == user_id) | (models.Amistad.id_usuario2 == user_id)),
+            models.Amistad.estado == "aceptada"
+        ).all()
+        
+        amigos_ids = []
+        for amistad in amistades:
+            if amistad.id_usuario1 == user_id:
+                amigos_ids.append(amistad.id_usuario2)
+            else:
+                amigos_ids.append(amistad.id_usuario1)
+        
+        print(f"👥 Amigos encontrados: {amigos_ids}")
+        
+        if not amigos_ids:
+            return []
+        
+        # Obtener compartidos de amigos
+        compartidos = (
+            db.query(models.Compartido)
+            .options(
+                joinedload(models.Compartido.publicacion)
+                .joinedload(models.Publicacion.usuario)
+                .joinedload(models.Usuario.perfil),
+                joinedload(models.Compartido.usuario)
+            )
+            .filter(
+                models.Compartido.id_usuario.in_(amigos_ids),
+                models.Compartido.expiracion > datetime.utcnow()
+            )
+            .order_by(models.Compartido.fecha.desc())
+            .all()
+        )
+        
+        print(f"📤 Compartidos de amigos encontrados: {len(compartidos)}")
+        
+        resultado = []
+        for compartido in compartidos:
+            resultado.append({
+                "id_compartido": compartido.id_compartido,
+                "fecha_compartido": compartido.fecha.isoformat(),
+                "mensaje": compartido.mensaje,
+                "tipo": compartido.tipo,
+                "expiracion": compartido.expiracion.isoformat(),
+                "usuario_compartio": {
+                    "id_usuario": compartido.usuario.id_usuario,
+                    "nombre_usuario": compartido.usuario.nombre_usuario,
+                    "foto_perfil": compartido.usuario.perfil.foto_perfil if compartido.usuario.perfil else None
+                },
+                "publicacion": {
+                    "id_publicacion": compartido.publicacion.id_publicacion,
+                    "contenido": compartido.publicacion.contenido,
+                    "imagen_url": compartido.publicacion.imagen,
+                    "fecha_creacion": compartido.publicacion.fecha_creacion.isoformat(),
+                    "usuario": {
+                        "id_usuario": compartido.publicacion.usuario.id_usuario,
+                        "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
+                        "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
+                    }
+                }
+            })
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"❌ Error en obtener_compartidos_amigos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+@app.get("/compartidos/mis-compartidos")
+def obtener_mis_compartidos(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener mis publicaciones compartidas - ENDPOINT FALTANTE"""
+    try:
+        print("🔍 Solicitando mis compartidos para usuario:", user_id)
+        
+        compartidos = (
+            db.query(models.Compartido)
+            .options(
+                joinedload(models.Compartido.publicacion)
+                .joinedload(models.Publicacion.usuario)
+                .joinedload(models.Usuario.perfil),
+                joinedload(models.Compartido.usuario)
+            )
+            .filter(
+                models.Compartido.id_usuario == user_id,
+                models.Compartido.expiracion > datetime.utcnow()
+            )
+            .order_by(models.Compartido.fecha.desc())
+            .all()
+        )
+        
+        print(f"📤 Mis compartidos encontrados: {len(compartidos)}")
+        
+        resultado = []
+        for compartido in compartidos:
+            resultado.append({
+                "id_compartido": compartido.id_compartido,
+                "fecha_compartido": compartido.fecha.isoformat(),
+                "mensaje": compartido.mensaje,
+                "tipo": compartido.tipo,
+                "expiracion": compartido.expiracion.isoformat(),
+                "usuario_compartio": {
+                    "id_usuario": compartido.usuario.id_usuario,
+                    "nombre_usuario": compartido.usuario.nombre_usuario,
+                    "foto_perfil": compartido.usuario.perfil.foto_perfil if compartido.usuario.perfil else None
+                },
+                "publicacion": {
+                    "id_publicacion": compartido.publicacion.id_publicacion,
+                    "contenido": compartido.publicacion.contenido,
+                    "imagen_url": compartido.publicacion.imagen,
+                    "fecha_creacion": compartido.publicacion.fecha_creacion.isoformat(),
+                    "usuario": {
+                        "id_usuario": compartido.publicacion.usuario.id_usuario,
+                        "nombre_usuario": compartido.publicacion.usuario.nombre_usuario,
+                        "foto_perfil": compartido.publicacion.usuario.perfil.foto_perfil if compartido.publicacion.usuario.perfil else None
+                    }
+                }
+            })
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"❌ Error en obtener_mis_compartidos: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
 # ------------------ HOME ------------------
 @app.get("/home")

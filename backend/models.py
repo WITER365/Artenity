@@ -1,7 +1,7 @@
 # backend/models.py
 from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from .database import Base
 
 # ------------------ USUARIO ------------------
@@ -228,16 +228,17 @@ class ResetPasswordToken(Base):
 
 
 # ------------------ COMPARTIR PUBLICACIÓN ------------------
+
 class Compartido(Base):
     __tablename__ = "compartidos"
-
+    
     id_compartido = Column(Integer, primary_key=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
     id_publicacion = Column(Integer, ForeignKey("publicaciones.id_publicacion", ondelete="CASCADE"), nullable=False)
-    # Elimina o comenta la columna 'tipo' si no existe en la BD
     tipo = Column(String(50), nullable=False)
-    mensaje = Column(Text, nullable=True)  # Cambia a nullable=True si es necesario
+    mensaje = Column(Text, nullable=True)
     fecha = Column(DateTime, default=datetime.utcnow)
-
+    expiracion = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
+    
     usuario = relationship("Usuario", back_populates="compartidos")
     publicacion = relationship("Publicacion", back_populates="compartidos")

@@ -1,6 +1,7 @@
 /*frontend/App.tsx*/
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+
 import Artenity from "./components/artenity";
 import Login from "./components/login";
 import Register from "./components/register";
@@ -11,6 +12,7 @@ import Messages from "./components/Messages";
 import PerfilUsuario from "./components/PerfilUsuario";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
+import CompartidosPage from "./components/CompartidosPage";
 
 function App() {
   const { token } = useAuth();
@@ -53,6 +55,14 @@ function App() {
         path="/mensajes"
         element={token ? <Messages /> : <Navigate to="/login" />}
       />
+
+      {/* 🔥 Nueva ruta para ver publicaciones compartidas */}
+      <Route
+        path="/compartidos"
+        element={token ? <CompartidosPage /> : <Navigate to="/login" />}
+      />
+
+      {/* Ruta fallback */}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
