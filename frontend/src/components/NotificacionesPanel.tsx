@@ -6,7 +6,10 @@ import {
   obtenerSolicitudesPendientes as getSolicitudesAmistad,
   obtenerSeguidores,
   marcarNotificacionesLeidas,
-  obtenerCompartidoPorId
+  obtenerCompartidoPorId,
+  obtenerPublicacionDeComentario,
+  obtenerMisCompartidos,
+  obtenerPublicacionesCompartidasAmigos
 } from "../services/api";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import "../styles/notificaciones.css";
@@ -24,32 +27,92 @@ const handleNotificacionClick = async (notificacion: any) => {
   try {
     console.log("Notificación clickeada:", notificacion);
     
-    if ((notificacion.tipo === "compartido_amigo" || notificacion.tipo === "compartido") && notificacion.id_referencia) {
+    let idPublicacion: number | null = null;
+    
+    // Manejar diferentes tipos de notificaciones
+    if ((notificacion.tipo === "compartido_amigo" || notificacion.tipo === "compartido")) {
+      // Para compartidos, necesitamos obtener el compartido primero
+      if (!notificacion.id_referencia) {
+        console.warn("La notificación no tiene id_referencia. Esta notificación puede estar expirada o ser antigua.");
+        // Si no hay id_referencia, mostrar un mensaje al usuario
+        alert("Esta notificación no tiene información de referencia. Puede que el compartido haya expirado o sea una notificación antigua. Por favor, busca la publicación manualmente.");
+        setMostrarPanel(false);
+        return;
+      } else {
+        if (isNaN(notificacion.id_referencia)) {
+          throw new Error("ID de compartido inválido");
+        }
+
+        const compartido = await obtenerCompartidoPorId(notificacion.id_referencia);
+        console.log("Compartido obtenido:", compartido);
+        
+        idPublicacion = compartido.publicacion?.id_publicacion;
+        
+        if (!idPublicacion) {
+          throw new Error("No se pudo obtener el ID de la publicación del compartido");
+        }
+      }
+      
+    } else if (notificacion.tipo === "me_gusta" && notificacion.id_referencia) {
+      // Para me_gusta, id_referencia es directamente el id_publicacion
+      idPublicacion = notificacion.id_referencia;
+      
+    } else if ((notificacion.tipo === "comentario" || notificacion.tipo === "comentario_respuesta") && notificacion.id_referencia) {
+      // Para comentarios, necesitamos obtener el id_publicacion del comentario
       if (!notificacion.id_referencia || isNaN(notificacion.id_referencia)) {
-        throw new Error("ID de compartido inválido");
+        throw new Error("ID de comentario inválido");
       }
 
-      const compartido = await obtenerCompartidoPorId(notificacion.id_referencia);
-      console.log("Compartido obtenido:", compartido);
+      const data = await obtenerPublicacionDeComentario(notificacion.id_referencia);
+      console.log("Publicación del comentario obtenida:", data);
       
-      // Navegar a la página de compartidos con parámetros de URL
-      navigate(`/compartidos?compartido=${notificacion.id_referencia}`, { 
-        state: { 
-          compartidoEspecifico: compartido,
-          fromNotification: true 
-        }
-      });
+      idPublicacion = data.id_publicacion;
       
-    } else if (notificacion.tipo === "me_gusta" || notificacion.tipo === "comentario") {
-      navigate(`/publicacion/${notificacion.id_referencia}`);
+      if (!idPublicacion) {
+        throw new Error("No se pudo obtener el ID de la publicación del comentario");
+      }
     }
     
-    setMostrarPanel(false);
+    // Si tenemos un id_publicacion, navegar a la publicación
+    if (idPublicacion) {
+      console.log("Navegando a /principal con idPublicacion:", idPublicacion);
+      setMostrarPanel(false);
+      
+      // Navegar a /principal primero
+      navigate(`/principal`, { 
+        state: { 
+          scrollToPublicacion: idPublicacion
+        },
+        replace: false
+      });
+      
+      // Disparar evento personalizado después de un pequeño delay para asegurar que la navegación se complete
+      setTimeout(() => {
+        console.log("Disparando evento scrollToPublicacion con id:", idPublicacion);
+        window.dispatchEvent(new CustomEvent('scrollToPublicacion', { 
+          detail: { idPublicacion } 
+        }));
+      }, 100);
+    } else {
+      console.warn("No se pudo determinar el id_publicacion para la notificación:", notificacion);
+    }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error al manejar notificación:", error);
-    // Mostrar error al usuario
-    alert("No se pudo cargar el contenido de la notificación. Puede que haya expirado.");
+    
+    // Mostrar mensaje de error más específico
+    let mensajeError = "No se pudo cargar el contenido de la notificación.";
+    
+    if (error.response?.status === 404) {
+      mensajeError = "El contenido de esta notificación ya no está disponible. Puede que haya expirado o sido eliminado.";
+    } else if (error.response?.status === 403) {
+      mensajeError = "No tienes permiso para ver este contenido.";
+    } else if (error.message) {
+      mensajeError = error.message;
+    }
+    
+    alert(mensajeError);
+    setMostrarPanel(false);
   }
 };
 

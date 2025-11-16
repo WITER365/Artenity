@@ -1,6 +1,6 @@
 // src/pages/PaginaPrincipal.tsx
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Home,
   Compass,
@@ -120,6 +120,7 @@ interface Amigo {
 
 export default function PaginaPrincipal() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { usuario } = useAuth();
   const [comentariosAbiertos, setComentariosAbiertos] = useState<{[key: number]: boolean}>({});
   const [nuevoComentario, setNuevoComentario] = useState<{[key: number]: {contenido: string}}>({});
@@ -591,6 +592,160 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
       window.removeEventListener("fotoPerfilActualizada", handleFotoActualizada);
   }, []);
 
+  // ✅ Hacer scroll a publicación cuando se navega desde notificación (estado)
+  useEffect(() => {
+    const idPublicacion = (location.state as any)?.scrollToPublicacion;
+    console.log("Scroll effect (estado) - idPublicacion:", idPublicacion, "publicaciones.length:", publicaciones.length);
+    
+    if (idPublicacion) {
+        const intentarScroll = (intento: number = 1) => {
+          console.log(`Intento ${intento} de scroll (estado) para publicación ${idPublicacion}`);
+          console.log("Publicaciones disponibles:", publicaciones.map(p => p.id_publicacion));
+          
+          // Buscar por atributo data
+          let elemento = document.querySelector(`[data-publicacion-id="${idPublicacion}"]`);
+          
+          // Si no se encuentra, buscar por ID directamente
+          if (!elemento) {
+            elemento = document.getElementById(`publicacion-${idPublicacion}`);
+          }
+          
+          // Si aún no se encuentra, buscar en todos los elementos con la clase post-card
+          if (!elemento) {
+            const todosLosPosts = document.querySelectorAll('.post-card');
+            todosLosPosts.forEach((post: any) => {
+              if (post.getAttribute('data-publicacion-id') === String(idPublicacion)) {
+                elemento = post;
+              }
+            });
+          }
+          
+          console.log("Buscando elemento con id:", idPublicacion, "Encontrado:", elemento);
+          
+          if (elemento) {
+            console.log("Elemento encontrado, haciendo scroll");
+            elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // También intentar hacer scroll manualmente por si acaso
+            setTimeout(() => {
+              elemento?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            return true;
+          } else {
+            console.warn(`Elemento no encontrado en intento ${intento}. Publicaciones en DOM:`, 
+              Array.from(document.querySelectorAll('.post-card')).map((el: any) => el.getAttribute('data-publicacion-id')));
+            return false;
+          }
+        };
+      
+      // Si las publicaciones ya están cargadas, intentar scroll
+      if (publicaciones.length > 0) {
+        const intentos = [300, 800, 1500, 2500];
+        
+        intentos.forEach((delay, index) => {
+          setTimeout(() => {
+            if (!intentarScroll(index + 1) && index === intentos.length - 1) {
+              console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
+            }
+          }, delay);
+        });
+      } else {
+        // Si no están cargadas, esperar a que se carguen
+        console.log("Esperando a que se carguen las publicaciones...");
+        const checkInterval = setInterval(() => {
+          if (publicaciones.length > 0) {
+            clearInterval(checkInterval);
+            console.log("Publicaciones cargadas, intentando scroll");
+            const intentos = [300, 800, 1500, 2500];
+            
+            intentos.forEach((delay, index) => {
+              setTimeout(() => {
+                if (!intentarScroll(index + 1) && index === intentos.length - 1) {
+                  console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
+                }
+              }, delay);
+            });
+          }
+        }, 100);
+        
+        // Limpiar después de 10 segundos si no se cargan
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          console.warn("Timeout esperando publicaciones");
+        }, 10000);
+      }
+      
+      // Limpiar el estado para evitar scrolls repetidos
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, publicaciones]);
+
+  // ✅ Escuchar evento personalizado para scroll (funciona incluso si ya estás en la página)
+  useEffect(() => {
+    const handleScrollEvent = (event: any) => {
+      const idPublicacion = event.detail?.idPublicacion;
+      console.log("Evento scrollToPublicacion recibido:", idPublicacion, "publicaciones.length:", publicaciones.length);
+      
+      if (idPublicacion) {
+        const intentarScroll = (intento: number = 1) => {
+          console.log(`Intento ${intento} de scroll (evento) para publicación ${idPublicacion}`);
+          console.log("Publicaciones disponibles:", publicaciones.map(p => p.id_publicacion));
+          
+          // Buscar por atributo data
+          let elemento = document.querySelector(`[data-publicacion-id="${idPublicacion}"]`);
+          
+          // Si no se encuentra, buscar por ID directamente
+          if (!elemento) {
+            elemento = document.getElementById(`publicacion-${idPublicacion}`);
+          }
+          
+          // Si aún no se encuentra, buscar en todos los elementos con la clase post-card
+          if (!elemento) {
+            const todosLosPosts = document.querySelectorAll('.post-card');
+            todosLosPosts.forEach((post: any) => {
+              if (post.getAttribute('data-publicacion-id') === String(idPublicacion)) {
+                elemento = post;
+              }
+            });
+          }
+          
+          console.log("Buscando elemento con id:", idPublicacion, "Encontrado:", elemento);
+          
+          if (elemento) {
+            console.log("Elemento encontrado, haciendo scroll");
+            elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // También intentar hacer scroll manualmente por si acaso
+            setTimeout(() => {
+              elemento?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            return true;
+          } else {
+            console.warn(`Elemento no encontrado en intento ${intento}. Publicaciones en DOM:`, 
+              Array.from(document.querySelectorAll('.post-card')).map((el: any) => el.getAttribute('data-publicacion-id')));
+            return false;
+          }
+        };
+        
+        // Intentar scroll múltiples veces con diferentes delays
+        const intentos = [300, 800, 1500, 2500];
+        
+        intentos.forEach((delay, index) => {
+          setTimeout(() => {
+            if (!intentarScroll(index + 1) && index === intentos.length - 1) {
+              console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
+              // Intentar una última vez después de un delay más largo
+              setTimeout(() => intentarScroll(intentos.length + 1), 2000);
+            }
+          }, delay);
+        });
+      }
+    };
+
+    window.addEventListener('scrollToPublicacion', handleScrollEvent);
+    return () => {
+      window.removeEventListener('scrollToPublicacion', handleScrollEvent);
+    };
+  }, [publicaciones]);
+
   // ✅ Crear publicación
   const handlePost = async () => {
     if (!contenido.trim() && !file) return;
@@ -710,14 +865,6 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
                 </button>
               </li>
               <li>
-                <button 
-                  className="nav-btn" 
-                  onClick={() => navigate("/compartidos")} 
-                >
-                  <Share2 /> Compartidos
-                </button>
-              </li>
-              <li>
                 <button className="nav-btn">
                   <Compass /> Explorar
                 </button>
@@ -776,7 +923,7 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
         {/* 🔹 Publicaciones */}
         <div className="posts">
           {publicaciones.map((post) => (
-            <div key={post.id_publicacion} className="post-card">
+            <div key={post.id_publicacion} className="post-card" data-publicacion-id={post.id_publicacion}>
               <div className="post-header">
                 <Link to={`/usuario/${post.usuario?.id_usuario}`}>
                   <img

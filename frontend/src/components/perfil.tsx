@@ -21,6 +21,7 @@ import {
   guardarPublicacion,
   quitarGuardado,
   obtenerEstadisticasMeGustas,
+  obtenerMisCompartidos,
 } from "../services/api";
 import "../styles/perfil.css";
 
@@ -56,7 +57,7 @@ interface PublicacionConEstadisticas {
   const [fotoPreview, setFotoPreview] = useState<string>("");
   const [editar, setEditar] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [pestanaActiva, setPestanaActiva] = useState<'publicaciones' | 'guardados' | 'likes'>('publicaciones');
+  const [pestanaActiva, setPestanaActiva] = useState<'publicaciones' | 'guardados' | 'likes' | 'compartidos'>('publicaciones');
 
   const [amigos, setAmigos] = useState<any[]>([]);
   const [seguidores, setSeguidores] = useState<any[]>([]);
@@ -75,6 +76,7 @@ interface PublicacionConEstadisticas {
   const [publicaciones, setPublicaciones] = useState<PublicacionConEstadisticas[]>([]);
   const [publicacionesGuardadas, setPublicacionesGuardadas] = useState<PublicacionConEstadisticas[]>([]);
   const [publicacionesConLike, setPublicacionesConLike] = useState<PublicacionConEstadisticas[]>([]);
+  const [compartidos, setCompartidos] = useState<any[]>([]);
 
   // ✅ Cargar datos del perfil
   const cargarPerfil = useCallback(async () => {
@@ -296,6 +298,16 @@ const cargarPublicacionesConLike = useCallback(async () => {
   }
 }, [usuario?.id_usuario]);
 
+  // ✅ Cargar compartidos
+  const cargarCompartidos = useCallback(async () => {
+    if (!usuario?.id_usuario) return;
+    try {
+      const compartidosData = await obtenerMisCompartidos();
+      setCompartidos(compartidosData);
+    } catch (error) {
+      console.error("Error cargando compartidos:", error);
+    }
+  }, [usuario?.id_usuario]);
 
   // ✅ Cargar amigos
   const cargarAmigos = useCallback(async () => {
@@ -404,7 +416,8 @@ const cargarPublicacionesConLike = useCallback(async () => {
     cargarPublicacionesConLike();
     cargarUsuariosBloqueados();
     cargarNoMeInteresa();
-    cargarEstadisticasMeGustas(); 
+    cargarEstadisticasMeGustas();
+    cargarCompartidos();
   }, [
     cargarPerfil,
     cargarAmigos,
@@ -417,6 +430,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     cargarUsuariosBloqueados,
     cargarNoMeInteresa,
     cargarEstadisticasMeGustas,
+    cargarCompartidos,
   ]);
 
   // 📸 Seleccionar imagen
@@ -611,6 +625,55 @@ const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisti
   );
 };
 
+  // Componente para mostrar compartidos
+  const CompartidoCard = ({ compartido }: { compartido: any }) => {
+    const publicacion = compartido.publicacion || compartido;
+    const fotoPerfil = publicacion.usuario?.perfil?.foto_perfil || defaultProfile;
+    
+    return (
+      <div className="publicacion-card">
+        <div className="publicacion-header">
+          <img
+            src={fotoPerfil}
+            alt="Foto perfil"
+            className="publicacion-foto-perfil"
+          />
+          <div className="publicacion-info-usuario">
+            <span className="publicacion-usuario">
+              {publicacion.usuario?.nombre_usuario || "Usuario desconocido"}
+            </span>
+            <span className="publicacion-fecha">
+              {new Date(publicacion.fecha_creacion || compartido.fecha).toLocaleString()}
+            </span>
+            {compartido.mensaje && (
+              <p className="compartido-mensaje" style={{ marginTop: '8px', fontStyle: 'italic', color: '#666' }}>
+                {compartido.mensaje}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="publicacion-contenido">
+          <p className="publicacion-texto">{publicacion.contenido}</p>
+          {publicacion.imagen && (
+            <img
+              src={publicacion.imagen}
+              alt="Publicación"
+              className="publicacion-imagen"
+            />
+          )}
+        </div>
+        <div className="publicacion-acciones">
+          <button className="accion-btn">
+            ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
+          </button>
+          <button className="accion-btn">
+            💬 {publicacion.estadisticas?.total_comentarios || 0}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Renderizar publicaciones según la pestaña activa
   const renderPublicaciones = () => {
     let publicacionesARenderizar: PublicacionConEstadisticas[] = [];
@@ -633,6 +696,27 @@ const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisti
         titulo = "Publicaciones que Me Gustan";
         mensajeVacio = "No tienes publicaciones con like.\nDale like a las publicaciones que te gusten";
         break;
+      case 'compartidos':
+        return (
+          <div className="perfil-section">
+            <div className="section-header">
+              <h3 className="section-title">Mis Compartidos</h3>
+              <span className="section-count">{compartidos.length}</span>
+            </div>
+            {compartidos.length > 0 ? (
+              <div className="publicaciones-lista">
+                {compartidos.map((compartido) => (
+                  <CompartidoCard key={compartido.id_compartido} compartido={compartido} />
+                ))}
+              </div>
+            ) : (
+              <div className="sin-publicaciones">
+                <p>No has compartido publicaciones aún.</p>
+                <p><small>Comparte publicaciones que te gusten para verlas aquí</small></p>
+              </div>
+            )}
+          </div>
+        );
     }
 
     return (
@@ -716,6 +800,12 @@ const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisti
               onClick={() => setPestanaActiva('likes')}
             >
               Me Gusta
+            </button>
+            <button 
+              className={`pestana ${pestanaActiva === 'compartidos' ? 'activa' : ''}`}
+              onClick={() => setPestanaActiva('compartidos')}
+            >
+              Compartidos
             </button>
           </div>
 

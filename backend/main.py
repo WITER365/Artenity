@@ -23,7 +23,7 @@ app = FastAPI()
 # ------------------ CORS ------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,25 +58,26 @@ models.Base.metadata.create_all(bind=database.engine)
 
 # ------------------ AUTENTICACIÓN SIMPLIFICADA ------------------
 def get_current_user_id(
-    token: str = Header(..., alias="token"),
-    user_id: int = Header(None, alias="id_usuario"),
+    token: str = Header(None, alias="token"),
+    user_id: str = Header(None, alias="id_usuario"),
     db: Session = Depends(get_db)
 ) -> int:
-    if not token:
-        raise HTTPException(status_code=401, detail="Token requerido")
+    if not token or token == "" or token == "null" or token == "undefined":
+        raise HTTPException(status_code=401, detail="Token requerido o inválido")
     
     # En lugar de verificar contra un token fijo, verifica si el token existe
     # y si el usuario_id corresponde a un usuario válido
-    if not user_id:
+    if not user_id or user_id == "" or user_id == "null" or user_id == "undefined":
         raise HTTPException(status_code=400, detail="ID de usuario no proporcionado")
     
-    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id).first()
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="ID de usuario inválido")
+    
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id_int).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    # Verificación básica del token (puedes hacerla más robusta)
-    if token == "null" or token == "undefined":
-        raise HTTPException(status_code=401, detail="Token inválido")
     
     return usuario.id_usuario
 
@@ -610,7 +611,7 @@ def obtener_notificaciones(db: Session = Depends(get_db), user_id: int = Depends
             "mensaje": n.mensaje,
             "fecha_creacion": n.fecha,
             "leida": n.leido,
-            "id_referencia": getattr(n, "id_referencia", None)
+            "id_referencia": n.id_referencia if n.id_referencia is not None else None
         }
         for n in notificaciones
     ]
@@ -1450,6 +1451,22 @@ def obtener_comentarios_publicacion(
         total=total_comentarios
     )
 
+@app.get("/comentarios/{id_comentario}/publicacion")
+def obtener_publicacion_de_comentario(
+    id_comentario: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """Obtener el id_publicacion de un comentario"""
+    comentario = db.query(models.Comentario).filter(
+        models.Comentario.id_comentario == id_comentario
+    ).first()
+    
+    if not comentario:
+        raise HTTPException(status_code=404, detail="Comentario no encontrado")
+    
+    return {"id_publicacion": comentario.id_publicacion}
+
 @app.delete("/comentarios/{id_comentario}")
 def eliminar_comentario(
     id_comentario: int,
@@ -1703,13 +1720,13 @@ def compartir_publicacion(
         if not publicacion:
             raise HTTPException(status_code=404, detail="Publicación no encontrada")
         
-        # Crear el compartido principal con expiración
+        # Crear el compartido principal (sin expiración)
         nuevo_compartido = models.Compartido(
             id_usuario=user_id,
             id_publicacion=id_publicacion,
             tipo=tipo,
             mensaje=mensaje or "",
-            expiracion=datetime.utcnow() + timedelta(minutes=3)  # 🔥 3 minutos de expiración
+            expiracion=None  # Sin expiración
         )
         
         db.add(nuevo_compartido)
@@ -1760,7 +1777,7 @@ def compartir_publicacion(
             "mensaje": "Publicación compartida exitosamente", 
             "id_compartido": nuevo_compartido.id_compartido,
             "tipo": tipo,
-            "expiracion": nuevo_compartido.expiracion
+            "expiracion": None
         }
     
     except HTTPException:
@@ -1807,23 +1824,7 @@ def obtener_publicacion_por_id(
     
     return publicacion
 
-# En backend/main.py - Agrega esta función para limpiar compartidos expirados
-def limpiar_compartidos_expirados(db: Session):
-    """Función para eliminar compartidos expirados"""
-    try:
-        ahora = datetime.utcnow()
-        compartidos_expirados = db.query(models.Compartido).filter(
-            models.Compartido.expiracion <= ahora
-        ).all()
-        
-        for compartido in compartidos_expirados:
-            db.delete(compartido)
-        
-        db.commit()
-        print(f"Eliminados {len(compartidos_expirados)} compartidos expirados")
-    except Exception as e:
-        print(f"Error limpiando compartidos expirados: {e}")
-        db.rollback()
+# Función de limpieza de expirados eliminada - los compartidos no expiran
 
 # ------------------ COMPARTIDOS - ENDPOINTS FALTANTES ------------------
 
@@ -1833,8 +1834,7 @@ def obtener_mis_compartidos(
     user_id: int = Depends(get_current_user_id)
 ):
     """Obtener las publicaciones que el usuario actual ha compartido"""
-    # Primero limpiar compartidos expirados
-    limpiar_compartidos_expirados(db)
+    # Sin limpieza de expirados - los compartidos no expiran
     
     compartidos = (
         db.query(models.Compartido)
@@ -1881,8 +1881,7 @@ def obtener_compartidos_amigos(
     user_id: int = Depends(get_current_user_id)
 ):
     """Obtener publicaciones compartidas por amigos del usuario"""
-    # Primero limpiar compartidos expirados
-    limpiar_compartidos_expirados(db)
+    # Sin limpieza de expirados - los compartidos no expiran
     
     # Obtener IDs de amigos
     amistades = db.query(models.Amistad).filter(
@@ -1951,8 +1950,7 @@ def obtener_compartido_por_id(
     user_id: int = Depends(get_current_user_id)
 ):
     """Obtener un compartido específico por ID"""
-    # Primero limpiar compartidos expirados
-    limpiar_compartidos_expirados(db)
+    # Sin limpieza de expirados - los compartidos no expiran
     
     compartido = (
         db.query(models.Compartido)
@@ -1996,33 +1994,7 @@ def obtener_compartido_por_id(
         }
     }
 
-def limpiar_compartidos_expirados(db: Session):
-    """Función para eliminar compartidos expirados y sus notificaciones"""
-    try:
-        ahora = datetime.utcnow()
-        compartidos_expirados = db.query(models.Compartido).filter(
-            models.Compartido.expiracion <= ahora
-        ).all()
-        
-        for compartido in compartidos_expirados:
-            # Eliminar notificaciones relacionadas con este compartido
-            notificaciones = db.query(models.Notificacion).filter(
-                models.Notificacion.id_referencia == compartido.id_compartido,
-                models.Notificacion.tipo.in_(["compartido", "compartido_amigo"])
-            ).all()
-            
-            for notificacion in notificaciones:
-                db.delete(notificacion)
-            
-            # Eliminar el compartido
-            db.delete(compartido)
-        
-        if compartidos_expirados:
-            db.commit()
-            print(f"✅ Eliminados {len(compartidos_expirados)} compartidos expirados")
-    except Exception as e:
-        print(f"❌ Error limpiando compartidos expirados: {e}")
-        db.rollback()
+# Función de limpieza de expirados eliminada - los compartidos no expiran
 
 # También necesitas agregar este endpoint general para compatibilidad
 @app.get("/compartidos")
@@ -2074,8 +2046,7 @@ def obtener_compartidos_amigos(
                 joinedload(models.Compartido.usuario)
             )
             .filter(
-                models.Compartido.id_usuario.in_(amigos_ids),
-                models.Compartido.expiracion > datetime.utcnow()
+                models.Compartido.id_usuario.in_(amigos_ids)
             )
             .order_by(models.Compartido.fecha.desc())
             .all()
@@ -2090,7 +2061,7 @@ def obtener_compartidos_amigos(
                 "fecha_compartido": compartido.fecha.isoformat(),
                 "mensaje": compartido.mensaje,
                 "tipo": compartido.tipo,
-                "expiracion": compartido.expiracion.isoformat(),
+                "expiracion": None,
                 "usuario_compartio": {
                     "id_usuario": compartido.usuario.id_usuario,
                     "nombre_usuario": compartido.usuario.nombre_usuario,
@@ -2135,8 +2106,7 @@ def obtener_mis_compartidos(
                 joinedload(models.Compartido.usuario)
             )
             .filter(
-                models.Compartido.id_usuario == user_id,
-                models.Compartido.expiracion > datetime.utcnow()
+                models.Compartido.id_usuario == user_id
             )
             .order_by(models.Compartido.fecha.desc())
             .all()
@@ -2151,7 +2121,7 @@ def obtener_mis_compartidos(
                 "fecha_compartido": compartido.fecha.isoformat(),
                 "mensaje": compartido.mensaje,
                 "tipo": compartido.tipo,
-                "expiracion": compartido.expiracion.isoformat(),
+                "expiracion": None,
                 "usuario_compartio": {
                     "id_usuario": compartido.usuario.id_usuario,
                     "nombre_usuario": compartido.usuario.nombre_usuario,

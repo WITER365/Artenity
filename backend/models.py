@@ -238,7 +238,7 @@ class Compartido(Base):
     tipo = Column(String(50), nullable=False)
     mensaje = Column(Text, nullable=True)
     fecha = Column(DateTime, default=datetime.utcnow)
-    expiracion = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(hours=24))
+    expiracion = Column(DateTime, nullable=True, default=None)  # Sin expiración
     
     usuario = relationship("Usuario", back_populates="compartidos")
     publicacion = relationship("Publicacion", back_populates="compartidos")

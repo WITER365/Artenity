@@ -13,6 +13,19 @@ const api = axios.create({
     },
 });
 
+// Interceptor para manejar errores 401
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            console.error("Error 401: No autorizado. Verifica que estés autenticado.");
+            // Opcional: redirigir al login
+            // window.location.href = "/login";
+        }
+        return Promise.reject(error);
+    }
+);
+
 // ======== UTILIDADES ========
 function getToken(): string {
   const token = localStorage.getItem("token");
@@ -20,20 +33,29 @@ function getToken(): string {
   return token || "";
 }
 
-function getUsuarioId(): number {
-  const usuario = localStorage.getItem("usuario");
-  if (!usuario) throw new Error("No hay usuario autenticado");
-  const parsed = JSON.parse(usuario);
-  return parsed.id_usuario;
+function getUsuarioId(): number | null {
+  try {
+    const usuario = localStorage.getItem("usuario");
+    if (!usuario) return null;
+    const parsed = JSON.parse(usuario);
+    return parsed.id_usuario || null;
+  } catch (error) {
+    console.error("Error obteniendo ID de usuario:", error);
+    return null;
+  }
 }
 
 function getAuthHeaders() {
   const token = getToken();
   const usuarioId = getUsuarioId();
   
+  if (!token || !usuarioId) {
+    console.warn("Token o usuario ID no disponible. Headers de autenticación incompletos.");
+  }
+  
   return {
-    "token": token,
-    "id_usuario": usuarioId.toString(),
+    "token": token || "",
+    "id_usuario": usuarioId ? usuarioId.toString() : "",
   };
 }
 
@@ -351,6 +373,13 @@ export async function crearComentario(comentarioData: ComentarioData) {
 
 export async function obtenerComentarios(idPublicacion: number) {
   const res = await api.get(`/comentarios/publicacion/${idPublicacion}`, {
+    headers: getAuthHeaders(),
+  });
+  return res.data;
+}
+
+export async function obtenerPublicacionDeComentario(idComentario: number) {
+  const res = await api.get(`/comentarios/${idComentario}/publicacion`, {
     headers: getAuthHeaders(),
   });
   return res.data;
