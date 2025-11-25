@@ -1,4 +1,4 @@
-// src/pages/PaginaPrincipal.tsx
+// src/components/paginaprincipal.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
@@ -21,7 +21,10 @@ import {
   Send,
   X,
   Users,
-  User
+  User,
+  Video,
+  FileImage,
+  X as CloseIcon
 } from "lucide-react";
 import "../styles/paginaprincipal.css";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
@@ -48,12 +51,13 @@ import {
 import { useAuth } from "../context/AuthContext";
 import NotificacionesPanel from "../components/NotificacionesPanel";
 
-// Interfaces TypeScript
+// Interfaces TypeScript actualizadas
 interface Publicacion {
   id_publicacion: number;
   id_usuario: number;
   contenido: string;
-  imagen?: string;
+  medios?: string[];
+  tipo_medio?: string;
   fecha_creacion: string;
   usuario: {
     id_usuario: number;
@@ -63,6 +67,8 @@ interface Publicacion {
       foto_perfil?: string;
     };
   };
+  // Para compatibilidad
+  imagen?: string;
 }
 
 interface EstadisticasPublicacion {
@@ -129,7 +135,7 @@ export default function PaginaPrincipal() {
   const [estadisticas, setEstadisticas] = useState<{[key: number]: EstadisticasPublicacion}>({});
   const [publicaciones, setPublicaciones] = useState<Publicacion[]>([]);
   const [contenido, setContenido] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]); // Cambiado de file a files
   const [menuAbierto, setMenuAbierto] = useState<number | null>(null);
   const [menuComentarioAbierto, setMenuComentarioAbierto] = useState<number | null>(null);
 
@@ -160,15 +166,41 @@ export default function PaginaPrincipal() {
     }
   };
 
-// En tu PaginaPrincipal.tsx, asegúrate de tener esta función:
-const verCompartidoEspecifico = (compartido: Compartido) => {
-  navigate("/compartidos", { 
-    state: { 
-      compartidoEspecifico: compartido 
-    } 
-    
-  });
-};
+  // ✅ Función para manejar selección de archivos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      
+      // Validar archivos
+      const validFiles = selectedFiles.filter(file => {
+        const fileType = file.type.split('/')[0];
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        const isValidImage = fileType === 'image' && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '');
+        const isValidVideo = fileType === 'video' && ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(extension || '');
+        
+        if (!isValidImage && !isValidVideo) {
+          alert(`Tipo de archivo no soportado: ${file.name}`);
+          return false;
+        }
+        
+        // Validar tamaño (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`Archivo demasiado grande: ${file.name} (máximo 10MB)`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      setFiles(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  // ✅ Función para eliminar archivo
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   // ✅ Función para cargar estadísticas de una publicación
   const cargarEstadisticas = async (idPublicacion: number) => {
     try {
@@ -322,7 +354,60 @@ const verCompartidoEspecifico = (compartido: Compartido) => {
     }));
   };
 
+  //  Actualizar handlePost para enviar múltiples archivos
+const handlePost = async () => {
+  // Validar que haya contenido o archivos
+  if (!contenido.trim() && files.length === 0) {
+    alert("Debes escribir algo o agregar una imagen/video");
+    return;
+  }
 
+  // Validar número máximo de archivos
+  if (files.length > 10) {
+    alert("Máximo 10 archivos permitidos");
+    return;
+  }
+
+  const data = new FormData();
+  data.append("id_usuario", usuario!.id_usuario.toString());
+  data.append("contenido", contenido);
+  
+  // Agregar múltiples archivos
+  files.forEach(file => {
+    data.append("files", file);
+  });
+
+  try {
+    console.log("Enviando publicación...", {
+      contenido,
+      archivos: files.length
+    });
+    
+    await crearPublicacion(data);
+    setContenido("");
+    setFiles([]);
+    await cargarPublicaciones();
+    
+    // Mostrar notificación de éxito
+    const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+      detail: { mensaje: 'Publicación creada exitosamente', tipo: 'exito' }
+    });
+    window.dispatchEvent(notificacionEvent);
+    
+  } catch (error: any) {
+    console.error("Error creando publicación:", error);
+    
+    let mensajeError = "Error al crear la publicación";
+    if (error.response?.data?.detail) {
+      mensajeError = error.response.data.detail;
+    } else if (error.message) {
+      mensajeError = error.message;
+    }
+    
+    alert(mensajeError);
+  }
+};
+//  Función para manejar compartir
 const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") => {
   try {
     console.log(`Compartiendo publicación ${idPublicacion} con tipo: ${tipo}`);
@@ -384,7 +469,7 @@ const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") =
   }
 };
 
-// También actualiza la función de compartir en redes sociales:
+// ✅ Función para compartir en redes sociales
 const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
   const texto = `Mira esta publicación de ${publicacion.usuario.nombre_usuario} en Artenity: ${publicacion.contenido.substring(0, 100)}...`;
   const url = `${window.location.origin}/publicacion/${publicacion.id_publicacion}`;
@@ -412,7 +497,7 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
   window.open(shareUrl, '_blank', 'width=600,height=400');
   setCompartirAbierto(null);
 
-   const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+  const notificacionEvent = new CustomEvent('nuevaNotificacion', {
     detail: { 
       mensaje: `Compartido en ${redSocial}`, 
       tipo: 'info' 
@@ -421,51 +506,164 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
   window.dispatchEvent(notificacionEvent);
 };
 
-  // ✅ Función para cargar publicaciones compartidas
-  const cargarPublicacionesCompartidas = async () => {
+// ✅ Función para manejar selección de amigos
+const toggleAmigoSeleccionado = (idAmigo: number) => {
+  setAmigosSeleccionados(prev => 
+    prev.includes(idAmigo)
+      ? prev.filter(id => id !== idAmigo)
+      : [...prev, idAmigo]
+  );
+};
+
+// ✅ Función para seleccionar/deseleccionar todos los amigos
+const toggleTodosAmigos = () => {
+  if (amigosSeleccionados.length === amigos.length) {
+    setAmigosSeleccionados([]);
+  } else {
+    setAmigosSeleccionados(amigos.map(amigo => amigo.id_usuario));
+  }
+};
+
+// ✅ Función para cargar publicaciones compartidas
+const cargarPublicacionesCompartidas = async () => {
+  try {
+    const compartidos = await obtenerPublicacionesCompartidas();
+    setPublicacionesCompartidas(compartidos);
+  } catch (error) {
+    console.error("Error cargando publicaciones compartidas:", error);
+  }
+};
+
+// ✅ Función para ver compartido específico
+const verCompartidoEspecifico = (compartido: Compartido) => {
+  navigate("/compartidos", { 
+    state: { 
+      compartidoEspecifico: compartido 
+    } 
+  });
+};
+  // ✅ Cerrar sesión
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+    window.location.href = "/login";
+  };
+
+  // ✅ Funciones del menú
+  const toggleMenu = (postId: number) => {
+    setMenuAbierto(menuAbierto === postId ? null : postId);
+  };
+
+  const handleEliminarPublicacion = async (postId: number) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar esta publicación?"))
+      return;
+
     try {
-      const compartidos = await obtenerPublicacionesCompartidas();
-      setPublicacionesCompartidas(compartidos);
+      await eliminarPublicacion(postId);
+      setPublicaciones(publicaciones.filter((p) => p.id_publicacion !== postId));
+      setMenuAbierto(null);
     } catch (error) {
-      console.error("Error cargando publicaciones compartidas:", error);
+      console.error("Error eliminando publicación:", error);
+      alert("Error al eliminar la publicación");
     }
   };
 
-  // ✅ Función para manejar selección de amigos
-  const toggleAmigoSeleccionado = (idAmigo: number) => {
-    setAmigosSeleccionados(prev => 
-      prev.includes(idAmigo)
-        ? prev.filter(id => id !== idAmigo)
-        : [...prev, idAmigo]
-    );
-  };
+  const handleBloquearUsuario = async (userId: number, userName: string) => {
+    if (!window.confirm(`¿Estás seguro de que quieres bloquear a ${userName}?`))
+      return;
 
-  // ✅ Función para seleccionar/deseleccionar todos los amigos
-  const toggleTodosAmigos = () => {
-    if (amigosSeleccionados.length === amigos.length) {
-      setAmigosSeleccionados([]);
-    } else {
-      setAmigosSeleccionados(amigos.map(amigo => amigo.id_usuario));
+    try {
+      await bloquearUsuario(userId);
+      setPublicaciones(publicaciones.filter((p) => p.usuario.id_usuario !== userId));
+      setMenuAbierto(null);
+      alert("Usuario bloqueado correctamente");
+    } catch (error) {
+      console.error("Error bloqueando usuario:", error);
+      alert("Error al bloquear el usuario");
     }
   };
 
-  // Efecto para cargar publicaciones compartidas cuando se muestre el panel
-  useEffect(() => {
-    if (mostrarCompartidos) {
-      cargarPublicacionesCompartidas();
+  const handleNoMeInteresa = async (postId: number) => {
+    try {
+      await noMeInteresa(postId);
+      setPublicaciones(publicaciones.filter((p) => p.id_publicacion !== postId));
+      setMenuAbierto(null);
+    } catch (error) {
+      console.error("Error marcando como no me interesa:", error);
+      alert("Error al marcar la publicación");
     }
-  }, [mostrarCompartidos]);
+  };
 
   // Efecto para cargar amigos cuando se abre el panel de compartir con amigos
-  useEffect(() => {
-    if (mostrarSeleccionAmigos) {
-      cargarAmigos();
-    }
-  }, [mostrarSeleccionAmigos]);
+useEffect(() => {
+  if (mostrarSeleccionAmigos) {
+    cargarAmigos();
+  }
+}, [mostrarSeleccionAmigos]);
 
-  // ✅ Componente para mostrar comentarios recursivamente
+// Efecto para cargar publicaciones compartidas cuando se muestre el panel
+useEffect(() => {
+  if (mostrarCompartidos) {
+    cargarPublicacionesCompartidas();
+  }
+}, [mostrarCompartidos]);
+
+  // ✅ Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setMenuAbierto(null);
+      setMenuComentarioAbierto(null);
+      setCompartirAbierto(null);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // ✅ Cargar publicaciones
+  const cargarPublicaciones = async () => {
+    try {
+      const posts = await getPublicaciones();
+
+      const postsConFotosActualizadas = posts.map((p: Publicacion) => {
+        let fotoPerfil = defaultProfile;
+
+        if (
+          p.usuario?.perfil?.foto_perfil &&
+          p.usuario.perfil.foto_perfil.trim() !== ""
+        ) {
+          fotoPerfil = `${p.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`;
+        }
+
+        return {
+          ...p,
+          usuario: {
+            ...p.usuario,
+            perfil: {
+              ...p.usuario?.perfil,
+              foto_perfil: fotoPerfil,
+            },
+          },
+        };
+      });
+
+      setPublicaciones(postsConFotosActualizadas);
+
+      // Cargar estadísticas para cada publicación
+      postsConFotosActualizadas.forEach((post: Publicacion) => {
+        cargarEstadisticas(post.id_publicacion);
+      });
+    } catch (error) {
+      console.error("Error cargando publicaciones:", error);
+    }
+  };
+
+  useEffect(() => {
+    cargarPublicaciones();
+  }, []);
+
+
   const ComentarioComponent = ({ comentario, nivel = 0, idPublicacion }: { comentario: Comentario, nivel?: number, idPublicacion: number }) => {
-    const [mostrarRespuestas, setMostrarRespuestas] = useState(nivel < 2); // Mostrar hasta 2 niveles por defecto
+    const [mostrarRespuestas, setMostrarRespuestas] = useState(nivel < 2);
     const [respondiendo, setRespondiendo] = useState(false);
 
     return (
@@ -581,292 +779,6 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
     );
   };
 
-  // ✅ Cargar publicaciones
-  const cargarPublicaciones = async () => {
-    try {
-      const posts = await getPublicaciones();
-
-      const postsConFotosActualizadas = posts.map((p: Publicacion) => {
-        let fotoPerfil = defaultProfile;
-
-        if (
-          p.usuario?.perfil?.foto_perfil &&
-          p.usuario.perfil.foto_perfil.trim() !== ""
-        ) {
-          fotoPerfil = `${p.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`;
-        }
-
-        return {
-          ...p,
-          usuario: {
-            ...p.usuario,
-            perfil: {
-              ...p.usuario?.perfil,
-              foto_perfil: fotoPerfil,
-            },
-          },
-        };
-      });
-
-      setPublicaciones(postsConFotosActualizadas);
-
-      // Cargar estadísticas para cada publicación
-      postsConFotosActualizadas.forEach((post: Publicacion) => {
-        cargarEstadisticas(post.id_publicacion);
-      });
-    } catch (error) {
-      console.error("Error cargando publicaciones:", error);
-    }
-  };
-
-  useEffect(() => {
-    cargarPublicaciones();
-  }, []);
-
-  // ✅ Recargar cuando cambie una foto de perfil
-  useEffect(() => {
-    const handleFotoActualizada = () => cargarPublicaciones();
-    window.addEventListener("fotoPerfilActualizada", handleFotoActualizada);
-    return () =>
-      window.removeEventListener("fotoPerfilActualizada", handleFotoActualizada);
-  }, []);
-
-  // ✅ Hacer scroll a publicación cuando se navega desde notificación (estado)
-  useEffect(() => {
-    const idPublicacion = (location.state as any)?.scrollToPublicacion;
-    console.log("Scroll effect (estado) - idPublicacion:", idPublicacion, "publicaciones.length:", publicaciones.length);
-    
-    if (idPublicacion) {
-        const intentarScroll = (intento: number = 1) => {
-          console.log(`Intento ${intento} de scroll (estado) para publicación ${idPublicacion}`);
-          console.log("Publicaciones disponibles:", publicaciones.map(p => p.id_publicacion));
-          
-          // Buscar por atributo data
-          let elemento = document.querySelector(`[data-publicacion-id="${idPublicacion}"]`);
-          
-          // Si no se encuentra, buscar por ID directamente
-          if (!elemento) {
-            elemento = document.getElementById(`publicacion-${idPublicacion}`);
-          }
-          
-          // Si aún no se encuentra, buscar en todos los elementos con la clase post-card
-          if (!elemento) {
-            const todosLosPosts = document.querySelectorAll('.post-card');
-            todosLosPosts.forEach((post: any) => {
-              if (post.getAttribute('data-publicacion-id') === String(idPublicacion)) {
-                elemento = post;
-              }
-            });
-          }
-          
-          console.log("Buscando elemento con id:", idPublicacion, "Encontrado:", elemento);
-          
-          if (elemento) {
-            console.log("Elemento encontrado, haciendo scroll");
-            elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // También intentar hacer scroll manualmente por si acaso
-            setTimeout(() => {
-              elemento?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-            return true;
-          } else {
-            console.warn(`Elemento no encontrado en intento ${intento}. Publicaciones en DOM:`, 
-              Array.from(document.querySelectorAll('.post-card')).map((el: any) => el.getAttribute('data-publicacion-id')));
-            return false;
-          }
-        };
-      
-      // Si las publicaciones ya están cargadas, intentar scroll
-      if (publicaciones.length > 0) {
-        const intentos = [300, 800, 1500, 2500];
-        
-        intentos.forEach((delay, index) => {
-          setTimeout(() => {
-            if (!intentarScroll(index + 1) && index === intentos.length - 1) {
-              console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
-            }
-          }, delay);
-        });
-      } else {
-        // Si no están cargadas, esperar a que se carguen
-        console.log("Esperando a que se carguen las publicaciones...");
-        const checkInterval = setInterval(() => {
-          if (publicaciones.length > 0) {
-            clearInterval(checkInterval);
-            console.log("Publicaciones cargadas, intentando scroll");
-            const intentos = [300, 800, 1500, 2500];
-            
-            intentos.forEach((delay, index) => {
-              setTimeout(() => {
-                if (!intentarScroll(index + 1) && index === intentos.length - 1) {
-                  console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
-                }
-              }, delay);
-            });
-          }
-        }, 100);
-        
-        // Limpiar después de 10 segundos si no se cargan
-        setTimeout(() => {
-          clearInterval(checkInterval);
-          console.warn("Timeout esperando publicaciones");
-        }, 10000);
-      }
-      
-      // Limpiar el estado para evitar scrolls repetidos
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, publicaciones]);
-
-  // ✅ Escuchar evento personalizado para scroll (funciona incluso si ya estás en la página)
-  useEffect(() => {
-    const handleScrollEvent = (event: any) => {
-      const idPublicacion = event.detail?.idPublicacion;
-      console.log("Evento scrollToPublicacion recibido:", idPublicacion, "publicaciones.length:", publicaciones.length);
-      
-      if (idPublicacion) {
-        const intentarScroll = (intento: number = 1) => {
-          console.log(`Intento ${intento} de scroll (evento) para publicación ${idPublicacion}`);
-          console.log("Publicaciones disponibles:", publicaciones.map(p => p.id_publicacion));
-          
-          // Buscar por atributo data
-          let elemento = document.querySelector(`[data-publicacion-id="${idPublicacion}"]`);
-          
-          // Si no se encuentra, buscar por ID directamente
-          if (!elemento) {
-            elemento = document.getElementById(`publicacion-${idPublicacion}`);
-          }
-          
-          // Si aún no se encuentra, buscar en todos los elementos con la clase post-card
-          if (!elemento) {
-            const todosLosPosts = document.querySelectorAll('.post-card');
-            todosLosPosts.forEach((post: any) => {
-              if (post.getAttribute('data-publicacion-id') === String(idPublicacion)) {
-                elemento = post;
-              }
-            });
-          }
-          
-          console.log("Buscando elemento con id:", idPublicacion, "Encontrado:", elemento);
-          
-          if (elemento) {
-            console.log("Elemento encontrado, haciendo scroll");
-            elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // También intentar hacer scroll manualmente por si acaso
-            setTimeout(() => {
-              elemento?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-            return true;
-          } else {
-            console.warn(`Elemento no encontrado en intento ${intento}. Publicaciones en DOM:`, 
-              Array.from(document.querySelectorAll('.post-card')).map((el: any) => el.getAttribute('data-publicacion-id')));
-            return false;
-          }
-        };
-        
-        // Intentar scroll múltiples veces con diferentes delays
-        const intentos = [300, 800, 1500, 2500];
-        
-        intentos.forEach((delay, index) => {
-          setTimeout(() => {
-            if (!intentarScroll(index + 1) && index === intentos.length - 1) {
-              console.error(`No se pudo encontrar la publicación ${idPublicacion} después de ${intentos.length} intentos`);
-              // Intentar una última vez después de un delay más largo
-              setTimeout(() => intentarScroll(intentos.length + 1), 2000);
-            }
-          }, delay);
-        });
-      }
-    };
-
-    window.addEventListener('scrollToPublicacion', handleScrollEvent);
-    return () => {
-      window.removeEventListener('scrollToPublicacion', handleScrollEvent);
-    };
-  }, [publicaciones]);
-
-  // ✅ Crear publicación
-  const handlePost = async () => {
-    if (!contenido.trim() && !file) return;
-
-    const data = new FormData();
-    data.append("id_usuario", usuario!.id_usuario.toString());
-    data.append("contenido", contenido);
-    if (file) data.append("file", file);
-
-    try {
-      await crearPublicacion(data);
-      setContenido("");
-      setFile(null);
-      await cargarPublicaciones();
-    } catch (error) {
-      console.error("Error creando publicación:", error);
-    }
-  };
-
-  // ✅ Cerrar sesión
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    window.location.href = "/login";
-  };
-
-  // ✅ Funciones del menú
-  const toggleMenu = (postId: number) => {
-    setMenuAbierto(menuAbierto === postId ? null : postId);
-  };
-
-  const handleEliminarPublicacion = async (postId: number) => {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar esta publicación?"))
-      return;
-
-    try {
-      await eliminarPublicacion(postId);
-      setPublicaciones(publicaciones.filter((p) => p.id_publicacion !== postId));
-      setMenuAbierto(null);
-    } catch (error) {
-      console.error("Error eliminando publicación:", error);
-      alert("Error al eliminar la publicación");
-    }
-  };
-
-  const handleBloquearUsuario = async (userId: number, userName: string) => {
-    if (!window.confirm(`¿Estás seguro de que quieres bloquear a ${userName}?`))
-      return;
-
-    try {
-      await bloquearUsuario(userId);
-      setPublicaciones(publicaciones.filter((p) => p.usuario.id_usuario !== userId));
-      setMenuAbierto(null);
-      alert("Usuario bloqueado correctamente");
-    } catch (error) {
-      console.error("Error bloqueando usuario:", error);
-      alert("Error al bloquear el usuario");
-    }
-  };
-
-  const handleNoMeInteresa = async (postId: number) => {
-    try {
-      await noMeInteresa(postId);
-      setPublicaciones(publicaciones.filter((p) => p.id_publicacion !== postId));
-      setMenuAbierto(null);
-    } catch (error) {
-      console.error("Error marcando como no me interesa:", error);
-      alert("Error al marcar la publicación");
-    }
-  };
-
-  // ✅ Cerrar menú al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setMenuAbierto(null);
-      setMenuComentarioAbierto(null);
-      setCompartirAbierto(null);
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
-
   return (
     <div className="main-container">
       {/* 🔹 Barra superior */}
@@ -941,7 +853,7 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
           <button>GUARDADO</button>
         </div>
 
-        {/* Crear nuevo post */}
+        {/* Crear nuevo post - ACTUALIZADO PARA MÚLTIPLES ARCHIVOS */}
         <div className="post-input">
           <input
             type="text"
@@ -949,12 +861,68 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
             value={contenido}
             onChange={(e) => setContenido(e.target.value)}
           />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
-          <button onClick={handlePost}>POST</button>
+          
+          {/* Input para múltiples archivos */}
+          <div className="file-upload-section">
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+              id="file-input"
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="file-input" className="file-upload-btn">
+              <FileImage size={16} /> Agregar imágenes/videos
+            </label>
+            
+            {/* Mostrar archivos seleccionados */}
+            {files.length > 0 && (
+              <div className="selected-files">
+                <div className="files-list">
+                  {files.map((file, index) => (
+                    <div key={index} className="file-item">
+                      {file.type.startsWith('image/') ? (
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt="Preview" 
+                          className="file-preview"
+                        />
+                      ) : (
+                        <div className="video-preview">
+                          <video className="file-preview">
+                            <source src={URL.createObjectURL(file)} type={file.type} />
+                          </video>
+                          <div className="video-indicator">🎥</div>
+                        </div>
+                      )}
+                      <div className="file-info">
+                        <span className="file-name">{file.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="remove-file-btn"
+                        >
+                          <CloseIcon size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="files-count">
+                  {files.length} archivo(s) seleccionado(s)
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <button 
+            onClick={handlePost} 
+            disabled={!contenido.trim() && files.length === 0}
+            className="post-button"
+          >
+            POST
+          </button>
         </div>
 
         <div className="banner">NUEVOS POSTERS!!</div>
@@ -1048,56 +1016,78 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
                 </div>
               </div>
 
-              {/* Contenido del post */}
+              {/* Contenido del post - ACTUALIZADO PARA MÚLTIPLES MEDIOS */}
               <div className="post-content">
                 <p>{post.contenido}</p>
-                {post.imagen && (
+                
+                {/* Mostrar múltiples medios */}
+                 {post.medios && post.medios.length > 0 && (
+  <div className={`post-media ${post.medios.length > 1 ? 'multiple-media' : 'single-media'}`}>
+    {post.medios.map((medio: string, index: number) => (
+      <div key={index} className="media-item">
+        {(post.tipo_medio === 'video' || medio.includes('.mp4') || medio.includes('.avi') || medio.includes('.mov')) ? (
+          <video controls className="post-video" preload="metadata">
+            <source src={medio} type="video/mp4" />
+            Tu navegador no soporta el elemento video.
+          </video>
+        ) : (
+          <img src={medio} alt={`Post media ${index + 1}`} className="post-image" />
+        )}
+      </div>
+    ))}
+  </div>
+)}
+                
+                {/* Mantener compatibilidad con imagen única */}
+                {(!post.medios || post.medios.length === 0) && post.imagen && (
                   <img src={post.imagen} alt="post" className="post-image" />
                 )}
               </div>
 
+              
+              
               <div className="post-actions-x">
-  <button 
-    className="action-btn-x comment-btn"
-    onClick={() => toggleComentarios(post.id_publicacion)}
-  >
-    <div className="btn-content">
-      <MessageCircle size={18} />
-      <span className="count">{estadisticas[post.id_publicacion]?.total_comentarios || 0}</span>
-    </div>
-  </button>
-  
-  <button 
-    className="action-btn-x retweet-btn"
-    onClick={(e) => {
-      e.stopPropagation();
-      setCompartirAbierto(compartirAbierto === post.id_publicacion ? null : post.id_publicacion);
-    }}
-  >
-    <div className="btn-content">
-      <Share2 size={18} />
-    </div>
-  </button>
-  
-  <button 
-    className={`action-btn-x like-btn ${estadisticas[post.id_publicacion]?.me_gusta_dado ? 'liked' : ''}`}
-    onClick={() => handleMeGusta(post.id_publicacion)}
-  >
-    <div className="btn-content">
-      <Heart size={18} />
-      <span className="count">{estadisticas[post.id_publicacion]?.total_me_gusta || 0}</span>
-    </div>
-  </button>
-  
-  <button 
-    className={`action-btn-x bookmark-btn ${estadisticas[post.id_publicacion]?.guardado ? 'saved' : ''}`}
-    onClick={() => handleGuardar(post.id_publicacion)}
-  >
-    <div className="btn-content">
-      <Bookmark size={18} />
-    </div>
-  </button>
-</div>
+                <button 
+                  className="action-btn-x comment-btn"
+                  onClick={() => toggleComentarios(post.id_publicacion)}
+                >
+                  <div className="btn-content">
+                    <MessageCircle size={18} />
+                    <span className="count">{estadisticas[post.id_publicacion]?.total_comentarios || 0}</span>
+                  </div>
+                </button>
+                
+                <button 
+                  className="action-btn-x retweet-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCompartirAbierto(compartirAbierto === post.id_publicacion ? null : post.id_publicacion);
+                  }}
+                >
+                  <div className="btn-content">
+                    <Share2 size={18} />
+                  </div>
+                </button>
+                
+                <button 
+                  className={`action-btn-x like-btn ${estadisticas[post.id_publicacion]?.me_gusta_dado ? 'liked' : ''}`}
+                  onClick={() => handleMeGusta(post.id_publicacion)}
+                >
+                  <div className="btn-content">
+                    <Heart size={18} />
+                    <span className="count">{estadisticas[post.id_publicacion]?.total_me_gusta || 0}</span>
+                  </div>
+                </button>
+                
+                <button 
+                  className={`action-btn-x bookmark-btn ${estadisticas[post.id_publicacion]?.guardado ? 'saved' : ''}`}
+                  onClick={() => handleGuardar(post.id_publicacion)}
+                >
+                  <div className="btn-content">
+                    <Bookmark size={18} />
+                  </div>
+                </button>
+              </div>
 
 {/* Panel de compartir - ESTILO X/TWITTER MODERNO */}
 {compartirAbierto === post.id_publicacion && (
@@ -1156,18 +1146,6 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
             </svg>
           </div>
           <span>X</span>
-        </button>
-        
-        <button 
-          className="red-social-btn-x linkedin-x"
-          onClick={() => compartirEnRedSocial("linkedin", post)}
-        >
-          <div className="red-social-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-            </svg>
-          </div>
-          <span>LinkedIn</span>
         </button>
       </div>
     </div>
@@ -1271,7 +1249,7 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
         <div className="compartir-input-container">
           <div className="user-avatar">
             <img 
-              src={usuario?.foto_perfil || defaultProfile} 
+              src={usuario?.perfil?.foto_perfil || defaultProfile} 
               alt="Tu avatar" 
               className="avatar-img"
             />
@@ -1299,8 +1277,7 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
     </div>
   </div>
 )}
-
-              {/* Sección de comentarios */}
+              {/* Sección de comentarios (mantener igual) */}
               {comentariosAbiertos[post.id_publicacion] && (
                 <div className="comentarios-section">
                   <div className="nuevo-comentario">
@@ -1362,13 +1339,8 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
         </div>
       </section>
 
-    
-
-     {/* 🔹 Sidebar derecha */}
+      {/* 🔹 Sidebar derecha */}
       <aside className="right-sidebar">
-        <div className="card">
-          <h2>COMUNIDADES A SEGUIR</h2>
-        </div>
         <div className="card">
           <h2>LO QUE SUCEDE CON EL MUNDO DEL ARTE</h2>
         </div>
@@ -1376,7 +1348,6 @@ const compartirEnRedSocial = (redSocial: string, publicacion: Publicacion) => {
           <h2>A QUIÉN SEGUIR</h2>
         </div>
       </aside>
-
     </div>
   );
 }

@@ -1,7 +1,8 @@
 # backend/schemas.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from datetime import date, datetime
 from typing import Optional, List
+import json
 
 # ------------------ PERFIL ------------------
 class PerfilBase(BaseModel):
@@ -32,12 +33,12 @@ class UsuarioCreate(UsuarioBase):
 
 class UsuarioResponse(UsuarioBase):
     id_usuario: int
-    perfil: Optional[PerfilResponse] = None  # Perfil incluido
+    perfil: Optional[PerfilResponse] = None
 
     class Config:
         from_attributes = True
 
-# ------------------ PUBLICACIÓN ------------------
+# ------------------ USUARIO PERFIL ------------------
 class UsuarioPerfil(BaseModel):
     id_usuario: int
     nombre: str
@@ -47,9 +48,11 @@ class UsuarioPerfil(BaseModel):
     class Config:
         from_attributes = True
 
+# ------------------ PUBLICACIÓN ------------------
 class PublicacionBase(BaseModel):
     contenido: str
-    imagen: Optional[str] = None
+    medios: Optional[List[str]] = None
+    tipo_medio: Optional[str] = "imagen"
 
 class PublicacionCreate(PublicacionBase):
     id_usuario: int
@@ -59,18 +62,33 @@ class PublicacionResponse(PublicacionBase):
     id_usuario: int
     fecha_creacion: datetime
     usuario: UsuarioPerfil
+    # Para compatibilidad
+    imagen: Optional[str] = None
 
-class NotificacionResponse(BaseModel):
-    id_notificacion: int
-    tipo: str
-    mensaje: str
-    fecha_creacion: datetime
-    leida: bool
+    @validator('imagen', pre=True, always=True)
+    def set_imagen(cls, v, values):
+        # Usar la primera imagen de medios para compatibilidad
+        if 'medios' in values and values['medios'] and len(values['medios']) > 0:
+            return values['medios'][0]
+        return None
+
+    @validator('medios', pre=True)
+    def parse_medios(cls, v):
+        # Parsear medios desde el campo imagen que contiene JSON
+        if isinstance(v, str):
+            try:
+                # Si es un JSON string, parsearlo
+                if v.startswith('[') and v.endswith(']'):
+                    return json.loads(v)
+                else:
+                    # Si es una URL simple, convertir a lista
+                    return [v] if v else []
+            except:
+                return [v] if v else []
+        return v
 
     class Config:
         from_attributes = True
-
-# Agregar al final de backend/schemas.py
 
 # ------------------ SEGUIDORES / SIGUIENDO ------------------
 class SeguidorResponse(BaseModel):
@@ -95,17 +113,13 @@ class EstadisticasPerfilResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-
- # ------------------ RECUPERACIÓN DE CONTRASEÑA ------------------
+# ------------------ RECUPERACIÓN DE CONTRASEÑA ------------------
 class ResetPasswordRequest(BaseModel):
     token: str
     nueva_contrasena: str
 
 class ForgotPasswordRequest(BaseModel):
     correo: EmailStr
-
-
 
 # ------------------ ME GUSTA ------------------
 class MeGustaBase(BaseModel):
@@ -197,11 +211,9 @@ class EstadisticasMeGustasResponse(BaseModel):
         from_attributes = True
 
 # ------------------ COMPARTIDOS ------------------
-
 class CompartidoBase(BaseModel):
     id_publicacion: int
     mensaje: Optional[str] = None
-
 
 class CompartidoResponse(BaseModel):
     id_compartido: int
@@ -209,30 +221,19 @@ class CompartidoResponse(BaseModel):
     id_publicacion: int
     mensaje: Optional[str]
     fecha: datetime
-    expiracion: datetime  # 🔥 NUEVO
+    expiracion: Optional[datetime] = None
     tipo: str
 
     class Config:
         from_attributes = True
 
-
-# backend/schemas.py - AGREGAR ESTOS ESQUEMAS
-
-class CompartidoBase(BaseModel):
-    id_usuario: int
-    id_publicacion: int
+# ------------------ NOTIFICACIONES ------------------
+class NotificacionResponse(BaseModel):
+    id_notificacion: int
     tipo: str
-    mensaje: Optional[str] = None
-    expiracion: Optional[datetime] = None
-
-class CompartidoResponse(BaseModel):
-    id_compartido: int
-    fecha_compartido: str
-    mensaje: Optional[str]
-    tipo: str
-    expiracion: Optional[str]
-    usuario_compartio: dict
-    publicacion: dict
+    mensaje: str
+    fecha_creacion: datetime
+    leida: bool
 
     class Config:
         from_attributes = True

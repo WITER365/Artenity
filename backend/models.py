@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Bool
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from .database import Base
+import json
 
 # ------------------ USUARIO ------------------
 class Usuario(Base):
@@ -53,20 +54,17 @@ class Perfil(Base):
 
     usuario = relationship("Usuario", back_populates="perfil")
 
-
 class Amistad(Base):
     __tablename__ = "amistades"
 
     id_amistad = Column(Integer, primary_key=True, index=True)
     id_usuario1 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
     id_usuario2 = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    estado = Column(String(50), default="aceptada")  # aceptada / eliminada
-    # Elimina esta línea si no existe en la base de datos:
-    # fecha_amistad = Column(DateTime, default=datetime.utcnow)
+    estado = Column(String(50), default="aceptada")
 
-    # Relaciones
     usuario1 = relationship("Usuario", foreign_keys=[id_usuario1], back_populates="amistades_como_usuario1")
     usuario2 = relationship("Usuario", foreign_keys=[id_usuario2], back_populates="amistades_como_usuario2")
+
 # ------------------ PUBLICACIÓN ------------------
 class Publicacion(Base):
     __tablename__ = "publicaciones"
@@ -74,7 +72,12 @@ class Publicacion(Base):
     id_publicacion = Column(Integer, primary_key=True, index=True)
     id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
     contenido = Column(Text, nullable=False)
-    imagen = Column(String, nullable=True)
+    
+    # Usar el campo existente 'imagen' pero almacenar JSON para múltiples archivos
+    imagen = Column(Text, nullable=True)  # Cambiado de String a Text para almacenar JSON
+    
+    # Agregar tipo_medio si no existe
+    tipo_medio = Column(String(20), default="imagen")
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     usuario = relationship("Usuario", back_populates="publicaciones")
@@ -83,6 +86,21 @@ class Publicacion(Base):
     guardados = relationship("Guardado", back_populates="publicacion", cascade="all, delete-orphan")
     comentarios = relationship("Comentario", back_populates="publicacion", cascade="all, delete-orphan")
     compartidos = relationship("Compartido", back_populates="publicacion", cascade="all, delete-orphan")
+
+    # Propiedad para compatibilidad - parsear JSON de imagen como medios
+    @property
+    def medios(self):
+        if self.imagen:
+            try:
+                # Si imagen contiene JSON, parsearlo
+                if self.imagen.startswith('[') and self.imagen.endswith(']'):
+                    return json.loads(self.imagen)
+                else:
+                    # Si es una URL simple, devolverla como lista de un elemento
+                    return [self.imagen]
+            except:
+                return [self.imagen] if self.imagen else []
+        return []
 
 # ------------------ SEGUIR USUARIO ------------------
 class SeguirUsuario(Base):
@@ -117,7 +135,7 @@ class SolicitudAmistad(Base):
     id_solicitud = Column(Integer, primary_key=True, index=True)
     id_emisor = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
     id_receptor = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
-    estado = Column(String(50), default="pendiente")  # pendiente / aceptada / rechazada
+    estado = Column(String(50), default="pendiente")
     fecha_envio = Column(DateTime, default=datetime.utcnow)
 
     emisor = relationship("Usuario", foreign_keys=[id_emisor], back_populates="amistades_enviadas")
@@ -213,8 +231,6 @@ class MeGustaComentario(Base):
     usuario = relationship("Usuario", back_populates="me_gusta_comentarios")
     comentario = relationship("Comentario", back_populates="me_gusta_comentarios")
 
-
-
 # ------------------ TOKEN DE RECUPERACIÓN ------------------
 class ResetPasswordToken(Base):
     __tablename__ = "reset_password_tokens"
@@ -226,9 +242,7 @@ class ResetPasswordToken(Base):
 
     usuario = relationship("Usuario", back_populates="reset_tokens")
 
-
 # ------------------ COMPARTIR PUBLICACIÓN ------------------
-
 class Compartido(Base):
     __tablename__ = "compartidos"
     
@@ -238,7 +252,7 @@ class Compartido(Base):
     tipo = Column(String(50), nullable=False)
     mensaje = Column(Text, nullable=True)
     fecha = Column(DateTime, default=datetime.utcnow)
-    expiracion = Column(DateTime, nullable=True, default=None)  # Sin expiración
+    expiracion = Column(DateTime, nullable=True, default=None)
     
     usuario = relationship("Usuario", back_populates="compartidos")
     publicacion = relationship("Publicacion", back_populates="compartidos")

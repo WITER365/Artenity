@@ -15,16 +15,18 @@ const api = axios.create({
 
 // Interceptor para manejar errores 401
 api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            console.error("Error 401: No autorizado. Verifica que estés autenticado.");
-            // Opcional: redirigir al login
-            // window.location.href = "/login";
-        }
-        return Promise.reject(error);
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error("Error 401: No autorizado. Redirigiendo al login...");
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+      window.location.href = "/login";
     }
+    return Promise.reject(error);
+  }
 );
+
 
 // ======== UTILIDADES ========
 function getToken(): string {
@@ -49,8 +51,9 @@ function getAuthHeaders() {
   const token = getToken();
   const usuarioId = getUsuarioId();
   
-  if (!token || !usuarioId) {
-    console.warn("Token o usuario ID no disponible. Headers de autenticación incompletos.");
+  if (!token) {
+    console.warn("Token no disponible. Usuario probablemente no autenticado.");
+    // No redirigir aquí, dejar que el interceptor maneje el 401
   }
   
   return {
@@ -80,7 +83,7 @@ export async function registerUsuario(usuario: any): Promise<Usuario> {
 }
 
 // ================== LOGIN / SESIÓN ==================
-// ================== LOGIN / SESIÓN ==================
+
 export async function loginUsuario(correo_electronico: string, contrasena: string) {
   try {
     const res = await api.post("/login", { correo_electronico, contrasena });

@@ -4,8 +4,10 @@ import shutil
 from datetime import datetime, timedelta
 from typing import List
 from uuid import uuid4
+import json 
+import uuid
 
-from fastapi import Depends, FastAPI,Request, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, Request, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -240,39 +242,116 @@ async def actualizar_perfil(
     return perfil
 
 # ------------------ PUBLICACIONES ------------------
+
+@app.post("/publicaciones", response_model=schemas.PublicacionResponse)
+async def crear_publicacion(
+    id_usuario: int = Form(...),
+    contenido: str = Form(None),  # Cambiar a None para permitir posts sin texto
+    files: List[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    try:
+        medios_urls = []
+        tipo_medio = "texto"  # Valor por defecto
+        
+        # Procesar múltiples archivos
+        if files and len(files) > 0:
+            for file in files:
+                if file.filename:
+                    # Validar tipo de archivo
+                    file_extension = file.filename.split('.')[-1].lower()
+                    is_video = file_extension in ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm']
+                    is_image = file_extension in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+                    
+                    if not (is_video or is_image):
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"Tipo de archivo no soportado: {file.filename}"
+                        )
+                    
+                    # Determinar carpeta y tipo
+                    if is_video:
+                        folder = "static/videos"
+                        file_tipo_medio = "video"
+                    else:
+                        folder = "static/posts" 
+                        file_tipo_medio = "imagen"
+                    
+                    # Actualizar tipo_medio principal
+                    if len(medios_urls) == 0:  # Primer archivo determina el tipo principal
+                        tipo_medio = file_tipo_medio
+                    
+                    os.makedirs(folder, exist_ok=True)
+                    
+                    # Generar nombre único
+                    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+                    ruta = os.path.join(folder, unique_filename)
+                    
+                    # Guardar archivo
+                    with open(ruta, "wb") as f:
+                        content = await file.read()
+                        f.write(content)
+                    
+                    url_medio = f"http://localhost:8000/{folder}/{unique_filename}"
+                    medios_urls.append(url_medio)
+        
+        # Crear publicación
+        nueva_pub = models.Publicacion(
+            id_usuario=id_usuario, 
+            contenido=contenido or "",  # Permitir contenido vacío
+            imagen=medios_urls[0] if medios_urls else None,  # Primer medio para compatibilidad
+            tipo_medio=tipo_medio
+        )
+        
+        db.add(nueva_pub)
+        db.commit()
+        db.refresh(nueva_pub)
+        
+        # Si hay múltiples medios, guardarlos en una tabla separada (si existe)
+        if len(medios_urls) > 1:
+            # Aquí puedes guardar los medios adicionales en otra tabla
+            # Por ahora solo usamos el primer medio para 'imagen'
+            pass
+        
+        # Cargar relaciones
+        db.refresh(nueva_pub, ['usuario'])
+        if nueva_pub.usuario:
+            db.refresh(nueva_pub.usuario, ['perfil'])
+        
+        return nueva_pub
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creando publicación: {str(e)}")
+
 @app.get("/publicaciones", response_model=List[schemas.PublicacionResponse])
 def obtener_publicaciones(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id)
 ):
-    # Obtener usuarios que el usuario actual ha bloqueado
+    # ... (mantener tu código existente de filtros)
+    
     usuarios_bloqueados = db.query(models.BloqueoUsuario.id_bloqueado).filter(
         models.BloqueoUsuario.id_bloqueador == user_id
     ).all()
     ids_usuarios_bloqueados = [ub[0] for ub in usuarios_bloqueados]
 
-    # Obtener usuarios que han bloqueado al usuario actual
     usuarios_que_me_bloquearon = db.query(models.BloqueoUsuario.id_bloqueador).filter(
         models.BloqueoUsuario.id_bloqueado == user_id
     ).all()
     ids_usuarios_que_me_bloquearon = [ub[0] for ub in usuarios_que_me_bloquearon]
 
-    # Obtener publicaciones marcadas como "No me interesa"
     no_me_interesa = db.query(models.NoMeInteresa.id_publicacion).filter(
         models.NoMeInteresa.id_usuario == user_id
     ).all()
     ids_no_me_interesa = [nmi[0] for nmi in no_me_interesa]
 
-    # Consulta base con filtros combinados
     publicaciones = (
         db.query(models.Publicacion)
         .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
         .filter(
-            # Excluir publicaciones de usuarios bloqueados por mí
             ~models.Publicacion.id_usuario.in_(ids_usuarios_bloqueados),
-            # Excluir publicaciones de usuarios que me han bloqueado
             ~models.Publicacion.id_usuario.in_(ids_usuarios_que_me_bloquearon),
-            # Excluir publicaciones marcadas como "No me interesa"
             ~models.Publicacion.id_publicacion.in_(ids_no_me_interesa)
         )
         .order_by(models.Publicacion.fecha_creacion.desc())
@@ -280,29 +359,6 @@ def obtener_publicaciones(
     )
 
     return publicaciones
-
-@app.post("/publicaciones", response_model=schemas.PublicacionResponse)
-async def crear_publicacion(
-    id_usuario: int = Form(...),
-    contenido: str = Form(...),
-    file: UploadFile | None = File(None),
-    db: Session = Depends(get_db)
-):
-    imagen_url = None
-    if file:
-        os.makedirs("static/posts", exist_ok=True)
-        filename = f"{id_usuario}_{file.filename}"
-        ruta = os.path.join("static/posts", filename)
-        with open(ruta, "wb") as f:
-            f.write(await file.read())
-        imagen_url = f"http://localhost:8000/static/posts/{filename}"
-
-
-    nueva_pub = models.Publicacion(id_usuario=id_usuario, contenido=contenido, imagen=imagen_url)
-    db.add(nueva_pub)
-    db.commit()
-    db.refresh(nueva_pub)
-    return nueva_pub
 
 # ------------------ SEGUIR USUARIO ------------------
 @app.post("/seguir/{id_seguido}")
@@ -1544,7 +1600,7 @@ def quitar_me_gusta_comentario(
 
     return {"mensaje": "Me gusta eliminado del comentario"}
 
-# ------------------ ESTADÍSTICAS PUBLICACIÓN ------------------
+ # ------------------ ESTADÍSTICAS PUBLICACIÓN ------------------
 @app.get("/publicaciones/{id_publicacion}/estadisticas", response_model=schemas.EstadisticasPublicacionResponse)
 def obtener_estadisticas_publicacion(
     id_publicacion: int,
