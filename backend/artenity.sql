@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-11-2025 a las 17:51:06
+-- Tiempo de generación: 25-11-2025 a las 19:03:39
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -40,7 +40,9 @@ CREATE TABLE `amistades` (
 
 INSERT INTO `amistades` (`id_amistad`, `id_usuario1`, `id_usuario2`, `estado`) VALUES
 (2, 1, 58, 'aceptada'),
-(6, 57, 56, 'aceptada');
+(8, 56, 58, 'aceptada'),
+(10, 57, 56, 'aceptada'),
+(11, 57, 58, 'aceptada');
 
 -- --------------------------------------------------------
 
@@ -54,13 +56,6 @@ CREATE TABLE `bloqueos_usuarios` (
   `id_bloqueado` int(11) DEFAULT NULL,
   `fecha_bloqueo` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `bloqueos_usuarios`
---
-
-INSERT INTO `bloqueos_usuarios` (`id_bloqueo`, `id_bloqueador`, `id_bloqueado`, `fecha_bloqueo`) VALUES
-(14, 56, 58, '2025-11-06 19:47:30');
 
 -- --------------------------------------------------------
 
@@ -258,6 +253,48 @@ CREATE TABLE `comentarios` (
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `comentarios`
+--
+
+INSERT INTO `comentarios` (`id_comentario`, `id_usuario`, `id_publicacion`, `id_comentario_padre`, `contenido`, `fecha`) VALUES
+(1, 57, 22, NULL, 'sxsxsx', '2025-11-12 17:34:42'),
+(2, 57, 22, 1, 'sxxsxsxx', '2025-11-12 17:34:46'),
+(3, 56, 22, NULL, 'cdcdcdc', '2025-11-12 17:34:59'),
+(4, 56, 22, 2, 'cdcdcd', '2025-11-12 17:35:06'),
+(5, 56, 22, 4, 'jjjj', '2025-11-12 21:13:08'),
+(6, 56, 22, 3, 'nhnhnhn', '2025-11-12 21:13:12'),
+(7, 56, 22, 1, 'bbfbfbfbf', '2025-11-12 21:13:20'),
+(8, 56, 22, 4, 'c c c c', '2025-11-12 21:13:26'),
+(9, 56, 22, 8, 'j', '2025-11-12 21:13:33'),
+(10, 57, 22, NULL, 'ffbfb', '2025-11-12 22:13:14'),
+(11, 57, 22, NULL, ' hhhhh', '2025-11-12 22:13:18'),
+(12, 56, 16, NULL, 'vfvvfv', '2025-11-14 01:03:07'),
+(13, 56, 21, NULL, 'dcdcdc', '2025-11-14 01:03:13'),
+(14, 56, 21, NULL, 'frfrfr', '2025-11-14 01:03:35'),
+(15, 56, 21, 13, 'frfrfrf', '2025-11-14 01:03:38'),
+(16, 56, 21, 15, 'frfrfrfr', '2025-11-14 01:03:41'),
+(17, 56, 21, NULL, 'efefe', '2025-11-14 01:31:56'),
+(18, 56, 22, NULL, 'dddeeeed', '2025-11-16 17:29:21'),
+(19, 56, 22, NULL, 'd', '2025-11-16 17:37:07'),
+(20, 56, 22, NULL, 'gato', '2025-11-16 17:37:40'),
+(21, 56, 22, NULL, 'hola', '2025-11-16 17:40:57'),
+(22, 56, 22, NULL, 'perro', '2025-11-16 17:41:06'),
+(23, 56, 22, 22, 'zorro', '2025-11-16 17:41:30'),
+(24, 56, 22, 23, 'mica', '2025-11-16 17:41:51'),
+(25, 56, 22, NULL, 'gata', '2025-11-16 17:48:54'),
+(28, 56, 22, NULL, 'njmk', '2025-11-16 18:35:04'),
+(29, 56, 22, 1, 'dfvdfg', '2025-11-16 18:35:09'),
+(30, 56, 7, NULL, 'efefe', '2025-11-16 18:48:23'),
+(31, 56, 7, 30, 'fefef', '2025-11-16 18:48:26'),
+(32, 57, 29, NULL, 'G5GGG', '2025-11-23 16:11:23'),
+(33, 57, 1, NULL, 'x', '2025-11-24 16:15:38'),
+(34, 57, 22, NULL, 'cdcdcd', '2025-11-24 20:03:04'),
+(35, 57, 29, NULL, 'sxsxsxsx', '2025-11-24 20:03:09'),
+(36, 56, 29, NULL, 'ccxc', '2025-11-24 21:37:03'),
+(37, 56, 29, NULL, 'ssxs', '2025-11-25 17:20:52'),
+(38, 56, 29, NULL, 'yjyj', '2025-11-25 17:53:56');
+
 -- --------------------------------------------------------
 
 --
@@ -325,8 +362,19 @@ CREATE TABLE `compartidos` (
   `id_publicacion` int(11) NOT NULL,
   `tipo` varchar(50) NOT NULL,
   `mensaje` text DEFAULT NULL,
-  `fecha` datetime DEFAULT NULL
+  `fecha` datetime DEFAULT NULL,
+  `expiracion` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `compartidos`
+--
+
+INSERT INTO `compartidos` (`id_compartido`, `id_usuario`, `id_publicacion`, `tipo`, `mensaje`, `fecha`, `expiracion`) VALUES
+(40, 58, 6, 'amigos', '', '2025-11-24 16:54:15', NULL),
+(44, 58, 12, 'amigos', '', '2025-11-24 23:59:38', NULL),
+(45, 57, 15, 'amigos', '', '2025-11-25 00:00:45', NULL),
+(50, 56, 29, 'amigos', '', '2025-11-25 16:27:23', NULL);
 
 -- --------------------------------------------------------
 
@@ -443,6 +491,24 @@ CREATE TABLE `guardados` (
   `id_publicacion` int(11) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `guardados`
+--
+
+INSERT INTO `guardados` (`id_guardado`, `id_usuario`, `id_publicacion`, `fecha`) VALUES
+(2, 56, 12, '2025-11-12 16:56:34'),
+(3, 56, 14, '2025-11-12 16:56:36'),
+(12, 57, 22, '2025-11-14 21:13:07'),
+(13, 57, 4, '2025-11-16 17:20:34'),
+(19, 56, 7, '2025-11-16 18:48:20'),
+(21, 57, 29, '2025-11-21 22:16:21'),
+(23, 56, 22, '2025-11-25 02:23:32'),
+(24, 56, 21, '2025-11-25 02:23:33'),
+(25, 56, 18, '2025-11-25 02:23:34'),
+(26, 56, 16, '2025-11-25 02:23:36'),
+(27, 56, 13, '2025-11-25 02:23:51'),
+(28, 56, 29, '2025-11-25 16:27:10');
 
 -- --------------------------------------------------------
 
@@ -596,6 +662,21 @@ INSERT INTO `likes_obra` (`id_like`, `id_publicacion`, `id_usuario`, `tipo_reacc
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `mensajes`
+--
+
+CREATE TABLE `mensajes` (
+  `id_mensaje` int(11) NOT NULL,
+  `id_emisor` int(11) NOT NULL,
+  `id_receptor` int(11) NOT NULL,
+  `contenido` text NOT NULL,
+  `leido` tinyint(1) DEFAULT NULL,
+  `fecha` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `mensajes_privados`
 --
 
@@ -657,6 +738,25 @@ CREATE TABLE `me_gusta` (
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `me_gusta`
+--
+
+INSERT INTO `me_gusta` (`id_megusta`, `id_usuario`, `id_publicacion`, `fecha`) VALUES
+(2, 57, 22, '2025-11-12 16:52:55'),
+(3, 56, 15, '2025-11-12 16:56:31'),
+(5, 56, 13, '2025-11-12 16:56:33'),
+(6, 56, 12, '2025-11-12 16:56:35'),
+(8, 56, 18, '2025-11-12 17:35:10'),
+(13, 56, 21, '2025-11-14 00:59:27'),
+(14, 56, 7, '2025-11-14 01:04:44'),
+(17, 57, 18, '2025-11-16 17:20:00'),
+(18, 57, 4, '2025-11-16 17:20:32'),
+(27, 57, 21, '2025-11-23 14:27:56'),
+(28, 57, 29, '2025-11-24 20:03:15'),
+(29, 56, 29, '2025-11-25 02:19:24'),
+(30, 56, 22, '2025-11-25 02:20:56');
+
 -- --------------------------------------------------------
 
 --
@@ -669,6 +769,14 @@ CREATE TABLE `me_gusta_comentarios` (
   `id_comentario` int(11) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `me_gusta_comentarios`
+--
+
+INSERT INTO `me_gusta_comentarios` (`id_megusta_comentario`, `id_usuario`, `id_comentario`, `fecha`) VALUES
+(1, 57, 32, '2025-11-24 20:03:13'),
+(2, 57, 35, '2025-11-24 20:03:13');
 
 -- --------------------------------------------------------
 
@@ -753,7 +861,107 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leido
 (60, 56, 'laurapintora aceptó tu solicitud de amistad', 1, '2025-11-06 01:23:20', 'amistad_aceptada', 20),
 (61, 56, 'witer365 te ha enviado una solicitud de amistad', 1, '2025-11-06 19:51:51', 'solicitud_amistad', 21),
 (62, 56, 'witer365 comenzó a seguirte', 1, '2025-11-06 19:52:00', 'nuevo_seguidor', 28),
-(63, 57, 'and aceptó tu solicitud de amistad', 0, '2025-11-06 19:53:03', 'amistad_aceptada', 21);
+(63, 57, 'and aceptó tu solicitud de amistad', 1, '2025-11-06 19:53:03', 'amistad_aceptada', 21),
+(64, 56, 'A witer365 le gusta tu publicación', 1, '2025-11-12 16:52:54', 'me_gusta', 25),
+(65, 58, 'A witer365 le gusta tu publicación', 1, '2025-11-12 16:52:55', 'me_gusta', 22),
+(66, 57, 'A and le gusta tu publicación', 1, '2025-11-12 16:56:31', 'me_gusta', 15),
+(67, 57, 'A and le gusta tu publicación', 1, '2025-11-12 16:56:31', 'me_gusta', 14),
+(68, 22, 'A and le gusta tu publicación', 0, '2025-11-12 16:56:33', 'me_gusta', 13),
+(69, 24, 'A and le gusta tu publicación', 0, '2025-11-12 16:56:35', 'me_gusta', 12),
+(70, 58, 'and comenzó a seguirte', 1, '2025-11-12 16:57:19', 'nuevo_seguidor', 29),
+(71, 58, 'and te ha enviado una solicitud de amistad', 1, '2025-11-12 16:57:22', 'solicitud_amistad', 22),
+(72, 58, '@and compartió tu publicación', 1, '2025-11-12 17:06:31', 'compartido', 22),
+(73, 57, '@and te compartió una publicación', 1, '2025-11-12 17:06:31', 'compartido_amigo', 22),
+(74, 58, 'witer365 comentó tu publicación', 1, '2025-11-12 17:34:42', 'comentario', 1),
+(75, 58, 'witer365 respondió a tu comentario', 1, '2025-11-12 17:34:46', 'comentario_respuesta', 2),
+(76, 58, 'and comentó tu publicación', 1, '2025-11-12 17:34:59', 'comentario', 3),
+(77, 58, 'and respondió a tu comentario', 1, '2025-11-12 17:35:06', 'comentario_respuesta', 4),
+(78, 58, 'A and le gusta tu publicación', 1, '2025-11-12 17:35:10', 'me_gusta', 18),
+(81, 58, '@witer365 compartió tu publicación', 1, '2025-11-12 17:45:07', 'compartido', 22),
+(82, 56, '@witer365 te compartió una publicación', 1, '2025-11-12 17:45:07', 'compartido_amigo', 22),
+(85, 58, '@and compartió tu publicación', 1, '2025-11-12 18:33:38', 'compartido', 22),
+(86, 57, '@and te compartió una publicación', 1, '2025-11-12 18:33:38', 'compartido_amigo', 22),
+(87, 58, '@witer365 compartió tu publicación', 1, '2025-11-12 19:09:18', 'compartido', 22),
+(88, 56, '@witer365 te compartió una publicación', 1, '2025-11-12 19:09:18', 'compartido_amigo', 22),
+(89, 58, 'A and le gusta tu publicación', 1, '2025-11-12 20:08:00', 'me_gusta', 22),
+(90, 58, 'A and le gusta tu publicación', 1, '2025-11-12 21:07:35', 'me_gusta', 22),
+(91, 58, 'and respondió a tu comentario', 1, '2025-11-12 21:13:08', 'comentario_respuesta', 5),
+(92, 58, 'and respondió a tu comentario', 1, '2025-11-12 21:13:12', 'comentario_respuesta', 6),
+(93, 58, 'and respondió a tu comentario', 1, '2025-11-12 21:13:20', 'comentario_respuesta', 7),
+(94, 58, 'and respondió a tu comentario', 1, '2025-11-12 21:13:26', 'comentario_respuesta', 8),
+(95, 58, 'and respondió a tu comentario', 1, '2025-11-12 21:13:33', 'comentario_respuesta', 9),
+(96, 58, 'and comenzó a seguirte', 1, '2025-11-12 21:13:55', 'nuevo_seguidor', 30),
+(97, 58, 'and te ha enviado una solicitud de amistad', 1, '2025-11-12 21:13:59', 'solicitud_amistad', 23),
+(98, 58, '@and compartió tu publicación', 1, '2025-11-12 22:11:18', 'compartido', 22),
+(99, 57, '@and te compartió una publicación', 1, '2025-11-12 22:11:18', 'compartido_amigo', 22),
+(100, 58, 'witer365 comenzó a seguirte', 1, '2025-11-12 22:13:03', 'nuevo_seguidor', 31),
+(101, 58, 'witer365 te ha enviado una solicitud de amistad', 1, '2025-11-12 22:13:05', 'solicitud_amistad', 24),
+(102, 58, 'witer365 comentó tu publicación', 1, '2025-11-12 22:13:14', 'comentario', 10),
+(103, 58, 'witer365 comentó tu publicación', 1, '2025-11-12 22:13:18', 'comentario', 11),
+(104, 58, '@witer365 compartió tu publicación', 1, '2025-11-12 22:13:28', 'compartido', 22),
+(105, 56, '@witer365 te compartió una publicación', 1, '2025-11-12 22:13:28', 'compartido_amigo', 22),
+(106, 58, '@witer365 compartió tu publicación', 1, '2025-11-13 20:19:46', 'compartido', 22),
+(107, 56, '@witer365 te compartió una publicación', 1, '2025-11-13 20:19:46', 'compartido_amigo', 22),
+(110, 58, '@witer365 compartió tu publicación', 1, '2025-11-13 20:32:19', 'compartido', 22),
+(111, 56, '@witer365 te compartió una publicación', 1, '2025-11-13 20:32:19', 'compartido_amigo', 22),
+(112, 58, '@witer365 compartió tu publicación', 1, '2025-11-13 21:28:21', 'compartido', 22),
+(113, 56, '@witer365 te compartió una publicación', 1, '2025-11-13 21:28:21', 'compartido_amigo', 22),
+(114, 58, 'A and le gusta tu publicación', 1, '2025-11-13 23:02:28', 'me_gusta', 22),
+(120, 55, 'and comenzó a seguirte', 0, '2025-11-14 00:59:17', 'nuevo_seguidor', 32),
+(121, 55, 'and te ha enviado una solicitud de amistad', 0, '2025-11-14 00:59:21', 'solicitud_amistad', 25),
+(122, 55, 'A and le gusta tu publicación', 0, '2025-11-14 00:59:27', 'me_gusta', 21),
+(123, 55, '@and compartió tu publicación', 0, '2025-11-14 00:59:45', 'compartido', 4),
+(124, 57, '@and te compartió una publicación', 1, '2025-11-14 00:59:45', 'compartido_amigo', 4),
+(125, 55, 'and comentó tu publicación', 0, '2025-11-14 01:03:13', 'comentario', 13),
+(126, 55, 'and comentó tu publicación', 0, '2025-11-14 01:03:35', 'comentario', 14),
+(127, 55, 'and respondió a tu comentario', 0, '2025-11-14 01:03:39', 'comentario_respuesta', 15),
+(128, 55, 'and respondió a tu comentario', 0, '2025-11-14 01:03:41', 'comentario_respuesta', 16),
+(134, 55, 'and comentó tu publicación', 0, '2025-11-14 01:31:56', 'comentario', 17),
+(137, 58, 'and comenzó a seguirte', 1, '2025-11-14 22:37:57', 'nuevo_seguidor', 33),
+(138, 57, 'and te ha enviado una solicitud de amistad', 1, '2025-11-14 22:43:46', 'solicitud_amistad', 26),
+(139, 56, 'witer365 aceptó tu solicitud de amistad', 1, '2025-11-14 22:44:13', 'amistad_aceptada', 26),
+(140, 55, 'A witer365 le gusta tu publicación', 0, '2025-11-16 17:19:58', 'me_gusta', 21),
+(142, 1, 'A witer365 le gusta tu publicación', 0, '2025-11-16 17:20:32', 'me_gusta', 4),
+(217, 55, 'A witer365 le gusta tu publicación', 0, '2025-11-23 14:27:56', 'me_gusta', 21),
+(268, 24, '@and compartió tu publicación', 0, '2025-11-24 16:53:24', 'compartido', 38),
+(269, 58, '@and te compartió una publicación', 1, '2025-11-24 16:53:24', 'compartido_amigo', 38),
+(270, 57, '@and te compartió una publicación', 1, '2025-11-24 16:53:24', 'compartido_amigo', 38),
+(271, 56, '@witer365 te compartió una publicación', 1, '2025-11-24 16:53:40', 'compartido_amigo', 39),
+(272, 49, '@laurapintora compartió tu publicación', 0, '2025-11-24 16:54:15', 'compartido', 40),
+(273, 1, '@laurapintora te compartió una publicación', 0, '2025-11-24 16:54:15', 'compartido_amigo', 40),
+(274, 56, '@laurapintora te compartió una publicación', 1, '2025-11-24 16:54:15', 'compartido_amigo', 40),
+(275, 58, 'witer365 comentó tu publicación', 1, '2025-11-24 20:03:04', 'comentario', 34),
+(276, 56, 'witer365 comentó tu publicación', 1, '2025-11-24 20:03:09', 'comentario', 35),
+(277, 56, 'A witer365 le gusta tu publicación', 1, '2025-11-24 20:03:15', 'me_gusta', 29),
+(278, 58, '@and te compartió una publicación', 1, '2025-11-24 20:33:34', 'compartido_amigo', 42),
+(279, 58, 'and comenzó a seguirte', 1, '2025-11-24 20:40:25', 'nuevo_seguidor', 36),
+(280, 58, '@and compartió tu publicación', 1, '2025-11-24 23:57:18', 'compartido', 43),
+(281, 58, '@and te compartió una publicación', 1, '2025-11-24 23:57:18', 'compartido_amigo', 43),
+(282, 56, 'witer365 comenzó a seguirte', 1, '2025-11-24 23:57:27', 'nuevo_seguidor', 37),
+(283, 56, 'witer365 te ha enviado una solicitud de amistad', 1, '2025-11-24 23:57:29', 'solicitud_amistad', 29),
+(284, 57, 'and aceptó tu solicitud de amistad', 1, '2025-11-24 23:57:40', 'amistad_aceptada', 29),
+(285, 58, 'witer365 te ha enviado una solicitud de amistad', 1, '2025-11-24 23:58:56', 'solicitud_amistad', 30),
+(286, 57, 'laurapintora aceptó tu solicitud de amistad', 0, '2025-11-24 23:59:26', 'amistad_aceptada', 30),
+(287, 24, '@laurapintora compartió tu publicación', 0, '2025-11-24 23:59:38', 'compartido', 44),
+(288, 1, '@laurapintora te compartió una publicación', 0, '2025-11-24 23:59:38', 'compartido_amigo', 44),
+(289, 56, '@laurapintora te compartió una publicación', 1, '2025-11-24 23:59:38', 'compartido_amigo', 44),
+(290, 57, '@laurapintora te compartió una publicación', 0, '2025-11-24 23:59:38', 'compartido_amigo', 44),
+(291, 56, '@witer365 te compartió una publicación', 1, '2025-11-25 00:00:45', 'compartido_amigo', 45),
+(292, 58, '@witer365 te compartió una publicación', 0, '2025-11-25 00:00:45', 'compartido_amigo', 45),
+(293, 58, '@and te compartió una publicación', 0, '2025-11-25 01:24:19', 'compartido_amigo', 46),
+(294, 57, '@and te compartió una publicación', 0, '2025-11-25 01:24:19', 'compartido_amigo', 46),
+(295, 58, '@and compartió tu publicación', 0, '2025-11-25 01:38:59', 'compartido', 47),
+(296, 58, '@and te compartió una publicación', 0, '2025-11-25 01:38:59', 'compartido_amigo', 47),
+(297, 57, '@and te compartió una publicación', 0, '2025-11-25 01:38:59', 'compartido_amigo', 47),
+(298, 58, 'A and le gusta tu publicación', 0, '2025-11-25 02:20:56', 'me_gusta', 22),
+(299, 22, 'and comenzó a seguirte', 0, '2025-11-25 02:21:08', 'nuevo_seguidor', 38),
+(300, 58, '@and te compartió una publicación', 0, '2025-11-25 02:23:05', 'compartido_amigo', 49),
+(301, 57, '@and te compartió una publicación', 0, '2025-11-25 02:23:05', 'compartido_amigo', 49),
+(302, 58, '@and te compartió una publicación', 0, '2025-11-25 16:27:23', 'compartido_amigo', 50),
+(303, 57, '@and te compartió una publicación', 0, '2025-11-25 16:27:23', 'compartido_amigo', 50),
+(304, 58, '@and compartió tu publicación', 0, '2025-11-25 16:27:49', 'compartido', 51),
+(305, 58, '@and te compartió una publicación', 0, '2025-11-25 16:27:49', 'compartido_amigo', 51),
+(306, 57, '@and te compartió una publicación', 0, '2025-11-25 16:27:49', 'compartido_amigo', 51);
 
 -- --------------------------------------------------------
 
@@ -767,13 +975,6 @@ CREATE TABLE `no_me_interesa` (
   `id_publicacion` int(11) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `no_me_interesa`
---
-
-INSERT INTO `no_me_interesa` (`id_no_me_interesa`, `id_usuario`, `id_publicacion`, `fecha`) VALUES
-(12, 56, 21, '2025-11-06 19:49:17');
 
 -- --------------------------------------------------------
 
@@ -841,7 +1042,7 @@ INSERT INTO `perfiles` (`id_perfil`, `id_usuario`, `descripcion`, `foto_perfil`,
 (46, 53, NULL, NULL, NULL),
 (47, 54, NULL, NULL, NULL),
 (48, 55, NULL, 'http://localhost:8000/static/perfiles/perfil_55_1761516857.jpg', NULL),
-(49, 56, 'tan poco se', 'http://localhost:8000/static/perfiles/perfil_56.avif', 'me gusta el arte y dormir'),
+(49, 56, 'tan poco se', 'http://localhost:8000/static/perfiles/perfil_56_1763318804.jpg', 'me gusta el arte y dormir'),
 (50, 57, 'me gusta dormir SI', 'http://localhost:8000/static/perfiles/perfil_57_1762299627.jpg', 'tengo hambre SI'),
 (51, 58, '\"Artista digital especializado en surrealismo moderno.\"', 'http://localhost:8000/static/perfiles/perfil_58_1761516762.jpg', '\"Desde 2015 exploro el arte digital fusionando elementos de fantasía y tecnología.\"'),
 (52, 59, NULL, NULL, NULL),
@@ -916,30 +1117,31 @@ CREATE TABLE `publicaciones` (
   `id_usuario` int(11) NOT NULL,
   `contenido` varchar(255) NOT NULL,
   `imagen` varchar(255) DEFAULT NULL,
-  `fecha_creacion` datetime DEFAULT current_timestamp()
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  `tipo_medio` varchar(20) DEFAULT 'texto'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `publicaciones`
 --
 
-INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `imagen`, `fecha_creacion`) VALUES
-(1, 1, 'Esta es una publicación de prueba', 'imagen1.jpg', '2025-10-05 15:00:28'),
-(2, 1, 'hola', NULL, '2025-10-05 20:09:32'),
-(3, 1, 'hola', NULL, '2025-10-05 20:11:58'),
-(4, 1, '', 'http://localhost:8000/static/posts\\1_1.png', '2025-10-05 20:12:19'),
-(5, 51, 'hola si', 'http://localhost:8000/static/posts\\51_ARTIVERSE.drawio.png', '2025-10-05 20:16:42'),
-(6, 49, 'HOLA COMO ESTAN EPERO QUE BIEN ', 'http://localhost:8000/static/posts\\49_8d3bec423a4c16808c32fdb6f28a44e8.jpg', '2025-10-05 20:59:16'),
-(7, 56, 'bgbgbgb', 'http://localhost:8000/static/posts\\56_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-06 21:48:48'),
-(12, 24, 'hola ', 'http://localhost:8000/static/posts/24_Captura de pantalla 2025-10-10 183230.png', '2025-10-11 19:55:53'),
-(13, 22, 'ya casi', 'http://localhost:8000/static/posts/22_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-11 20:05:30'),
-(14, 57, 'ya casi se logra', 'http://localhost:8000/static/posts/57_3.jpg', '2025-10-11 20:06:46'),
-(15, 57, 'bvbvbvb', 'http://localhost:8000/static/posts/57_2.jpg', '2025-10-11 20:27:39'),
-(16, 56, 'vhgghg', 'http://localhost:8000/static/posts/56_3.jpg', '2025-10-11 23:10:03'),
-(18, 58, 'Primera publicación de prueba desde Artenity', 'http://localhost:8000/static/posts/58_4.avif', '2025-10-24 13:59:55'),
-(21, 55, 'hola ahí esperanza', NULL, '2025-10-26 22:14:46'),
-(22, 58, 'AHI HAMBRE GENTE ', NULL, '2025-11-01 22:38:01'),
-(25, 56, 'dcdcdc', NULL, '2025-11-06 19:46:15');
+INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `imagen`, `fecha_creacion`, `tipo_medio`) VALUES
+(1, 1, 'Esta es una publicación de prueba', 'imagen1.jpg', '2025-10-05 15:00:28', 'texto'),
+(2, 1, 'hola', NULL, '2025-10-05 20:09:32', 'texto'),
+(3, 1, 'hola', NULL, '2025-10-05 20:11:58', 'texto'),
+(4, 1, '', 'http://localhost:8000/static/posts\\1_1.png', '2025-10-05 20:12:19', 'texto'),
+(5, 51, 'hola si', 'http://localhost:8000/static/posts\\51_ARTIVERSE.drawio.png', '2025-10-05 20:16:42', 'texto'),
+(6, 49, 'HOLA COMO ESTAN EPERO QUE BIEN ', 'http://localhost:8000/static/posts\\49_8d3bec423a4c16808c32fdb6f28a44e8.jpg', '2025-10-05 20:59:16', 'texto'),
+(7, 56, 'bgbgbgb', 'http://localhost:8000/static/posts\\56_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-06 21:48:48', 'texto'),
+(12, 24, 'hola ', 'http://localhost:8000/static/posts/24_Captura de pantalla 2025-10-10 183230.png', '2025-10-11 19:55:53', 'texto'),
+(13, 22, 'ya casi', 'http://localhost:8000/static/posts/22_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-11 20:05:30', 'texto'),
+(14, 57, 'ya casi se logra', 'http://localhost:8000/static/posts/57_3.jpg', '2025-10-11 20:06:46', 'texto'),
+(15, 57, 'bvbvbvb', 'http://localhost:8000/static/posts/57_2.jpg', '2025-10-11 20:27:39', 'texto'),
+(16, 56, 'vhgghg', 'http://localhost:8000/static/posts/56_3.jpg', '2025-10-11 23:10:03', 'texto'),
+(18, 58, 'Primera publicación de prueba desde Artenity', 'http://localhost:8000/static/posts/58_4.avif', '2025-10-24 13:59:55', 'texto'),
+(21, 55, 'hola ahí esperanza', NULL, '2025-10-26 22:14:46', 'texto'),
+(22, 58, 'AHI HAMBRE GENTE ', NULL, '2025-11-01 22:38:01', 'texto'),
+(29, 56, 'dvvdvd', NULL, '2025-11-16 18:48:34', 'texto');
 
 -- --------------------------------------------------------
 
@@ -1017,7 +1219,8 @@ INSERT INTO `reportes_usuarios` (`id_reporte`, `id_reportante`, `id_reportado`, 
 (5, 57, 55, '🖼️ Plagio o uso no autorizado de obras', 'http://localhost:8000/static/reportes/reporte_57_55_1761600922.jpg', '2025-10-27 16:35:22'),
 (6, 57, 58, '🔞 Contenido obsceno o inapropiado', 'http://localhost:8000/static/reportes/reporte_57_58_1762036616.jpg', '2025-11-01 17:36:56'),
 (7, 56, 58, 'xsxsxsxsx', 'http://localhost:8000/static/reportes/reporte_56_58_1762389172.jpg', '2025-11-05 19:32:52'),
-(8, 57, 56, '🎭 Suplantación de identidad', NULL, '2025-11-06 14:52:17');
+(8, 57, 56, '🎭 Suplantación de identidad', NULL, '2025-11-06 14:52:17'),
+(9, 56, 58, '🧠 Acoso o comportamiento abusivo', NULL, '2025-11-12 16:14:05');
 
 -- --------------------------------------------------------
 
@@ -1038,7 +1241,8 @@ CREATE TABLE `reset_password_tokens` (
 
 INSERT INTO `reset_password_tokens` (`id`, `id_usuario`, `token`, `expiracion`) VALUES
 (18, 59, '224ccb4f-211b-47e2-a3d4-c0cc1900337f', '2025-11-01 23:15:25'),
-(19, 57, '030c7182-8f3b-4180-ae06-9aa9e3e13ec8', '2025-11-01 23:18:00');
+(31, 57, 'a8b1c4b8-a305-4875-9d2b-3175b8b6cdf1', '2025-11-14 02:02:35'),
+(33, 56, 'b9d8ee69-6a5f-48b7-bac9-e8cea047517f', '2025-11-25 18:15:08');
 
 -- --------------------------------------------------------
 
@@ -1058,14 +1262,16 @@ CREATE TABLE `seguir_usuario` (
 --
 
 INSERT INTO `seguir_usuario` (`id_seguimiento`, `id_seguidor`, `id_seguido`, `fecha_seguimiento`) VALUES
-(5, 56, 57, '2025-10-12 22:08:08'),
 (6, 1, 57, '2025-10-12 23:20:59'),
 (8, 1, 56, '2025-10-24 12:13:00'),
 (17, 58, 22, '2025-10-24 18:37:04'),
 (20, 55, 57, '2025-10-26 22:16:21'),
 (21, 57, 55, '2025-10-26 23:11:29'),
 (22, 57, 49, '2025-10-27 18:40:39'),
-(28, 57, 56, '2025-11-06 19:52:00');
+(31, 57, 58, '2025-11-12 22:13:03'),
+(36, 56, 58, '2025-11-24 20:40:25'),
+(37, 57, 56, '2025-11-24 23:57:27'),
+(38, 56, 22, '2025-11-25 02:21:08');
 
 -- --------------------------------------------------------
 
@@ -1152,7 +1358,7 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo_electronico`
 (53, 'anderson', 'dcdcdcd', 'cdcdcdcdc@gmail.com', 'cscscscsc', '2025-10-13', 'Hombre', 'circo', '3197255375', 'cscs'),
 (54, 'anderson', 'roldan', 'roldan@gmail.com', '12345', '2018-05-30', 'Hombre', 'dibujo', '314315545445', 'roldan'),
 (55, 'seba', 'rodriguez', 'seba@gmail.com', '123456', '2018-06-12', 'Hombre', 'circo', '65365436546354364', 'seba'),
-(56, 'wáter', 'sena2', 'anderson.17cardenas@gmail.com', 'witer123456', '2010-10-06', 'Personalizado', 'circo', '223232323', 'and'),
+(56, 'wáter', 'sena2', 'anderson.17cardenas@gmail.com', '1234', '2010-10-06', 'Personalizado', 'circo', '223232323', 'and'),
 (57, 'witer365', 'real', 'anderson@gmail.com', '12345', '2006-07-09', 'Hombre', 'dibujo', '653654365463543645', 'witer365'),
 (58, 'Laura', 'Pérez', 'laura.perez@example.com', 'Laura123*', '1998-05-10', 'Mujer', 'pintura', '3005678910', 'laurapintora'),
 (59, 'artenity', 'agirre', 'w59345907@gmail.com', 'wtr#56789', '2009-02-18', 'Hombre', 'escultura', '3232025652', 'wtr856'),
@@ -1277,6 +1483,15 @@ ALTER TABLE `likes_obra`
   ADD KEY `id_usuario` (`id_usuario`);
 
 --
+-- Indices de la tabla `mensajes`
+--
+ALTER TABLE `mensajes`
+  ADD PRIMARY KEY (`id_mensaje`),
+  ADD KEY `id_emisor` (`id_emisor`),
+  ADD KEY `id_receptor` (`id_receptor`),
+  ADD KEY `ix_mensajes_id_mensaje` (`id_mensaje`);
+
+--
 -- Indices de la tabla `mensajes_privados`
 --
 ALTER TABLE `mensajes_privados`
@@ -1395,55 +1610,61 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `amistades`
 --
 ALTER TABLE `amistades`
-  MODIFY `id_amistad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_amistad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `bloqueos_usuarios`
 --
 ALTER TABLE `bloqueos_usuarios`
-  MODIFY `id_bloqueo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_bloqueo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT de la tabla `comentarios`
 --
 ALTER TABLE `comentarios`
-  MODIFY `id_comentario` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de la tabla `compartidos`
 --
 ALTER TABLE `compartidos`
-  MODIFY `id_compartido` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_compartido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT de la tabla `guardados`
 --
 ALTER TABLE `guardados`
-  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+
+--
+-- AUTO_INCREMENT de la tabla `mensajes`
+--
+ALTER TABLE `mensajes`
+  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta`
 --
 ALTER TABLE `me_gusta`
-  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta_comentarios`
 --
 ALTER TABLE `me_gusta_comentarios`
-  MODIFY `id_megusta_comentario` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_megusta_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=307;
 
 --
 -- AUTO_INCREMENT de la tabla `no_me_interesa`
 --
 ALTER TABLE `no_me_interesa`
-  MODIFY `id_no_me_interesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id_no_me_interesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `perfiles`
@@ -1455,31 +1676,31 @@ ALTER TABLE `perfiles`
 -- AUTO_INCREMENT de la tabla `publicaciones`
 --
 ALTER TABLE `publicaciones`
-  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT de la tabla `reportes_usuarios`
 --
 ALTER TABLE `reportes_usuarios`
-  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `reset_password_tokens`
 --
 ALTER TABLE `reset_password_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de la tabla `seguir_usuario`
 --
 ALTER TABLE `seguir_usuario`
-  MODIFY `id_seguimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id_seguimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de la tabla `solicitud_de_amistad`
 --
 ALTER TABLE `solicitud_de_amistad`
-  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
@@ -1526,6 +1747,13 @@ ALTER TABLE `compartidos`
 ALTER TABLE `guardados`
   ADD CONSTRAINT `guardados_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
   ADD CONSTRAINT `guardados_ibfk_2` FOREIGN KEY (`id_publicacion`) REFERENCES `publicaciones` (`id_publicacion`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `mensajes`
+--
+ALTER TABLE `mensajes`
+  ADD CONSTRAINT `mensajes_ibfk_1` FOREIGN KEY (`id_emisor`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
+  ADD CONSTRAINT `mensajes_ibfk_2` FOREIGN KEY (`id_receptor`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `me_gusta`
