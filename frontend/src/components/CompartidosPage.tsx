@@ -1,4 +1,3 @@
-// src/pages/CompartidosPage.tsx - VERSIÓN FINAL INTEGRADA
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -40,6 +39,13 @@ interface Publicacion {
   imagen_url?: string;
   usuario: Usuario;
   fecha_creacion: string;
+  estadisticas?: {
+    total_me_gusta: number;
+    total_comentarios: number;
+    total_guardados: number;
+    me_gusta_dado: boolean;
+    guardado: boolean;
+  };
 }
 
 interface Compartido {
@@ -52,11 +58,11 @@ interface Compartido {
 }
 
 interface EstadisticasPublicacion {
-  me_gusta: number;
-  comentarios: number;
-  compartidos: number;
-  usuario_dio_me_gusta: boolean;
-  usuario_guardo: boolean;
+  total_me_gusta: number;
+  total_comentarios: number;
+  total_guardados: number;
+  me_gusta_dado: boolean;
+  guardado: boolean;
 }
 
 interface ComentarioData {
@@ -101,42 +107,25 @@ export default function CompartidosPage() {
   const [nuevoComentario, setNuevoComentario] = useState<{[key: number]: string}>({});
   const [comentarios, setComentarios] = useState<{[key: number]: ComentarioData[]}>({});
   
-  // 🔥 ESTADOS MEJORADOS PARA SCROLL
+  // Estados para scroll
   const [compartidoTarget, setCompartidoTarget] = useState<number | null>(null);
   const [scrollCompletado, setScrollCompletado] = useState(false);
   const [datosCargados, setDatosCargados] = useState(false);
   const compartidosRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollAttemptsRef = useRef(0);
-  const lastScrollTargetRef = useRef<number | null>(null);
 
-  // 🔥 FUNCIÓN PARA BUSCAR COMPARTIDO EN LISTA
+  // Función para buscar compartido en lista
   const buscarCompartidoEnLista = useCallback((idCompartido: number): boolean => {
     return compartidosLista.some(compartido => compartido.id_compartido === idCompartido);
   }, [compartidosLista]);
 
-  // 🔥 FUNCIÓN PARA SCROLL AUTOMÁTICO - OPTIMIZADA
+  // Función para scroll automático
   const scrollToCompartido = useCallback((idCompartido: number, attempt = 1) => {
-    // Evitar múltiples scrolls al mismo target
-    if (lastScrollTargetRef.current === idCompartido && scrollCompletado) {
-      console.log("🔄 Scroll ya completado para este target, omitiendo...");
-      return;
-    }
-
-    console.log(`🎯 Intentando scroll (intento ${attempt}) para compartido:`, idCompartido);
-    
-    if (attempt > 5) {
-      console.warn("❌ Demasiados intentos de scroll, abortando");
-      return;
-    }
+    if (attempt > 5) return;
 
     const element = compartidosRefs.current[idCompartido];
     
     if (element && containerRef.current) {
-      console.log("✅ Elemento encontrado, ejecutando scroll...");
-      
-      lastScrollTargetRef.current = idCompartido;
-      
       requestAnimationFrame(() => {
         try {
           element.scrollIntoView({ 
@@ -145,14 +134,9 @@ export default function CompartidosPage() {
             inline: 'nearest'
           });
           
-          // Resaltar el elemento
           element.classList.add('compartido-target');
-          
-          console.log("🎯 Scroll completado exitosamente");
           setScrollCompletado(true);
-          scrollAttemptsRef.current = 0;
           
-          // Quitar el resaltado después de 3 segundos
           setTimeout(() => {
             if (element) {
               element.classList.remove('compartido-target');
@@ -160,14 +144,11 @@ export default function CompartidosPage() {
           }, 3000);
           
         } catch (error) {
-          console.error("❌ Error durante scroll:", error);
+          console.error("Error durante scroll:", error);
         }
       });
       
     } else {
-      console.warn(`❌ Elemento no encontrado (intento ${attempt}), reintentando...`);
-      
-      // Reintentar después de un delay progresivo
       const delay = Math.min(500 * attempt, 2000);
       setTimeout(() => {
         if (datosCargados && compartidosLista.length > 0) {
@@ -175,9 +156,9 @@ export default function CompartidosPage() {
         }
       }, delay);
     }
-  }, [compartidosLista, datosCargados, scrollCompletado]);
+  }, [compartidosLista, datosCargados]);
 
-  // 🔥 EFECTO PRINCIPAL - CARGA DE DATOS
+  // Efecto principal - carga de datos
   useEffect(() => {
     const cargarCompartidos = async () => {
       try {
@@ -185,22 +166,15 @@ export default function CompartidosPage() {
         setError(null);
         setScrollCompletado(false);
         setDatosCargados(false);
-        scrollAttemptsRef.current = 0;
-        
-        console.log("🔍 Iniciando carga de compartidos...");
-        console.log("📍 Location state:", location.state);
         
         const fromNotification = location.state?.fromNotification;
         const compartidoFromState = location.state?.compartidoEspecifico;
         const idCompartidoFromState = location.state?.idCompartido;
         
-        // Determinar qué vista mostrar
         if (fromNotification || compartidoFromState || idCompartidoFromState) {
-          console.log("🎯 Modo vista específica (desde notificación)");
           setVista('especifico');
           await cargarCompartidoEspecifico(idCompartidoFromState);
         } else {
-          console.log("📋 Modo lista de compartidos");
           setVista('lista');
           await cargarListaCompartidos();
         }
@@ -208,7 +182,7 @@ export default function CompartidosPage() {
         setDatosCargados(true);
         
       } catch (error) {
-        console.error("❌ Error cargando compartidos:", error);
+        console.error("Error cargando compartidos:", error);
         setError("Error al cargar las publicaciones compartidas");
         setCargando(false);
       }
@@ -217,21 +191,12 @@ export default function CompartidosPage() {
     cargarCompartidos();
   }, [location]);
 
-  // 🔥 EFECTO PARA SCROLL AUTOMÁTICO - MEJORADO
+  // Efecto para scroll automático
   useEffect(() => {
     if (!datosCargados || !compartidoTarget || scrollCompletado) return;
 
-    console.log("📍 Condiciones para scroll:", {
-      datosCargados,
-      compartidoTarget,
-      scrollCompletado,
-      vista,
-      listaLength: compartidosLista.length
-    });
-
     if (vista === 'lista' && compartidosLista.length > 0) {
       const timer = setTimeout(() => {
-        console.log("🚀 Ejecutando scroll automático desde efecto...");
         scrollToCompartido(compartidoTarget);
       }, 400);
       
@@ -239,48 +204,11 @@ export default function CompartidosPage() {
     }
   }, [datosCargados, compartidoTarget, scrollCompletado, vista, compartidosLista, scrollToCompartido]);
 
-  // 🔥 EFECTO PARA MANEJAR EVENTOS DE SCROLL DESDE NOTIFICACIONES
-  useEffect(() => {
-    const handleScrollEvent = (event: CustomEvent) => {
-      console.log("📡 Evento de scroll recibido:", event.detail);
-      const { idCompartido } = event.detail;
-      
-      if (idCompartido) {
-        console.log("🎯 Procesando evento de scroll para compartido:", idCompartido);
-        
-        // Resetear estados
-        setCompartidoTarget(idCompartido);
-        setScrollCompletado(false);
-        scrollAttemptsRef.current = 0;
-        
-        if (datosCargados) {
-          if (vista === 'lista') {
-            console.log("📜 Ya estamos en lista, haciendo scroll inmediato...");
-            scrollToCompartido(idCompartido);
-          } else {
-            console.log("🔄 Cambiando a vista específica desde evento...");
-            cargarCompartidoEspecifico(idCompartido);
-          }
-        } else {
-          console.log("⏳ Datos no cargados aún, el target se procesará después de la carga");
-        }
-      }
-    };
-
-    window.addEventListener('scrollToCompartido', handleScrollEvent as EventListener);
-    
-    return () => {
-      window.removeEventListener('scrollToCompartido', handleScrollEvent as EventListener);
-    };
-  }, [vista, datosCargados, scrollToCompartido]);
-
-  // 🔥 CARGA DE COMPARTIDO ESPECÍFICO
+  // Carga de compartido específico
   const cargarCompartidoEspecifico = async (idCompartido?: number) => {
     try {
       const idToLoad = idCompartido || location.state?.idCompartido;
       const compartidoFromState = location.state?.compartidoEspecifico;
-      
-      console.log("🔄 Cargando compartido específico:", { idToLoad });
       
       let compartido: Compartido | null = null;
       
@@ -301,10 +229,8 @@ export default function CompartidosPage() {
         await cargarEstadisticas(compartido.publicacion.id_publicacion);
       }
       
-      console.log("✅ Compartido específico cargado exitosamente");
-      
     } catch (error) {
-      console.error("❌ Error cargando compartido específico:", error);
+      console.error("Error cargando compartido específico:", error);
       const errorMessage = getErrorMessage(error);
       setError(`No se pudo cargar la publicación compartida: ${errorMessage}`);
     } finally {
@@ -312,38 +238,27 @@ export default function CompartidosPage() {
     }
   };
 
-  // 🔥 CARGA DE LISTA DE COMPARTIDOS
+  // Carga de lista de compartidos
   const cargarListaCompartidos = async () => {
     try {
-      console.log("📋 Cargando lista de compartidos...");
-      
       const [misCompartidos, compartidosAmigos] = await Promise.all([
         obtenerMisCompartidos(),
         obtenerCompartidosAmigos()
       ]);
-      
-      console.log("📊 Resultados carga:", {
-        misCompartidos: misCompartidos?.length || 0,
-        compartidosAmigos: compartidosAmigos?.length || 0
-      });
       
       const todosCompartidos = [
         ...(misCompartidos || []),
         ...(compartidosAmigos || [])
       ].sort((a, b) => new Date(b.fecha_compartido).getTime() - new Date(a.fecha_compartido).getTime());
       
-      console.log("📦 Total de compartidos cargados:", todosCompartidos.length);
       setCompartidosLista(todosCompartidos);
       
       // Verificar si hay un target pendiente del state
       const pendingTarget = location.state?.idCompartido;
       if (pendingTarget) {
-        console.log("🎯 Target pendiente encontrado en state:", pendingTarget);
         setCompartidoTarget(pendingTarget);
         setScrollCompletado(false);
       }
-      
-
       
       // Cargar estadísticas
       todosCompartidos.forEach(compartido => {
@@ -354,7 +269,7 @@ export default function CompartidosPage() {
       });
       
     } catch (error) {
-      console.error("❌ Error cargando lista de compartidos:", error);
+      console.error("Error cargando lista de compartidos:", error);
       throw error;
     } finally {
       setCargando(false);
@@ -382,17 +297,20 @@ export default function CompartidosPage() {
     }
   };
 
+  // 🔥 NUEVOS MÉTODOS PARA ME GUSTA Y GUARDAR
   const handleMeGusta = async (idPublicacion: number) => {
     try {
       const stats = estadisticas[idPublicacion];
-      if (stats.usuario_dio_me_gusta) {
+      if (!stats) return;
+
+      if (stats.me_gusta_dado) {
         await quitarMeGusta(idPublicacion);
         setEstadisticas(prev => ({
           ...prev,
           [idPublicacion]: {
             ...stats,
-            me_gusta: stats.me_gusta - 1,
-            usuario_dio_me_gusta: false
+            total_me_gusta: stats.total_me_gusta - 1,
+            me_gusta_dado: false
           }
         }));
       } else {
@@ -401,8 +319,8 @@ export default function CompartidosPage() {
           ...prev,
           [idPublicacion]: {
             ...stats,
-            me_gusta: stats.me_gusta + 1,
-            usuario_dio_me_gusta: true
+            total_me_gusta: stats.total_me_gusta + 1,
+            me_gusta_dado: true
           }
         }));
       }
@@ -414,13 +332,15 @@ export default function CompartidosPage() {
   const handleGuardar = async (idPublicacion: number) => {
     try {
       const stats = estadisticas[idPublicacion];
-      if (stats.usuario_guardo) {
+      if (!stats) return;
+
+      if (stats.guardado) {
         await quitarGuardado(idPublicacion);
         setEstadisticas(prev => ({
           ...prev,
           [idPublicacion]: {
             ...stats,
-            usuario_guardo: false
+            guardado: false
           }
         }));
       } else {
@@ -429,7 +349,7 @@ export default function CompartidosPage() {
           ...prev,
           [idPublicacion]: {
             ...stats,
-            usuario_guardo: true
+            guardado: true
           }
         }));
       }
@@ -468,7 +388,7 @@ export default function CompartidosPage() {
           ...prev,
           [idPublicacion]: {
             ...stats,
-            comentarios: stats.comentarios + 1
+            total_comentarios: stats.total_comentarios + 1
           }
         }));
       }
@@ -503,27 +423,24 @@ export default function CompartidosPage() {
     navigate(`/publicacion/${idPublicacion}`);
   };
 
-  // 🔹 Volver a lista desde vista específica
+  // Volver a lista desde vista específica
   const volverALista = () => {
-    console.log("↩️ Volviendo a lista de compartidos");
     navigate("/compartidos", { replace: true });
     window.location.reload();
   };
 
-  // 🔥 FUNCIÓN PARA ASIGNAR REFS - MEJORADA
+  // Función para asignar refs
   const asignarRef = useCallback((idCompartido: number, element: HTMLDivElement | null) => {
     if (element) {
       compartidosRefs.current[idCompartido] = element;
       
-      // Scroll automático cuando se asigna la ref del target
       if (idCompartido === compartidoTarget && !scrollCompletado && datosCargados) {
-        console.log(`🎯 Ref asignada para target ${idCompartido}, ejecutando scroll...`);
         setTimeout(() => scrollToCompartido(idCompartido), 200);
       }
     }
   }, [compartidoTarget, scrollCompletado, datosCargados, scrollToCompartido]);
 
-  // 🔹 Renderizar compartido específico
+  // Renderizar compartido específico
   const renderCompartidoEspecifico = () => {
     if (!compartidoEspecifico) {
       return (
@@ -543,10 +460,7 @@ export default function CompartidosPage() {
     return (
       <div className="compartido-especifico-container">
         <div className="compartido-especifico-header">
-          <button 
-            className="btn-volver-lista" 
-            onClick={volverALista}
-          >
+          <button className="btn-volver-lista" onClick={volverALista}>
             <ArrowLeft size={20} />
             Ver todos los compartidos
           </button>
@@ -629,9 +543,9 @@ export default function CompartidosPage() {
 
           {stats && (
             <div className="publicacion-stats-especifico">
-              <span>{stats.me_gusta} me gusta</span>
-              <span>{stats.comentarios} comentarios</span>
-              <span>{stats.compartidos} compartidos</span>
+              <span>{stats.total_me_gusta} me gusta</span>
+              <span>{stats.total_comentarios} comentarios</span>
+              <span>{stats.total_guardados} guardados</span>
             </div>
           )}
 
@@ -639,7 +553,7 @@ export default function CompartidosPage() {
             <div className="post-actions-especifico">
               <button
                 onClick={() => handleMeGusta(publicacion.id_publicacion)}
-                className={`action-btn ${stats.usuario_dio_me_gusta ? 'liked' : ''}`}
+                className={`action-btn ${stats.me_gusta_dado ? 'liked' : ''}`}
               >
                 <Heart size={20} />
                 <span>Me gusta</span>
@@ -657,7 +571,7 @@ export default function CompartidosPage() {
               </button>
               <button
                 onClick={() => handleGuardar(publicacion.id_publicacion)}
-                className={`action-btn ${stats.usuario_guardo ? 'saved' : ''}`}
+                className={`action-btn ${stats.guardado ? 'saved' : ''}`}
               >
                 <Bookmark size={20} />
                 <span>Guardar</span>
@@ -722,7 +636,7 @@ export default function CompartidosPage() {
     );
   };
 
-  // 🔹 Renderizar lista de compartidos
+  // Renderizar lista de compartidos
   const renderListaCompartidos = () => {
     if (compartidosLista.length === 0) {
       return (
@@ -827,9 +741,9 @@ export default function CompartidosPage() {
 
                   {stats && (
                     <div className="publicacion-stats">
-                      <span>{stats.me_gusta} me gusta</span>
-                      <span>{stats.comentarios} comentarios</span>
-                      <span>{stats.compartidos} compartidos</span>
+                      <span>{stats.total_me_gusta} me gusta</span>
+                      <span>{stats.total_comentarios} comentarios</span>
+                      <span>{stats.total_guardados} guardados</span>
                     </div>
                   )}
 
@@ -837,7 +751,7 @@ export default function CompartidosPage() {
                     <div className="post-actions">
                       <button
                         onClick={() => handleMeGusta(publicacion.id_publicacion)}
-                        className={`action-btn ${stats.usuario_dio_me_gusta ? 'liked' : ''}`}
+                        className={`action-btn ${stats.me_gusta_dado ? 'liked' : ''}`}
                       >
                         <Heart size={18} />
                         <span>Me gusta</span>
@@ -858,7 +772,7 @@ export default function CompartidosPage() {
                       </button>
                       <button
                         onClick={() => handleGuardar(publicacion.id_publicacion)}
-                        className={`action-btn ${stats.usuario_guardo ? 'saved' : ''}`}
+                        className={`action-btn ${stats.guardado ? 'saved' : ''}`}
                       >
                         <Bookmark size={18} />
                         <span>Guardar</span>

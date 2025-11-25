@@ -32,6 +32,7 @@ interface PublicacionConEstadisticas {
   id_usuario: number;
   contenido: string;
   imagen?: string;
+  medios?: string[]; // 🔥 AGREGAR ESTA PROPIEDAD
   fecha_creacion: string;
   usuario: {
     id_usuario: number;
@@ -118,40 +119,53 @@ const Perfil: React.FC = () => {
   }, [usuario?.id_usuario]);
 
   // ✅ Cargar publicaciones del usuario con estadísticas
-  const cargarPublicaciones = useCallback(async () => {
-    if (!usuario?.id_usuario) return;
-    try {
-      const posts = await obtenerPublicacionesUsuario(usuario.id_usuario);
-      
-      const postsConEstadisticas = await Promise.all(
-        posts.map(async (post: any) => {
-          try {
-            const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
-            return {
-              ...post,
-              estadisticas: stats
-            };
-          } catch (error) {
-            console.error(`Error cargando estadísticas para publicación ${post.id_publicacion}:`, error);
-            return {
-              ...post,
-              estadisticas: {
-                total_me_gusta: 0,
-                total_comentarios: 0,
-                total_guardados: 0,
-                me_gusta_dado: false,
-                guardado: false
-              }
-            };
+  // En cargarPublicaciones, cargarPublicacionesGuardadas, etc., asegúrate de procesar los medios
+// En cargarPublicaciones, asegúrate de procesar los medios correctamente
+const cargarPublicaciones = useCallback(async () => {
+  if (!usuario?.id_usuario) return;
+  try {
+    const posts = await obtenerPublicacionesUsuario(usuario.id_usuario);
+    
+    const postsConEstadisticas = await Promise.all(
+      posts.map(async (post: any) => {
+        try {
+          const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
+          
+          // 🔥 PROCESAR MEDIOS CORRECTAMENTE
+          let mediosArray: string[] = [];
+          if (post.medios && Array.isArray(post.medios)) {
+            mediosArray = post.medios;
+          } else if (post.imagen) {
+            mediosArray = [post.imagen];
           }
-        })
-      );
-      
-      setPublicaciones(postsConEstadisticas);
-    } catch (error) {
-      console.error("Error cargando publicaciones:", error);
-    }
-  }, [usuario?.id_usuario]);
+          
+          return {
+            ...post,
+            medios: mediosArray, // 🔥 INCLUIR LA PROPIEDAD medios
+            estadisticas: stats
+          };
+        } catch (error) {
+          console.error(`Error cargando estadísticas para publicación ${post.id_publicacion}:`, error);
+          return {
+            ...post,
+            medios: post.medios || (post.imagen ? [post.imagen] : []), // 🔥 INCLUIR medios incluso en error
+            estadisticas: {
+              total_me_gusta: 0,
+              total_comentarios: 0,
+              total_guardados: 0,
+              me_gusta_dado: false,
+              guardado: false
+            }
+          };
+        }
+      })
+    );
+    
+    setPublicaciones(postsConEstadisticas);
+  } catch (error) {
+    console.error("Error cargando publicaciones:", error);
+  }
+}, [usuario?.id_usuario]);
 
   // ✅ Cargar publicaciones guardadas
   const cargarPublicacionesGuardadas = useCallback(async () => {
@@ -696,174 +710,273 @@ const Perfil: React.FC = () => {
   };
 
   // Componente para mostrar publicaciones
-  const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisticas }) => {
-    const [imgError, setImgError] = useState(false);
-    const [profileImgError, setProfileImgError] = useState(false);
+ const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisticas }) => {
+  const [imgError, setImgError] = useState(false);
+  const [profileImgError, setProfileImgError] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
-    const handleImageError = () => setImgError(true);
-    const handleProfileImageError = () => setProfileImgError(true);
+  const handleImageError = () => setImgError(true);
+  const handleProfileImageError = () => setProfileImgError(true);
+  const handleVideoError = () => setVideoError(true);
 
-    const fotoPerfil = publicacion.usuario?.perfil?.foto_perfil && !profileImgError 
-      ? publicacion.usuario.perfil.foto_perfil 
+  const fotoPerfil = publicacion.usuario?.perfil?.foto_perfil && !profileImgError 
+    ? publicacion.usuario.perfil.foto_perfil 
+    : defaultProfile;
+
+  // Función para determinar si es video
+  const esVideo = (url: string): boolean => {
+    if (!url) return false;
+    const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+    return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+  };
+
+ 
+  const obtenerMedios = (): string[] => {
+    if (publicacion.medios && Array.isArray(publicacion.medios) && publicacion.medios.length > 0) {
+      return publicacion.medios;
+    }
+    if (publicacion.imagen) {
+      return [publicacion.imagen];
+    }
+    return [];
+  };
+
+  const medios = obtenerMedios();
+
+  return (
+    <div key={publicacion.id_publicacion} className="publicacion-card">
+      <div className="publicacion-header">
+        <img
+          src={fotoPerfil}
+          alt="Foto perfil"
+          className="publicacion-foto-perfil"
+          onError={handleProfileImageError}
+        />
+        <div className="publicacion-info-usuario">
+          <span className="publicacion-usuario">
+            {publicacion.usuario?.nombre_usuario || "Usuario desconocido"}
+          </span>
+          <span className="publicacion-fecha">
+            {new Date(publicacion.fecha_creacion).toLocaleString()}
+          </span>
+        </div>
+      </div>
+      
+      <div className="publicacion-contenido">
+        <p className="publicacion-texto">{publicacion.contenido}</p>
+        
+        {/* Renderizado de medios - VERSIÓN MEJORADA CON VIDEOS */}
+        {medios.length > 0 && (
+          <div className={`publicacion-medios ${medios.length > 1 ? 'multiples-medios' : 'unico-medio'}`}>
+            {medios.map((medio: string, index: number) => (
+              <div key={index} className="medio-item">
+                {esVideo(medio) ? (
+                  <div className="video-container">
+                    <video 
+                      controls 
+                      className="post-video"
+                      preload="metadata"
+                      onError={handleVideoError}
+                    >
+                      <source src={medio} type="video/mp4" />
+                      <source src={medio} type="video/webm" />
+                      Tu navegador no soporta el elemento video.
+                    </video>
+                    {videoError && (
+                      <div className="video-error">
+                        ❌ Error al cargar el video
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <img
+                    src={medio}
+                    alt={`Publicación ${index + 1}`}
+                    className="publicacion-imagen"
+                    onError={handleImageError}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div className="publicacion-acciones">
+        <button 
+          className={`accion-btn ${publicacion.estadisticas?.me_gusta_dado ? 'liked' : ''}`}
+          onClick={() => handleMeGusta(publicacion)}
+        >
+          ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
+        </button>
+        <button className="accion-btn">
+          💬 {publicacion.estadisticas?.total_comentarios || 0}
+        </button>
+        <button 
+          className={`accion-btn ${publicacion.estadisticas?.guardado ? 'saved' : ''}`}
+          onClick={() => handleGuardar(publicacion)}
+        >
+          📤
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Componente para mostrar compartidos - ACTUALIZADO CON VIDEOS
+const CompartidoCard = ({ compartido }: { compartido: any }) => {
+  const [autorProfileImgError, setAutorProfileImgError] = useState(false);
+  const [compartioProfileImgError, setCompartioProfileImgError] = useState(false);
+  const [publicacionImgError, setPublicacionImgError] = useState(false);
+  const [publicacionVideoError, setPublicacionVideoError] = useState(false);
+
+  const publicacion = compartido.publicacion;
+  const usuarioAutor = publicacion.usuario;
+  const usuarioCompartio = compartido.usuario_compartio;
+
+  // Función para determinar si es video
+  const esVideo = (url: string): boolean => {
+    if (!url) return false;
+    const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+    return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+  };
+
+  // Función para obtener foto de perfil
+  const obtenerFotoPerfil = (usuarioObj: any, errorState: boolean) => {
+    if (!usuarioObj || errorState) return defaultProfile;
+    
+    const fotoPerfil = 
+      usuarioObj.perfil?.foto_perfil || 
+      usuarioObj.foto_perfil;
+      
+    return fotoPerfil 
+      ? `${fotoPerfil}?t=${new Date().getTime()}` 
       : defaultProfile;
+  };
 
-    return (
-      <div key={publicacion.id_publicacion} className="publicacion-card">
+  // Función para obtener medios de la publicación
+  const obtenerMediosPublicacion = (pub: any): string[] => {
+    if (pub.medios && Array.isArray(pub.medios) && pub.medios.length > 0) {
+      return pub.medios;
+    }
+    if (pub.imagen) {
+      return [pub.imagen];
+    }
+    return [];
+  };
+
+  const fotoPerfilAutor = obtenerFotoPerfil(usuarioAutor, autorProfileImgError);
+  const fotoPerfilCompartio = obtenerFotoPerfil(usuarioCompartio, compartioProfileImgError);
+  const mediosPublicacion = obtenerMediosPublicacion(publicacion);
+
+  return (
+    <div className="publicacion-card compartido-card">
+      {/* Header - Usuario que compartió */}
+      <div className="compartido-header">
+        <div className="usuario-compartio-info">
+          <img
+            src={fotoPerfilCompartio}
+            alt="Foto perfil"
+            className="compartido-foto-perfil"
+            onError={() => setCompartioProfileImgError(true)}
+          />
+          <div className="compartido-info-usuario">
+            <span className="compartido-usuario">
+              {usuarioCompartio?.nombre_usuario || "Tú"}
+            </span>
+            <span className="compartido-accion">compartió una publicación</span>
+            <span className="compartido-fecha">
+              {new Date(compartido.fecha_compartido || compartido.fecha_creacion).toLocaleString()}
+            </span>
+          </div>
+        </div>
+        
+        {/* BOTÓN ELIMINAR - Solo si el usuario actual es quien compartió */}
+        {usuario?.id_usuario === usuarioCompartio?.id_usuario && (
+          <button
+            onClick={() => handleEliminarCompartido(compartido.id_compartido, usuarioCompartio.nombre_usuario)}
+            className="btn-eliminar-compartido"
+            title="Eliminar compartido"
+            disabled={cargando}
+          >
+            {cargando ? "🗑️..." : "🗑️"}
+          </button>
+        )}
+      </div>
+
+      <div className="publicacion-original">
         <div className="publicacion-header">
           <img
-            src={fotoPerfil}
-            alt="Foto perfil"
+            src={fotoPerfilAutor}
+            alt="Foto perfil autor"
             className="publicacion-foto-perfil"
-            onError={handleProfileImageError}
+            onError={() => setAutorProfileImgError(true)}
           />
           <div className="publicacion-info-usuario">
             <span className="publicacion-usuario">
-              {publicacion.usuario?.nombre_usuario || "Usuario desconocido"}
+              {usuarioAutor?.nombre_usuario || "Usuario"}
             </span>
             <span className="publicacion-fecha">
               {new Date(publicacion.fecha_creacion).toLocaleString()}
             </span>
           </div>
         </div>
+        
         <div className="publicacion-contenido">
           <p className="publicacion-texto">{publicacion.contenido}</p>
-          {publicacion.imagen && !imgError && (
-            <img
-              src={publicacion.imagen}
-              alt="Publicación"
-              className="publicacion-imagen"
-              onError={handleImageError}
-            />
+          
+          {/* Renderizado de medios de la publicación original - CON VIDEOS */}
+          {mediosPublicacion.length > 0 && (
+            <div className={`publicacion-medios ${mediosPublicacion.length > 1 ? 'multiples-medios' : 'unico-medio'}`}>
+              {mediosPublicacion.map((medio: string, index: number) => (
+                <div key={index} className="medio-item">
+                  {esVideo(medio) ? (
+                    <div className="video-container">
+                      <video 
+                        controls 
+                        className="post-video"
+                        preload="metadata"
+                        onError={() => setPublicacionVideoError(true)}
+                      >
+                        <source src={`${medio}?t=${new Date().getTime()}`} type="video/mp4" />
+                        <source src={`${medio}?t=${new Date().getTime()}`} type="video/webm" />
+                        Tu navegador no soporta el elemento video.
+                      </video>
+                      {publicacionVideoError && (
+                        <div className="video-error">
+                          ❌ Error al cargar el video
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <img
+                      src={`${medio}?t=${new Date().getTime()}`}
+                      alt="Publicación"
+                      className="publicacion-imagen"
+                      onError={() => setPublicacionImgError(true)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
+        
         <div className="publicacion-acciones">
-          <button 
-            className={`accion-btn ${publicacion.estadisticas?.me_gusta_dado ? 'liked' : ''}`}
-            onClick={() => handleMeGusta(publicacion)}
-          >
+          <button className="accion-btn">
             ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
           </button>
           <button className="accion-btn">
             💬 {publicacion.estadisticas?.total_comentarios || 0}
           </button>
-          <button 
-            className={`accion-btn ${publicacion.estadisticas?.guardado ? 'saved' : ''}`}
-            onClick={() => handleGuardar(publicacion)}
-          >
+          <button className="accion-btn">
             📤
           </button>
         </div>
       </div>
-    );
-  };
-
-  // Componente para mostrar compartidos - CON BOTÓN ELIMINAR
-  const CompartidoCard = ({ compartido }: { compartido: any }) => {
-    const [autorProfileImgError, setAutorProfileImgError] = useState(false);
-    const [compartioProfileImgError, setCompartioProfileImgError] = useState(false);
-    const [publicacionImgError, setPublicacionImgError] = useState(false);
-
-    const publicacion = compartido.publicacion;
-    const usuarioAutor = publicacion.usuario;
-    const usuarioCompartio = compartido.usuario_compartio;
-
-    // Función para obtener foto de perfil
-    const obtenerFotoPerfil = (usuarioObj: any, errorState: boolean) => {
-      if (!usuarioObj || errorState) return defaultProfile;
-      
-      const fotoPerfil = 
-        usuarioObj.perfil?.foto_perfil || 
-        usuarioObj.foto_perfil;
-        
-      return fotoPerfil 
-        ? `${fotoPerfil}?t=${new Date().getTime()}` 
-        : defaultProfile;
-    };
-
-    const fotoPerfilAutor = obtenerFotoPerfil(usuarioAutor, autorProfileImgError);
-    const fotoPerfilCompartio = obtenerFotoPerfil(usuarioCompartio, compartioProfileImgError);
-
-    return (
-      <div className="publicacion-card compartido-card">
-        {/* Header - Usuario que compartió */}
-        <div className="compartido-header">
-          <div className="usuario-compartio-info">
-            <img
-              src={fotoPerfilCompartio}
-              alt="Foto perfil"
-              className="compartido-foto-perfil"
-              onError={() => setCompartioProfileImgError(true)}
-            />
-            <div className="compartido-info-usuario">
-              <span className="compartido-usuario">
-                {usuarioCompartio?.nombre_usuario || "Tú"}
-              </span>
-              <span className="compartido-accion">compartió una publicación</span>
-              <span className="compartido-fecha">
-                {new Date(compartido.fecha_compartido || compartido.fecha_creacion).toLocaleString()}
-              </span>
-            </div>
-          </div>
-          
-          {/* 🔥 BOTÓN ELIMINAR - Solo si el usuario actual es quien compartió */}
-          {usuario?.id_usuario === usuarioCompartio?.id_usuario && (
-            <button
-              onClick={() => handleEliminarCompartido(compartido.id_compartido, usuarioCompartio.nombre_usuario)}
-              className="btn-eliminar-compartido"
-              title="Eliminar compartido"
-              disabled={cargando}
-            >
-              {cargando ? "🗑️..." : "🗑️"}
-            </button>
-          )}
-        </div>
-
-        <div className="publicacion-original">
-          <div className="publicacion-header">
-            <img
-              src={fotoPerfilAutor}
-              alt="Foto perfil autor"
-              className="publicacion-foto-perfil"
-              onError={() => setAutorProfileImgError(true)}
-            />
-            <div className="publicacion-info-usuario">
-              <span className="publicacion-usuario">
-                {usuarioAutor?.nombre_usuario || "Usuario"}
-              </span>
-              <span className="publicacion-fecha">
-                {new Date(publicacion.fecha_creacion).toLocaleString()}
-              </span>
-            </div>
-          </div>
-          
-          <div className="publicacion-contenido">
-            <p className="publicacion-texto">{publicacion.contenido}</p>
-            {publicacion.imagen && !publicacionImgError && (
-              <img
-                src={`${publicacion.imagen}?t=${new Date().getTime()}`}
-                alt="Publicación"
-                className="publicacion-imagen"
-                onError={() => setPublicacionImgError(true)}
-              />
-            )}
-          </div>
-          
-          <div className="publicacion-acciones">
-            <button className="accion-btn">
-              ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
-            </button>
-            <button className="accion-btn">
-              💬 {publicacion.estadisticas?.total_comentarios || 0}
-            </button>
-            <button className="accion-btn">
-              📤
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
+    </div>
+  );
+};
   // Renderizar publicaciones según la pestaña activa
   const renderPublicaciones = () => {
     let publicacionesARenderizar: PublicacionConEstadisticas[] = [];
