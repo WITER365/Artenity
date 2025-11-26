@@ -168,44 +168,296 @@ const cargarPublicaciones = useCallback(async () => {
 }, [usuario?.id_usuario]);
 
   // ✅ Cargar publicaciones guardadas
-  const cargarPublicacionesGuardadas = useCallback(async () => {
-    try {
-      const posts = await obtenerPublicacionesGuardadas();
-      
-      const postsConEstadisticas = await Promise.all(
-        posts.map(async (post: any) => {
-          try {
-            const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
-            
-            const fotoPerfil = post.usuario?.perfil?.foto_perfil
-              ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
-              : defaultProfile;
+ // En cargarPublicacionesGuardadas - ACTUALIZADA
+const cargarPublicacionesGuardadas = useCallback(async () => {
+  try {
+    const posts = await obtenerPublicacionesGuardadas();
+    
+    const postsConEstadisticas = await Promise.all(
+      posts.map(async (post: any) => {
+        try {
+          const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
+          
+          // 🔥 PROCESAR MEDIOS
+          let mediosArray: string[] = [];
+          if (post.medios && Array.isArray(post.medios)) {
+            mediosArray = post.medios;
+          } else if (post.imagen) {
+            mediosArray = [post.imagen];
+          }
 
-            return {
-              ...post,
-              usuario: {
-                ...post.usuario,
-                perfil: {
-                  ...post.usuario.perfil,
-                  foto_perfil: fotoPerfil
-                }
+          const fotoPerfil = post.usuario?.perfil?.foto_perfil
+            ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+            : defaultProfile;
+
+          return {
+            ...post,
+            medios: mediosArray, // 🔥 INCLUIR MEDIOS
+            usuario: {
+              ...post.usuario,
+              perfil: {
+                ...post.usuario.perfil,
+                foto_perfil: fotoPerfil
+              }
+            },
+            estadisticas: stats
+          };
+        } catch (error) {
+          console.error(`Error cargando estadísticas para publicación guardada ${post.id_publicacion}:`, error);
+          
+          // 🔥 PROCESAR MEDIOS INCLUSO EN ERROR
+          let mediosArray: string[] = [];
+          if (post.medios && Array.isArray(post.medios)) {
+            mediosArray = post.medios;
+          } else if (post.imagen) {
+            mediosArray = [post.imagen];
+          }
+
+          const fotoPerfil = post.usuario?.perfil?.foto_perfil
+            ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+            : defaultProfile;
+
+          return {
+            ...post,
+            medios: mediosArray, // 🔥 INCLUIR MEDIOS
+            usuario: {
+              ...post.usuario,
+              perfil: {
+                ...post.usuario.perfil,
+                foto_perfil: fotoPerfil
+              }
+            },
+            estadisticas: {
+              total_me_gusta: 0,
+              total_comentarios: 0,
+              total_guardados: 0,
+              me_gusta_dado: false,
+              guardado: true
+            }
+          };
+        }
+      })
+    );
+    
+    setPublicacionesGuardadas(postsConEstadisticas);
+  } catch (error) {
+    console.error("Error cargando publicaciones guardadas:", error);
+  }
+}, []);
+
+// En cargarPublicacionesConLike - ACTUALIZADA
+const cargarPublicacionesConLike = useCallback(async () => {
+  if (!usuario?.id_usuario) return;
+  try {
+    const token = localStorage.getItem("token");
+    const usuarioStorage = localStorage.getItem("usuario");
+    
+    if (!token || !usuarioStorage) {
+      throw new Error("No hay usuario autenticado");
+    }
+    
+    const parsedUsuario = JSON.parse(usuarioStorage);
+    
+    const response = await fetch(`http://localhost:8000/usuarios/${usuario.id_usuario}/megusta-dados`, {
+      headers: {
+        'token': token,
+        'id_usuario': parsedUsuario.id_usuario.toString(),
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) throw new Error('Error al cargar me gustas');
+    
+    const data = await response.json();
+
+    const postsConEstadisticas = await Promise.all(
+      data.map(async (item: any) => {
+        try {
+          const stats = await obtenerEstadisticasPublicacion(item.publicacion.id_publicacion);
+
+          // 🔥 PROCESAR MEDIOS
+          let mediosArray: string[] = [];
+          if (item.publicacion.medios && Array.isArray(item.publicacion.medios)) {
+            mediosArray = item.publicacion.medios;
+          } else if (item.publicacion.imagen) {
+            mediosArray = [item.publicacion.imagen];
+          }
+
+          const fotoPerfilAutor = item.publicacion.usuario?.perfil?.foto_perfil
+            ? `${item.publicacion.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+            : defaultProfile;
+
+          return {
+            ...item.publicacion,
+            medios: mediosArray, // 🔥 INCLUIR MEDIOS
+            usuario: {
+              ...item.publicacion.usuario,
+              perfil: {
+                ...item.publicacion.usuario.perfil,
+                foto_perfil: fotoPerfilAutor,
               },
-              estadisticas: stats
-            };
-          } catch (error) {
-            console.error(`Error cargando estadísticas para publicación guardada ${post.id_publicacion}:`, error);
-            
-            const fotoPerfil = post.usuario?.perfil?.foto_perfil
-              ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
-              : defaultProfile;
+            },
+            estadisticas: stats,
+          };
+        } catch (error) {
+          console.error(`Error cargando estadísticas para publicación ${item.publicacion.id_publicacion}:`, error);
 
-            return {
-              ...post,
-              usuario: {
-                ...post.usuario,
+          // 🔥 PROCESAR MEDIOS INCLUSO EN ERROR
+          let mediosArray: string[] = [];
+          if (item.publicacion.medios && Array.isArray(item.publicacion.medios)) {
+            mediosArray = item.publicacion.medios;
+          } else if (item.publicacion.imagen) {
+            mediosArray = [item.publicacion.imagen];
+          }
+
+          const fotoPerfilAutor = item.publicacion.usuario?.perfil?.foto_perfil
+            ? `${item.publicacion.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+            : defaultProfile;
+
+          return {
+            ...item.publicacion,
+            medios: mediosArray, // 🔥 INCLUIR MEDIOS
+            usuario: {
+              ...item.publicacion.usuario,
+              perfil: {
+                ...item.publicacion.usuario.perfil,
+                foto_perfil: fotoPerfilAutor,
+              },
+            },
+            estadisticas: {
+              total_me_gusta: 0,
+              total_comentarios: 0,
+              total_guardados: 0,
+              me_gusta_dado: true,
+              guardado: false,
+            },
+          };
+        }
+      })
+    );
+
+    setPublicacionesConLike(postsConEstadisticas);
+  } catch (error) {
+    console.error("Error cargando publicaciones con like:", error);
+  }
+}, [usuario?.id_usuario]);
+
+  //  Cargar compartidos 
+ const cargarCompartidos = useCallback(async () => {
+  if (!usuario?.id_usuario) return;
+  try {
+    const compartidosData = await obtenerMisCompartidos();
+    
+    console.log("📤 Datos crudos de compartidos:", compartidosData);
+
+    const compartidosConEstadisticas = await Promise.all(
+      compartidosData.map(async (compartido: any) => {
+        try {
+          const publicacion = compartido.publicacion || compartido;
+          
+          let publicacionCompleta = { ...publicacion };
+          let usuarioAutor = publicacion.usuario;
+
+          // Cargar perfil del autor si falta información
+          if (publicacion.id_usuario && (!usuarioAutor || !usuarioAutor.perfil || !usuarioAutor.perfil.foto_perfil)) {
+            try {
+              const perfilAutor = await getPerfil(publicacion.id_usuario);
+              
+              usuarioAutor = {
+                id_usuario: publicacion.id_usuario,
+                nombre_usuario: perfilAutor.usuario?.nombre_usuario || "Usuario",
+                nombre: perfilAutor.usuario?.nombre || "",
                 perfil: {
-                  ...post.usuario.perfil,
-                  foto_perfil: fotoPerfil
+                  foto_perfil: perfilAutor.foto_perfil || null
+                }
+              };
+
+              publicacionCompleta = {
+                ...publicacion,
+                usuario: usuarioAutor
+              };
+            } catch (error) {
+              console.error(`❌ Error cargando perfil del autor ${publicacion.id_usuario}:`, error);
+              usuarioAutor = {
+                id_usuario: publicacion.id_usuario,
+                nombre_usuario: "Usuario",
+                nombre: "",
+                perfil: { foto_perfil: null }
+              };
+            }
+          }
+
+          const stats = await obtenerEstadisticasPublicacion(publicacionCompleta.id_publicacion);
+          
+          // 🔥 PROCESAR MEDIOS PARA LA PUBLICACIÓN COMPARTIDA
+          let mediosArray: string[] = [];
+          if (publicacionCompleta.medios && Array.isArray(publicacionCompleta.medios)) {
+            mediosArray = publicacionCompleta.medios;
+          } else if (publicacionCompleta.imagen) {
+            mediosArray = [publicacionCompleta.imagen];
+          }
+
+          // Función helper para obtener foto de perfil
+          const obtenerFotoPerfil = (usuarioObj: any) => {
+            if (!usuarioObj) return defaultProfile;
+            
+            const fotoPerfil = 
+              usuarioObj.perfil?.foto_perfil || 
+              usuarioObj.foto_perfil || 
+              null;
+              
+            return fotoPerfil 
+              ? `${fotoPerfil}?t=${new Date().getTime()}` 
+              : defaultProfile;
+          };
+
+          // Información del usuario que compartió
+          const usuarioCompartio = compartido.usuario_compartio || {
+            ...usuario,
+            id_usuario: usuario.id_usuario,
+            nombre_usuario: usuario.nombre_usuario,
+          };
+
+          const resultado = {
+            ...compartido,
+            publicacion: {
+              ...publicacionCompleta,
+              medios: mediosArray, // 🔥 INCLUIR MEDIOS PROCESADOS
+              usuario: usuarioAutor,
+              estadisticas: stats
+            },
+            usuario_compartio: {
+              ...usuarioCompartio,
+              foto_perfil: obtenerFotoPerfil(usuarioCompartio)
+            }
+          };
+
+          return resultado;
+
+        } catch (error) {
+          console.error(`❌ Error procesando compartido ${compartido.id_compartido}:`, error);
+          
+          const publicacion = compartido.publicacion || compartido;
+          
+          // 🔥 PROCESAR MEDIOS INCLUSO EN CASO DE ERROR
+          let mediosArray: string[] = [];
+          if (publicacion.medios && Array.isArray(publicacion.medios)) {
+            mediosArray = publicacion.medios;
+          } else if (publicacion.imagen) {
+            mediosArray = [publicacion.imagen];
+          }
+
+          return {
+            ...compartido,
+            publicacion: {
+              ...publicacion,
+              medios: mediosArray, // 🔥 INCLUIR MEDIOS
+              usuario: {
+                id_usuario: publicacion.id_usuario || 0,
+                nombre_usuario: publicacion.usuario?.nombre_usuario || "Usuario",
+                nombre: publicacion.usuario?.nombre || "",
+                perfil: { 
+                  foto_perfil: defaultProfile 
                 }
               },
               estadisticas: {
@@ -213,223 +465,27 @@ const cargarPublicaciones = useCallback(async () => {
                 total_comentarios: 0,
                 total_guardados: 0,
                 me_gusta_dado: false,
-                guardado: true
+                guardado: false
               }
-            };
-          }
-        })
-      );
-      
-      setPublicacionesGuardadas(postsConEstadisticas);
-    } catch (error) {
-      console.error("Error cargando publicaciones guardadas:", error);
-    }
-  }, []);
-
-  const cargarPublicacionesConLike = useCallback(async () => {
-    if (!usuario?.id_usuario) return;
-    try {
-      const token = localStorage.getItem("token");
-      const usuarioStorage = localStorage.getItem("usuario");
-      
-      if (!token || !usuarioStorage) {
-        throw new Error("No hay usuario autenticado");
-      }
-      
-      const parsedUsuario = JSON.parse(usuarioStorage);
-      
-      const response = await fetch(`http://localhost:8000/usuarios/${usuario.id_usuario}/megusta-dados`, {
-        headers: {
-          'token': token,
-          'id_usuario': parsedUsuario.id_usuario.toString(),
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) throw new Error('Error al cargar me gustas');
-      
-      const data = await response.json();
-
-      const postsConEstadisticas = await Promise.all(
-        data.map(async (item: any) => {
-          try {
-            const stats = await obtenerEstadisticasPublicacion(item.publicacion.id_publicacion);
-
-            const fotoPerfilAutor = item.publicacion.usuario?.perfil?.foto_perfil
-              ? `${item.publicacion.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
-              : defaultProfile;
-
-            return {
-              ...item.publicacion,
-              usuario: {
-                ...item.publicacion.usuario,
-                perfil: {
-                  ...item.publicacion.usuario.perfil,
-                  foto_perfil: fotoPerfilAutor,
-                },
-              },
-              estadisticas: stats,
-            };
-          } catch (error) {
-            console.error(`Error cargando estadísticas para publicación ${item.publicacion.id_publicacion}:`, error);
-
-            const fotoPerfilAutor = item.publicacion.usuario?.perfil?.foto_perfil
-              ? `${item.publicacion.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
-              : defaultProfile;
-
-            return {
-              ...item.publicacion,
-              usuario: {
-                ...item.publicacion.usuario,
-                perfil: {
-                  ...item.publicacion.usuario.perfil,
-                  foto_perfil: fotoPerfilAutor,
-                },
-              },
-              estadisticas: {
-                total_me_gusta: 0,
-                total_comentarios: 0,
-                total_guardados: 0,
-                me_gusta_dado: true,
-                guardado: false,
-              },
-            };
-          }
-        })
-      );
-
-      setPublicacionesConLike(postsConEstadisticas);
-    } catch (error) {
-      console.error("Error cargando publicaciones con like:", error);
-    }
-  }, [usuario?.id_usuario]);
-
-  // ✅ Cargar compartidos - VERSIÓN CORREGIDA
-  const cargarCompartidos = useCallback(async () => {
-    if (!usuario?.id_usuario) return;
-    try {
-      const compartidosData = await obtenerMisCompartidos();
-      
-      console.log("📤 Datos crudos de compartidos:", compartidosData);
-
-      const compartidosConEstadisticas = await Promise.all(
-        compartidosData.map(async (compartido: any) => {
-          try {
-            const publicacion = compartido.publicacion || compartido;
-            
-            let publicacionCompleta = { ...publicacion };
-            let usuarioAutor = publicacion.usuario;
-
-            // Cargar perfil del autor si falta información
-            if (publicacion.id_usuario && (!usuarioAutor || !usuarioAutor.perfil || !usuarioAutor.perfil.foto_perfil)) {
-              try {
-                const perfilAutor = await getPerfil(publicacion.id_usuario);
-                
-                usuarioAutor = {
-                  id_usuario: publicacion.id_usuario,
-                  nombre_usuario: perfilAutor.usuario?.nombre_usuario || "Usuario",
-                  nombre: perfilAutor.usuario?.nombre || "",
-                  perfil: {
-                    foto_perfil: perfilAutor.foto_perfil || null
-                  }
-                };
-
-                publicacionCompleta = {
-                  ...publicacion,
-                  usuario: usuarioAutor
-                };
-              } catch (error) {
-                console.error(`❌ Error cargando perfil del autor ${publicacion.id_usuario}:`, error);
-                usuarioAutor = {
-                  id_usuario: publicacion.id_usuario,
-                  nombre_usuario: "Usuario",
-                  nombre: "",
-                  perfil: { foto_perfil: null }
-                };
-              }
-            }
-
-            const stats = await obtenerEstadisticasPublicacion(publicacionCompleta.id_publicacion);
-            
-            // Función helper para obtener foto de perfil
-            const obtenerFotoPerfil = (usuarioObj: any) => {
-              if (!usuarioObj) return defaultProfile;
-              
-              const fotoPerfil = 
-                usuarioObj.perfil?.foto_perfil || 
-                usuarioObj.foto_perfil || 
-                null;
-                
-              return fotoPerfil 
-                ? `${fotoPerfil}?t=${new Date().getTime()}` 
-                : defaultProfile;
-            };
-
-            // Información del usuario que compartió
-            const usuarioCompartio = compartido.usuario_compartio || {
+            },
+            usuario_compartio: {
               ...usuario,
               id_usuario: usuario.id_usuario,
               nombre_usuario: usuario.nombre_usuario,
-            };
-
-            const resultado = {
-              ...compartido,
-              publicacion: {
-                ...publicacionCompleta,
-                usuario: usuarioAutor,
-                estadisticas: stats
-              },
-              usuario_compartio: {
-                ...usuarioCompartio,
-                foto_perfil: obtenerFotoPerfil(usuarioCompartio)
-              }
-            };
-
-            return resultado;
-
-          } catch (error) {
-            console.error(`❌ Error procesando compartido ${compartido.id_compartido}:`, error);
-            
-            const publicacion = compartido.publicacion || compartido;
-            
-            return {
-              ...compartido,
-              publicacion: {
-                ...publicacion,
-                usuario: {
-                  id_usuario: publicacion.id_usuario || 0,
-                  nombre_usuario: publicacion.usuario?.nombre_usuario || "Usuario",
-                  nombre: publicacion.usuario?.nombre || "",
-                  perfil: { 
-                    foto_perfil: defaultProfile 
-                  }
-                },
-                estadisticas: {
-                  total_me_gusta: 0,
-                  total_comentarios: 0,
-                  total_guardados: 0,
-                  me_gusta_dado: false,
-                  guardado: false
-                }
-              },
-              usuario_compartio: {
-                ...usuario,
-                id_usuario: usuario.id_usuario,
-                nombre_usuario: usuario.nombre_usuario,
-                foto_perfil: defaultProfile
-              }
-            };
-          }
-        })
-      );
-      
-      console.log("✅ TODOS los compartidos procesados:", compartidosConEstadisticas);
-      setCompartidos(compartidosConEstadisticas);
-    } catch (error) {
-      console.error("❌ Error cargando compartidos:", error);
-      setCompartidos([]);
-    }
-  }, [usuario]);
+              foto_perfil: defaultProfile
+            }
+          };
+        }
+      })
+    );
+    
+    console.log("✅ TODOS los compartidos procesados:", compartidosConEstadisticas);
+    setCompartidos(compartidosConEstadisticas);
+  } catch (error) {
+    console.error("❌ Error cargando compartidos:", error);
+    setCompartidos([]);
+  }
+}, [usuario]);
 
   // ✅ Función para eliminar compartido
   const handleEliminarCompartido = async (idCompartido: number, usuarioCompartioNombre: string = "") => {

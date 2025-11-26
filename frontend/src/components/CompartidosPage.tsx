@@ -37,6 +37,7 @@ interface Publicacion {
   id_publicacion: number;
   contenido: string;
   imagen_url?: string;
+  medios?: string[];
   usuario: Usuario;
   fecha_creacion: string;
   estadisticas?: {
@@ -90,6 +91,24 @@ const getErrorMessage = (error: unknown): string => {
   } else {
     return 'Error desconocido al cargar la publicación compartida';
   }
+};
+
+// Función para determinar si es video
+const esVideo = (url: string): boolean => {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+  return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+};
+
+// Función para obtener medios de la publicación
+const obtenerMediosPublicacion = (publicacion: Publicacion): string[] => {
+  if (publicacion.medios && Array.isArray(publicacion.medios) && publicacion.medios.length > 0) {
+    return publicacion.medios;
+  }
+  if (publicacion.imagen_url) {
+    return [publicacion.imagen_url];
+  }
+  return [];
 };
 
 export default function CompartidosPage() {
@@ -222,6 +241,11 @@ export default function CompartidosPage() {
         throw new Error("No se pudo cargar la publicación compartida");
       }
       
+      // 🔥 PROCESAR MEDIOS SI ES NECESARIO
+      if (compartido.publicacion && !compartido.publicacion.medios && compartido.publicacion.imagen_url) {
+        compartido.publicacion.medios = [compartido.publicacion.imagen_url];
+      }
+      
       setCompartidoEspecifico(compartido);
       setCompartidoTarget(compartido.id_compartido);
       
@@ -251,7 +275,21 @@ export default function CompartidosPage() {
         ...(compartidosAmigos || [])
       ].sort((a, b) => new Date(b.fecha_compartido).getTime() - new Date(a.fecha_compartido).getTime());
       
-      setCompartidosLista(todosCompartidos);
+      // 🔥 PROCESAR MEDIOS PARA CADA COMPARTIDO
+      const compartidosProcesados = todosCompartidos.map(compartido => {
+        if (compartido.publicacion && !compartido.publicacion.medios && compartido.publicacion.imagen_url) {
+          return {
+            ...compartido,
+            publicacion: {
+              ...compartido.publicacion,
+              medios: [compartido.publicacion.imagen_url]
+            }
+          };
+        }
+        return compartido;
+      });
+      
+      setCompartidosLista(compartidosProcesados);
       
       // Verificar si hay un target pendiente del state
       const pendingTarget = location.state?.idCompartido;
@@ -297,7 +335,6 @@ export default function CompartidosPage() {
     }
   };
 
-  // 🔥 NUEVOS MÉTODOS PARA ME GUSTA Y GUARDAR
   const handleMeGusta = async (idPublicacion: number) => {
     try {
       const stats = estadisticas[idPublicacion];
@@ -456,6 +493,7 @@ export default function CompartidosPage() {
     const publicacion = compartidoEspecifico.publicacion;
     const stats = estadisticas[publicacion.id_publicacion];
     const comentariosPublicacion = comentarios[publicacion.id_publicacion] || [];
+    const medios = obtenerMediosPublicacion(publicacion);
 
     return (
       <div className="compartido-especifico-container">
@@ -531,13 +569,35 @@ export default function CompartidosPage() {
 
           <div className="post-content-especifico">
             <p>{publicacion.contenido}</p>
-            {publicacion.imagen_url && (
-              <img
-                src={publicacion.imagen_url}
-                alt="Publicación"
-                className="post-image-especifico"
-                onClick={() => verPublicacion(publicacion.id_publicacion)}
-              />
+            
+            {/* 🔥 RENDERIZADO DE MEDIOS (IMÁGENES Y VIDEOS) */}
+            {medios.length > 0 && (
+              <div className={`publicacion-medios ${medios.length > 1 ? 'multiples-medios' : 'unico-medio'}`}>
+                {medios.map((medio: string, index: number) => (
+                  <div key={index} className="medio-item">
+                    {esVideo(medio) ? (
+                      <div className="video-container">
+                        <video 
+                          controls 
+                          className="post-video-especifico"
+                          preload="metadata"
+                        >
+                          <source src={medio} type="video/mp4" />
+                          <source src={medio} type="video/webm" />
+                          Tu navegador no soporta el elemento video.
+                        </video>
+                      </div>
+                    ) : (
+                      <img
+                        src={medio}
+                        alt={`Publicación ${index + 1}`}
+                        className="post-image-especifico"
+                        onClick={() => verPublicacion(publicacion.id_publicacion)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -655,6 +715,7 @@ export default function CompartidosPage() {
             const publicacion = compartido.publicacion;
             const stats = estadisticas[publicacion.id_publicacion];
             const comentariosPublicacion = comentarios[publicacion.id_publicacion] || [];
+            const medios = obtenerMediosPublicacion(publicacion);
             
             const esTarget = compartidoTarget === compartido.id_compartido;
             const claseTarget = esTarget && !scrollCompletado ? 'compartido-target' : '';
@@ -729,13 +790,35 @@ export default function CompartidosPage() {
 
                   <div className="post-content">
                     <p>{publicacion.contenido}</p>
-                    {publicacion.imagen_url && (
-                      <img
-                        src={publicacion.imagen_url}
-                        alt="Publicación"
-                        className="post-image"
-                        onClick={() => verPublicacion(publicacion.id_publicacion)}
-                      />
+                    
+                    {/* 🔥 RENDERIZADO DE MEDIOS (IMÁGENES Y VIDEOS) */}
+                    {medios.length > 0 && (
+                      <div className={`publicacion-medios ${medios.length > 1 ? 'multiples-medios' : 'unico-medio'}`}>
+                        {medios.map((medio: string, index: number) => (
+                          <div key={index} className="medio-item">
+                            {esVideo(medio) ? (
+                              <div className="video-container">
+                                <video 
+                                  controls 
+                                  className="post-video"
+                                  preload="metadata"
+                                >
+                                  <source src={medio} type="video/mp4" />
+                                  <source src={medio} type="video/webm" />
+                                  Tu navegador no soporta el elemento video.
+                                </video>
+                              </div>
+                            ) : (
+                              <img
+                                src={medio}
+                                alt={`Publicación ${index + 1}`}
+                                className="post-image"
+                                onClick={() => verPublicacion(publicacion.id_publicacion)}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
 

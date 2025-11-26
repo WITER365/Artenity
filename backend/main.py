@@ -1867,6 +1867,15 @@ def obtener_mis_compartidos(
     
     resultado = []
     for compartido in compartidos:
+        # 🔥 OBTENER MEDIOS DE LA PUBLICACIÓN
+        medios_array = []
+        if compartido.publicacion.imagen:
+            # Si hay imagen, agregarla como medio
+            medios_array.append(compartido.publicacion.imagen)
+        
+        # Aquí podrías agregar lógica para obtener múltiples medios si los tienes
+        # Por ejemplo, si tienes una tabla de medios separada
+        
         resultado.append({
             "id_compartido": compartido.id_compartido,
             "fecha_compartido": compartido.fecha.isoformat(),
@@ -1881,7 +1890,8 @@ def obtener_mis_compartidos(
             "publicacion": {
                 "id_publicacion": compartido.publicacion.id_publicacion,
                 "contenido": compartido.publicacion.contenido,
-                "imagen_url": compartido.publicacion.imagen,
+                "imagen": compartido.publicacion.imagen,  # Para compatibilidad
+                "medios": medios_array,  # 🔥 NUEVO: Array de medios
                 "fecha_creacion": compartido.publicacion.fecha_creacion.isoformat(),
                 "usuario": {
                     "id_usuario": compartido.publicacion.usuario.id_usuario,
@@ -1892,7 +1902,6 @@ def obtener_mis_compartidos(
         })
     
     return resultado
-
 @app.get("/compartidos/amigos")
 def obtener_compartidos_amigos(
     db: Session = Depends(get_db),
