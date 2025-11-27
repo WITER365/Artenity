@@ -485,7 +485,22 @@ export const obtenerCompartidoPorId = async (idCompartido: number): Promise<any>
   return res.data;
 };
 
+
+// ================== BÚSQUEDA ==================
+export async function buscarUsuarios(query: string): Promise<any[]> {
+  if (!query || query.length < 2) {
+    throw new Error("La búsqueda debe tener al menos 2 caracteres");
+  }
+  
+  const res = await api.get(`/buscar?query=${encodeURIComponent(query)}`, {
+    headers: getAuthHeaders(),
+  });
+  return res.data;
+}
+
+
 // Eliminar compartido
 export const eliminarCompartido = async (idCompartido: number): Promise<void> => {
   await api.delete(`/compartidos/${idCompartido}`, { headers: getAuthHeaders() });
 };
+

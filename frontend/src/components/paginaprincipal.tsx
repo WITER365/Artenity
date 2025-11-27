@@ -17,7 +17,9 @@ import {
   X,
   Users,
   FileImage,
-  X as CloseIcon
+  X as CloseIcon,
+  Search,
+  User
 } from "lucide-react";
 import "../styles/paginaprincipal.css";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
@@ -37,7 +39,8 @@ import {
   darMeGustaComentario,
   quitarMeGustaComentario,
   compartirPublicacion,
-  obtenerAmigos
+  obtenerAmigos,
+  buscarUsuarios
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import NotificacionesPanel from "../components/NotificacionesPanel";
@@ -104,6 +107,21 @@ interface Amigo {
   id_usuario: number;
   nombre_usuario: string;
   foto_perfil?: string;
+}
+
+interface UsuarioBusqueda {
+  id_usuario: number;
+  nombre: string;
+  apellido: string;
+  nombre_usuario: string;
+  correo_electronico: string;
+  perfil?: {
+    id_perfil: number;
+    foto_perfil?: string;
+    descripcion?: string;
+    biografia?: string;
+  };
+  sigo: boolean;
 }
 
 // Componente de Comentario separado para mejor organización
@@ -254,6 +272,12 @@ export default function PaginaPrincipal() {
   const [contenido, setContenido] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   
+  // ✅ ESTADOS PARA LA BÚSQUEDA
+  const [busqueda, setBusqueda] = useState("");
+  const [resultadosBusqueda, setResultadosBusqueda] = useState<UsuarioBusqueda[]>([]);
+  const [mostrarResultados, setMostrarResultados] = useState(false);
+  const [buscando, setBuscando] = useState(false);
+  
   // Estados de interacción
   const [comentariosAbiertos, setComentariosAbiertos] = useState<{[key: number]: boolean}>({});
   const [nuevoComentario, setNuevoComentario] = useState<{[key: number]: {contenido: string}}>({});
@@ -294,6 +318,62 @@ export default function PaginaPrincipal() {
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // ✅ FUNCIÓN PARA BUSCAR USUARIOS
+  const buscarUsuariosHandler = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setResultadosBusqueda([]);
+      setMostrarResultados(false);
+      return;
+    }
+
+    setBuscando(true);
+    try {
+      const resultados = await buscarUsuarios(query);
+      setResultadosBusqueda(resultados);
+      setMostrarResultados(true);
+    } catch (error) {
+      console.error("Error buscando usuarios:", error);
+      setResultadosBusqueda([]);
+    } finally {
+      setBuscando(false);
+    }
+  }, []);
+
+  // ✅ EFFECT PARA BÚSQUEDA EN TIEMPO REAL
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (busqueda.trim()) {
+        buscarUsuariosHandler(busqueda.trim());
+      } else {
+        setResultadosBusqueda([]);
+        setMostrarResultados(false);
+      }
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda, buscarUsuariosHandler]);
+
+  // ✅ FUNCIÓN PARA MANEJAR CLIC EN RESULTADO DE BÚSQUEDA
+  const manejarClicUsuario = (idUsuario: number) => {
+    navigate(`/usuario/${idUsuario}`);
+    setBusqueda("");
+    setMostrarResultados(false);
+    setResultadosBusqueda([]);
+  };
+
+  // ✅ FUNCIÓN PARA CERRAR RESULTADOS AL HACER CLIC FUERA
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setMostrarResultados(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   // ✅ Funciones de carga de datos
@@ -757,9 +837,119 @@ export default function PaginaPrincipal() {
 
   return (
     <div className="main-container">
-      {/* Barra superior */}
+      {/* Barra superior - MODIFICADA CON BÚSQUEDA */}
       <div className="topbar">
-        <input type="text" placeholder="Buscar" className="search-input" />
+        <div className="search-container" style={{ position: 'relative', width: '300px' }}>
+          <div style={{ position: 'relative' }}>
+            <Search 
+              size={18} 
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#666'
+              }} 
+            />
+            <input 
+              type="text" 
+              placeholder="Buscar usuarios..." 
+              className="search-input"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              onFocus={() => busqueda.length >= 2 && setMostrarResultados(true)}
+              style={{ paddingLeft: '40px', width: '100%' }}
+            />
+          </div>
+          
+          {/* Resultados de búsqueda */}
+          {mostrarResultados && (
+            <div className="search-results" style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              zIndex: 1000,
+              maxHeight: '400px',
+              overflowY: 'auto',
+              marginTop: '4px'
+            }}>
+              {buscando ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#666' }}>
+                  Buscando usuarios...
+                </div>
+              ) : resultadosBusqueda.length > 0 ? (
+                resultadosBusqueda.map((usuarioResultado) => (
+                  <div
+                    key={usuarioResultado.id_usuario}
+                    className="search-result-item"
+                    onClick={() => manejarClicUsuario(usuarioResultado.id_usuario)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #f0f0f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'white';
+                    }}
+                  >
+                    <img
+                      src={usuarioResultado.perfil?.foto_perfil || defaultProfile}
+                      alt={usuarioResultado.nombre_usuario}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        fontWeight: '600', 
+                        color: '#333',
+                        fontSize: '14px'
+                      }}>
+                        {usuarioResultado.nombre_usuario}
+                      </div>
+                      <div style={{ 
+                        color: '#666',
+                        fontSize: '12px'
+                      }}>
+                        {usuarioResultado.nombre} {usuarioResultado.apellido}
+                      </div>
+                      {usuarioResultado.sigo && (
+                        <div style={{
+                          color: '#007bff',
+                          fontSize: '11px',
+                          fontWeight: '500'
+                        }}>
+                          Siguiendo
+                        </div>
+                      )}
+                    </div>
+                    <User size={16} color="#666" />
+                  </div>
+                ))
+              ) : busqueda.length >= 2 ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: '#666' }}>
+                  No se encontraron usuarios
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+
         <NotificacionesPanel usuario={usuario} />
         <button className="img-btn" onClick={() => navigate("/perfil")}>
           <img

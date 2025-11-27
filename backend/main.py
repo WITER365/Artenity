@@ -2057,7 +2057,57 @@ def eliminar_compartido(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar compartido: {str(e)}")
 
-
+# ------------------ BÚSQUEDA ------------------
+@app.get("/buscar")
+def buscar(
+    query: str,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Buscar usuarios por nombre, nombre de usuario o correo electrónico
+    """
+    if not query or len(query.strip()) < 2:
+        raise HTTPException(status_code=400, detail="La búsqueda debe tener al menos 2 caracteres")
+    
+    search_term = f"%{query.strip()}%"
+    
+    # Buscar usuarios que coincidan con el término de búsqueda
+    usuarios = (
+        db.query(models.Usuario)
+        .options(joinedload(models.Usuario.perfil))
+        .filter(
+            (models.Usuario.nombre.ilike(search_term)) |
+            (models.Usuario.nombre_usuario.ilike(search_term)) |
+            (models.Usuario.correo_electronico.ilike(search_term))
+        )
+        .all()
+    )
+    
+    resultado = []
+    for usuario in usuarios:
+        # Verificar si el usuario actual sigue a este usuario
+        sigue = db.query(models.SeguirUsuario).filter(
+            models.SeguirUsuario.id_seguidor == user_id,
+            models.SeguirUsuario.id_seguido == usuario.id_usuario
+        ).first()
+        
+        resultado.append({
+            "id_usuario": usuario.id_usuario,
+            "nombre": usuario.nombre,
+            "apellido": usuario.apellido,
+            "nombre_usuario": usuario.nombre_usuario,
+            "correo_electronico": usuario.correo_electronico,
+            "perfil": {
+                "id_perfil": usuario.perfil.id_perfil if usuario.perfil else None,
+                "foto_perfil": usuario.perfil.foto_perfil if usuario.perfil else None,
+                "descripcion": usuario.perfil.descripcion if usuario.perfil else None,
+                "biografia": usuario.perfil.biografia if usuario.perfil else None
+            } if usuario.perfil else None,
+            "sigo": bool(sigue)
+        })
+    
+    return resultado
 
 
 # ------------------ HOME ------------------

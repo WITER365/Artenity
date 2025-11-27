@@ -28,7 +28,7 @@ interface AuthContextType {
   logout: () => void;
   actualizarFotoPerfil: (nuevaFoto: string) => void;
   forzarActualizacionPerfil: () => void;
-  recargarPerfilCompleto: () => Promise<void>; // 👈 NUEVA FUNCIÓN
+  recargarPerfilCompleto: () => Promise<void>; 
   usuariosBloqueados: number[];
   publicacionesNoMeInteresa: number[];
   cargarBloqueados: () => Promise<void>;
