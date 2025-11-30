@@ -292,3 +292,17 @@ class Mensaje(Base):
     
     chat = relationship("Chat", back_populates="mensajes")
     emisor = relationship("Usuario")
+
+    # backend/models.py - AGREGAR ESTE MODELO
+
+class MensajeEliminado(Base):
+    __tablename__ = "mensajes_eliminados"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    id_mensaje = Column(Integer, ForeignKey("mensajes.id_mensaje"), nullable=False)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario"), nullable=False)
+    fecha_eliminacion = Column(DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    mensaje = relationship("Mensaje")
+    usuario = relationship("Usuario")

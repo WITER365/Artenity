@@ -2231,9 +2231,15 @@ def obtener_mensajes_chat(
         ).update({"leido": True})
         db.commit()
         
-        # Obtener mensajes
+        # Subquery para obtener IDs de mensajes eliminados por este usuario
+        mensajes_eliminados_subquery = db.query(models.MensajeEliminado.id_mensaje).filter(
+            models.MensajeEliminado.id_usuario == id_usuario
+        ).subquery()
+        
+        # Obtener mensajes que NO han sido eliminados por este usuario
         mensajes = db.query(models.Mensaje).filter(
-            models.Mensaje.id_chat == id_chat
+            models.Mensaje.id_chat == id_chat,
+            ~models.Mensaje.id_mensaje.in_(mensajes_eliminados_subquery)
         ).order_by(models.Mensaje.fecha_envio.asc()).all()
         
         return [{
@@ -2252,7 +2258,7 @@ def obtener_mensajes_chat(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener mensajes: {str(e)}")
-
+    
 # Enviar mensaje de texto
 @app.post("/chats/{id_chat}/mensajes")
 def enviar_mensaje(
@@ -2478,16 +2484,26 @@ def eliminar_mensaje(
         if not mensaje:
             raise HTTPException(status_code=404, detail="Mensaje no encontrado")
         
-        # En esta versión simple, solo permitimos eliminar mensajes propios
-        # Para mensajes de otros, simplemente no hacemos nada (simulando eliminación)
-        if mensaje.id_emisor == id_usuario:
-            # Si es mensaje propio, eliminarlo físicamente
-            db.delete(mensaje)
-            db.commit()
-            return {"message": "Mensaje eliminado para todos"}
-        else:
-            # Si es mensaje de otro, simplemente retornamos éxito (eliminación virtual)
-            return {"message": "Mensaje eliminado para ti"}
+        # Verificar si ya existe un registro de eliminación
+        eliminacion_existente = db.query(models.MensajeEliminado).filter(
+            models.MensajeEliminado.id_mensaje == id_mensaje,
+            models.MensajeEliminado.id_usuario == id_usuario
+        ).first()
+        
+        if eliminacion_existente:
+            # Ya estaba eliminado, retornar éxito
+            return {"message": "Mensaje ya estaba eliminado"}
+        
+        # Crear registro de mensaje eliminado
+        mensaje_eliminado = models.MensajeEliminado(
+            id_mensaje=id_mensaje,
+            id_usuario=id_usuario
+        )
+        
+        db.add(mensaje_eliminado)
+        db.commit()
+        
+        return {"message": "Mensaje eliminado correctamente para ti"}
         
     except HTTPException:
         raise
@@ -2546,6 +2562,11 @@ def eliminar_mensaje_para_todos(
         if not mensaje:
             raise HTTPException(status_code=404, detail="Solo puedes eliminar tus propios mensajes para todos")
         
+        # Eliminar físicamente el mensaje y también los registros de eliminación
+        db.query(models.MensajeEliminado).filter(
+            models.MensajeEliminado.id_mensaje == id_mensaje
+        ).delete()
+        
         db.delete(mensaje)
         db.commit()
         
@@ -2556,7 +2577,48 @@ def eliminar_mensaje_para_todos(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar mensaje: {str(e)}")
-    
+    # backend/main.py - AGREGAR ENDPOINT DE DIAGNÓSTICO
+
+# Endpoint para diagnóstico - verificar mensajes eliminados
+@app.get("/diagnostico/mensajes-eliminados/{id_chat}")
+def diagnostico_mensajes_eliminados(
+    id_chat: int,
+    id_usuario: int = Header(..., alias="id_usuario"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Mensajes eliminados por el usuario
+        mensajes_eliminados = db.query(models.MensajeEliminado).filter(
+            models.MensajeEliminado.id_usuario == id_usuario,
+            models.MensajeEliminado.mensaje.has(id_chat=id_chat)
+        ).all()
+        
+        # Todos los mensajes del chat
+        todos_mensajes = db.query(models.Mensaje).filter(
+            models.Mensaje.id_chat == id_chat
+        ).all()
+        
+        # Mensajes visibles para el usuario
+        mensajes_eliminados_subquery = db.query(models.MensajeEliminado.id_mensaje).filter(
+            models.MensajeEliminado.id_usuario == id_usuario
+        ).subquery()
+        
+        mensajes_visibles = db.query(models.Mensaje).filter(
+            models.Mensaje.id_chat == id_chat,
+            ~models.Mensaje.id_mensaje.in_(mensajes_eliminados_subquery)
+        ).all()
+        
+        return {
+            "mensajes_eliminados": [{"id": me.id_mensaje} for me in mensajes_eliminados],
+            "todos_los_mensajes": [{"id": m.id_mensaje, "contenido": m.contenido} for m in todos_mensajes],
+            "mensajes_visibles": [{"id": m.id_mensaje, "contenido": m.contenido} for m in mensajes_visibles],
+            "count_eliminados": len(mensajes_eliminados),
+            "count_todos": len(todos_mensajes),
+            "count_visibles": len(mensajes_visibles)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en diagnóstico: {str(e)}")
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

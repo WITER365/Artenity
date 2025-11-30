@@ -105,14 +105,16 @@ const Messages: React.FC = () => {
     }
   };
 
-  const cargarMensajes = async (chatId: number) => {
-    try {
-      const mensajesData = await obtenerMensajesChat(chatId);
-      setMessages(mensajesData);
-    } catch (error) {
-      console.error("Error cargando mensajes:", error);
-    }
-  };
+ const cargarMensajes = async (chatId: number) => {
+  try {
+    console.log("Cargando mensajes para chat:", chatId);
+    const mensajesData = await obtenerMensajesChat(chatId);
+    console.log("Mensajes recibidos:", mensajesData);
+    setMessages(mensajesData);
+  } catch (error) {
+    console.error("Error cargando mensajes:", error);
+  }
+};
 
   const cargarConfiguracionChat = () => {
     setChatConfig({
@@ -273,19 +275,37 @@ const Messages: React.FC = () => {
   };
 
   // Eliminar mensaje
-  const handleDeleteMessage = async (message: MessageType) => {
-    if (!selectedChat) return;
+const handleDeleteMessage = async (message: MessageType) => {
+  if (!selectedChat) return;
 
-    try {
-      await eliminarMensaje(selectedChat.id, message.id);
-      setMessages(prev => prev.filter(m => m.id !== message.id));
-      setShowDeleteMenu(null);
-      await cargarChats(); // Recargar para actualizar último mensaje
-    } catch (error) {
-      console.error("Error eliminando mensaje:", error);
-      alert("Error al eliminar el mensaje");
+  console.log("Eliminando mensaje para mí:", {
+    messageId: message.id,
+    chatId: selectedChat.id,
+    isMyMessage: message.sender === "yo"
+  });
+
+  try {
+    const resultado = await eliminarMensaje(selectedChat.id, message.id);
+    console.log("Respuesta del servidor:", resultado);
+    
+    // Actualizar la lista de mensajes localmente
+    setMessages(prev => prev.filter(m => m.id !== message.id));
+    setShowDeleteMenu(null);
+    
+    console.log("Mensaje eliminado localmente, mensajes restantes:", messages.length - 1);
+    
+  } catch (error: any) {
+    console.error("Error completo eliminando mensaje:", error);
+    console.error("Response data:", error.response?.data);
+    console.error("Status:", error.response?.status);
+    
+    if (error.response?.status === 404) {
+      alert("El mensaje no existe o no tienes permisos para eliminarlo");
+    } else {
+      alert("Error al eliminar el mensaje: " + (error.response?.data?.detail || error.message));
     }
-  };
+  }
+};
 
   // Eliminar mensaje para todos
   const handleDeleteMessageForEveryone = async (message: MessageType) => {
