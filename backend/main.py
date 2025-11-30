@@ -2318,7 +2318,7 @@ def enviar_mensaje(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al enviar mensaje: {str(e)}")
 
-# Enviar mensaje con archivo (imagen o video)
+
 # Versión simplificada sin verificación de amistad (para testing):
 
 @app.post("/chats/{id_chat}/mensajes/archivo")
@@ -2419,44 +2419,7 @@ def crear_o_obtener_chat(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al crear chat: {str(e)}")
 
-# Configurar chat
-@app.put("/chats/{id_chat}/configuracion")
-def configurar_chat(
-    id_chat: int,
-    config: ConfiguracionChat,
-    id_usuario: int = Header(..., alias="id_usuario"),
-    db: Session = Depends(get_db)
-):
-    try:
-        chat = db.query(models.Chat).filter(
-            models.Chat.id_chat == id_chat,
-            (models.Chat.id_usuario1 == id_usuario) | (models.Chat.id_usuario2 == id_usuario)
-        ).first()
-        
-        if not chat:
-            raise HTTPException(status_code=404, detail="Chat no encontrado")
-        
-        # Actualizar configuración según el usuario
-        if chat.id_usuario1 == id_usuario:
-            chat.fondo_chat_usuario1 = config.fondo_chat
-            chat.color_burbuja_usuario1 = config.color_burbuja
-        else:
-            chat.fondo_chat_usuario2 = config.fondo_chat
-            chat.color_burbuja_usuario2 = config.color_burbuja
-        
-        db.commit()
-        
-        return {"message": "Configuración actualizada correctamente"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al configurar chat: {str(e)}")
 
-# backend/main.py - AGREGAR ESTOS ENDPOINTS
-
-# Eliminar mensaje
 # Eliminar mensaje (para mí) - VERSIÓN SIMPLE
 @app.delete("/chats/{id_chat}/mensajes/{id_mensaje}")
 def eliminar_mensaje(
@@ -2619,6 +2582,98 @@ def diagnostico_mensajes_eliminados(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en diagnóstico: {str(e)}")
+    
+# backend/main.py - MODIFICAR LOS ENDPOINTS DE CONFIGURACIÓN
+
+# Configurar chat - GUARDAR EN BASE DE DATOS
+@app.put("/chats/{id_chat}/configuracion")
+def configurar_chat(
+    id_chat: int,
+    config: ConfiguracionChat,
+    id_usuario: int = Header(..., alias="id_usuario"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Verificar que el usuario pertenece al chat
+        chat = db.query(models.Chat).filter(
+            models.Chat.id_chat == id_chat,
+            (models.Chat.id_usuario1 == id_usuario) | (models.Chat.id_usuario2 == id_usuario)
+        ).first()
+        
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat no encontrado")
+        
+        # Buscar si ya existe una configuración para este usuario y chat
+        config_existente = db.query(models.ConfiguracionChat).filter(
+            models.ConfiguracionChat.id_chat == id_chat,
+            models.ConfiguracionChat.id_usuario == id_usuario
+        ).first()
+        
+        if config_existente:
+            # Actualizar configuración existente
+            config_existente.fondo_chat = config.fondo_chat
+            config_existente.color_burbuja = config.color_burbuja
+            config_existente.fecha_actualizacion = datetime.utcnow()
+        else:
+            # Crear nueva configuración
+            nueva_config = models.ConfiguracionChat(
+                id_chat=id_chat,
+                id_usuario=id_usuario,
+                fondo_chat=config.fondo_chat,
+                color_burbuja=config.color_burbuja
+            )
+            db.add(nueva_config)
+        
+        db.commit()
+        
+        return {"message": "Configuración guardada correctamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al configurar chat: {str(e)}")
+
+# Obtener configuración del chat
+@app.get("/chats/{id_chat}/configuracion")
+def obtener_configuracion_chat(
+    id_chat: int,
+    id_usuario: int = Header(..., alias="id_usuario"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Verificar que el usuario pertenece al chat
+        chat = db.query(models.Chat).filter(
+            models.Chat.id_chat == id_chat,
+            (models.Chat.id_usuario1 == id_usuario) | (models.Chat.id_usuario2 == id_usuario)
+        ).first()
+        
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat no encontrado")
+        
+        # Buscar configuración existente
+        config = db.query(models.ConfiguracionChat).filter(
+            models.ConfiguracionChat.id_chat == id_chat,
+            models.ConfiguracionChat.id_usuario == id_usuario
+        ).first()
+        
+        if config:
+            return {
+                "fondo_chat": config.fondo_chat,
+                "color_burbuja": config.color_burbuja
+            }
+        else:
+            # Retornar configuración por defecto
+            return {
+                "fondo_chat": "default",
+                "color_burbuja": "#6C63FF"
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener configuración: {str(e)}")
+
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

@@ -606,14 +606,6 @@ export async function crearObtenerChat(idUsuarioDestino: number): Promise<{id_ch
   const res = await api.post(`/chats/con-usuario/${idUsuarioDestino}`, {}, { headers: getAuthHeaders() });
   return res.data;
 }
-
-// Configurar chat
-export async function configurarChat(idChat: number, configuracion: ConfiguracionChat): Promise<any> {
-  const res = await api.put(`/chats/${idChat}/configuracion`, configuracion, { headers: getAuthHeaders() });
-  return res.data;
-}
-// frontend/services/api.ts - AGREGAR ESTAS FUNCIONES
-
 // ================== ELIMINAR CHATS Y MENSAJES ==================
 
 // Eliminar mensaje
@@ -637,4 +629,22 @@ export const eliminarMensajeParaTodos = async (idMensaje: number): Promise<void>
     headers: getAuthHeaders(),
   });
   return response.data;
+};
+
+// frontend/services/api.ts - AGREGAR LA FUNCIÓN FALTANTE
+
+// Configurar chat
+export async function configurarChat(idChat: number, configuracion: ConfiguracionChat): Promise<any> {
+  const res = await api.put(`/chats/${idChat}/configuracion`, configuracion, { 
+    headers: getAuthHeaders() 
+  });
+  return res.data;
+}
+
+// Obtener configuración del chat
+export const obtenerConfiguracionChat = async (idChat: number): Promise<ConfiguracionChat> => {
+  const res = await api.get(`/chats/${idChat}/configuracion`, { 
+    headers: getAuthHeaders() 
+  });
+  return res.data;
 };

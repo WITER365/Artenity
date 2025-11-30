@@ -1,4 +1,4 @@
-// frontend/components/Messages.tsx
+// frontend/components/Messages.tsx - VERSIÓN CORREGIDA
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/Messages.css";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import {
   enviarMensaje, 
   crearObtenerChat,
   configurarChat,
+  obtenerConfiguracionChat, // IMPORTAR ESTA FUNCIÓN
   obtenerAmigos,
   eliminarMensaje,
   eliminarChat,
@@ -60,11 +61,11 @@ const Messages: React.FC = () => {
     cargarAmigos();
   }, []);
 
-  // Cargar mensajes cuando se selecciona un chat
+  // Cargar mensajes y configuración cuando se selecciona un chat
   useEffect(() => {
     if (selectedChat) {
       cargarMensajes(selectedChat.id);
-      cargarConfiguracionChat();
+      cargarConfiguracionChat(); // Ahora carga desde el servidor
     }
   }, [selectedChat]);
 
@@ -105,22 +106,34 @@ const Messages: React.FC = () => {
     }
   };
 
- const cargarMensajes = async (chatId: number) => {
-  try {
-    console.log("Cargando mensajes para chat:", chatId);
-    const mensajesData = await obtenerMensajesChat(chatId);
-    console.log("Mensajes recibidos:", mensajesData);
-    setMessages(mensajesData);
-  } catch (error) {
-    console.error("Error cargando mensajes:", error);
-  }
-};
+  const cargarMensajes = async (chatId: number) => {
+    try {
+      console.log("Cargando mensajes para chat:", chatId);
+      const mensajesData = await obtenerMensajesChat(chatId);
+      console.log("Mensajes recibidos:", mensajesData);
+      setMessages(mensajesData);
+    } catch (error) {
+      console.error("Error cargando mensajes:", error);
+    }
+  };
 
-  const cargarConfiguracionChat = () => {
-    setChatConfig({
-      fondo_chat: "default",
-      color_burbuja: selectedChat?.color || "#6C63FF"
-    });
+  // NUEVA FUNCIÓN: Cargar configuración desde el servidor
+  const cargarConfiguracionChat = async () => {
+    if (!selectedChat) return;
+    
+    try {
+      console.log("Cargando configuración para chat:", selectedChat.id);
+      const configData = await obtenerConfiguracionChat(selectedChat.id);
+      console.log("Configuración cargada del servidor:", configData);
+      setChatConfig(configData);
+    } catch (error) {
+      console.error("Error cargando configuración:", error);
+      // Si hay error, usar configuración por defecto
+      setChatConfig({
+        fondo_chat: "default",
+        color_burbuja: "#6C63FF"
+      });
+    }
   };
 
   const scrollToBottom = () => {
@@ -275,37 +288,37 @@ const Messages: React.FC = () => {
   };
 
   // Eliminar mensaje
-const handleDeleteMessage = async (message: MessageType) => {
-  if (!selectedChat) return;
+  const handleDeleteMessage = async (message: MessageType) => {
+    if (!selectedChat) return;
 
-  console.log("Eliminando mensaje para mí:", {
-    messageId: message.id,
-    chatId: selectedChat.id,
-    isMyMessage: message.sender === "yo"
-  });
+    console.log("Eliminando mensaje para mí:", {
+      messageId: message.id,
+      chatId: selectedChat.id,
+      isMyMessage: message.sender === "yo"
+    });
 
-  try {
-    const resultado = await eliminarMensaje(selectedChat.id, message.id);
-    console.log("Respuesta del servidor:", resultado);
-    
-    // Actualizar la lista de mensajes localmente
-    setMessages(prev => prev.filter(m => m.id !== message.id));
-    setShowDeleteMenu(null);
-    
-    console.log("Mensaje eliminado localmente, mensajes restantes:", messages.length - 1);
-    
-  } catch (error: any) {
-    console.error("Error completo eliminando mensaje:", error);
-    console.error("Response data:", error.response?.data);
-    console.error("Status:", error.response?.status);
-    
-    if (error.response?.status === 404) {
-      alert("El mensaje no existe o no tienes permisos para eliminarlo");
-    } else {
-      alert("Error al eliminar el mensaje: " + (error.response?.data?.detail || error.message));
+    try {
+      const resultado = await eliminarMensaje(selectedChat.id, message.id);
+      console.log("Respuesta del servidor:", resultado);
+      
+      // Actualizar la lista de mensajes localmente
+      setMessages(prev => prev.filter(m => m.id !== message.id));
+      setShowDeleteMenu(null);
+      
+      console.log("Mensaje eliminado localmente, mensajes restantes:", messages.length - 1);
+      
+    } catch (error: any) {
+      console.error("Error completo eliminando mensaje:", error);
+      console.error("Response data:", error.response?.data);
+      console.error("Status:", error.response?.status);
+      
+      if (error.response?.status === 404) {
+        alert("El mensaje no existe o no tienes permisos para eliminarlo");
+      } else {
+        alert("Error al eliminar el mensaje: " + (error.response?.data?.detail || error.message));
+      }
     }
-  }
-};
+  };
 
   // Eliminar mensaje para todos
   const handleDeleteMessageForEveryone = async (message: MessageType) => {
@@ -401,16 +414,30 @@ const handleDeleteMessage = async (message: MessageType) => {
     }
   };
 
+  // MODIFICADO: Guardar configuración en el servidor
   const handleSaveConfig = async () => {
     if (!selectedChat) return;
 
     try {
+      console.log("Guardando configuración:", chatConfig);
       await configurarChat(selectedChat.id, chatConfig);
       setShowConfigModal(false);
+      
+      // Actualizar el chat seleccionado con el nuevo color
       setSelectedChat(prev => prev ? {...prev, color: chatConfig.color_burbuja} : null);
-      await cargarChats();
+      
+      // Actualizar la lista de chats para reflejar el nuevo color
+      setChats(prev => prev.map(chat => 
+        chat.id === selectedChat.id 
+          ? {...chat, color: chatConfig.color_burbuja}
+          : chat
+      ));
+      
+      console.log("Configuración guardada exitosamente");
+      
     } catch (error) {
       console.error("Error guardando configuración:", error);
+      alert("Error al guardar la configuración. Intenta nuevamente.");
     }
   };
 

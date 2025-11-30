@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Text
+from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from .database import Base
@@ -306,3 +306,21 @@ class MensajeEliminado(Base):
     # Relaciones
     mensaje = relationship("Mensaje")
     usuario = relationship("Usuario")
+    # backend/models.py - AGREGAR EL MODELO ConfiguracionChat
+
+class ConfiguracionChat(Base):
+    __tablename__ = "configuraciones_chat"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    id_chat = Column(Integer, ForeignKey("chats.id_chat"), nullable=False)
+    id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario"), nullable=False)
+    fondo_chat = Column(String(50), default="default")
+    color_burbuja = Column(String(7), default="#6C63FF")  # Formato HEX
+    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    chat = relationship("Chat")
+    usuario = relationship("Usuario")
+    
+    # Índice único para evitar configuraciones duplicadas
+    __table_args__ = (UniqueConstraint('id_chat', 'id_usuario', name='uq_chat_usuario'),)
