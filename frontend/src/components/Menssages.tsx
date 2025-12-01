@@ -1,4 +1,4 @@
-// frontend/components/Messages.tsx - VERSIÓN CORREGIDA
+// frontend/components/Messages.tsx - VERSIÓN COMPLETA CORREGIDA
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/Messages.css";
 import { useNavigate } from "react-router-dom";
@@ -238,7 +238,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // NUEVA FUNCIÓN: Manejar selección de fondo personalizado
   const handleBackgroundSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedChat) return;
@@ -256,14 +255,11 @@ const Messages: React.FC = () => {
     try {
       setUploadingBackground(true);
       
-      // Crear vista previa
       const url = URL.createObjectURL(file);
       setBackgroundPreview(url);
       
-      // Subir al servidor
       const resultado = await subirFondoPersonalizado(selectedChat.id, file);
       
-      // Actualizar configuración
       setChatConfig(prev => ({
         ...prev,
         fondo_chat: "personalizado",
@@ -284,7 +280,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // NUEVA FUNCIÓN: Eliminar fondo personalizado
   const handleRemoveBackground = async () => {
     if (!selectedChat) return;
 
@@ -321,7 +316,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Manejar clic derecho en mensajes
   const handleMessageContextMenu = (e: React.MouseEvent, message: MessageType) => {
     e.preventDefault();
     e.stopPropagation();
@@ -333,7 +327,6 @@ const Messages: React.FC = () => {
     });
   };
 
-  // Manejar clic derecho en chats
   const handleChatContextMenu = (e: React.MouseEvent, chat: ChatType) => {
     e.preventDefault();
     e.stopPropagation();
@@ -345,7 +338,6 @@ const Messages: React.FC = () => {
     });
   };
 
-  // Eliminar mensaje
   const handleDeleteMessage = async (message: MessageType) => {
     if (!selectedChat) return;
 
@@ -363,7 +355,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Eliminar mensaje para todos
   const handleDeleteMessageForEveryone = async (message: MessageType) => {
     try {
       await eliminarMensajeParaTodos(message.id);
@@ -376,10 +367,15 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Eliminar chat
   const handleDeleteChat = async (chat: ChatType) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar el chat con @${chat.username}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
     try {
+      console.log("Eliminando chat:", chat.id);
       await eliminarChat(chat.id);
+      
       setChats(prev => prev.filter(c => c.id !== chat.id));
       setShowChatMenu(null);
       
@@ -387,13 +383,22 @@ const Messages: React.FC = () => {
         setSelectedChat(null);
         setMessages([]);
       }
-    } catch (error) {
+      
+      console.log("Chat eliminado exitosamente");
+      
+    } catch (error: any) {
       console.error("Error eliminando chat:", error);
-      alert("Error al eliminar el chat");
+      
+      if (error.response?.status === 404) {
+        alert("El chat no existe o ya fue eliminado");
+      } else if (error.response?.status === 403) {
+        alert("No tienes permisos para eliminar este chat");
+      } else {
+        alert("Error al eliminar el chat. Intenta nuevamente.");
+      }
     }
   };
 
-  // Renderizar mensajes con archivos
   const renderMessageContent = (msg: MessageType) => {
     if (msg.tipo === "texto") {
       return msg.text;
@@ -429,15 +434,18 @@ const Messages: React.FC = () => {
 
   const handleStartChat = async (amigo: User) => {
     try {
-      const { id_chat } = await crearObtenerChat(amigo.id_usuario);
+      console.log("Iniciando chat con:", amigo);
       
-      const chatExistente = chats.find(chat => chat.id === id_chat);
+      const resultado = await crearObtenerChat(amigo.id_usuario);
+      console.log("Chat creado/obtenido:", resultado);
+      
+      const chatExistente = chats.find(chat => chat.id === resultado.id_chat);
       
       if (chatExistente) {
         setSelectedChat(chatExistente);
       } else {
         const nuevoChat: ChatType = {
-          id: id_chat,
+          id: resultado.id_chat,
           username: amigo.nombre_usuario,
           nombre_completo: amigo.nombre_completo,
           foto_perfil: amigo.foto_perfil || null,
@@ -446,17 +454,30 @@ const Messages: React.FC = () => {
           ultima_actividad: new Date().toISOString(),
           no_leidos: 0
         };
+        
         setSelectedChat(nuevoChat);
         setChats(prev => [nuevoChat, ...prev]);
       }
       
       setShowFriendsModal(false);
-    } catch (error) {
+      
+      setTimeout(() => {
+        cargarChats();
+      }, 500);
+      
+    } catch (error: any) {
       console.error("Error al iniciar chat:", error);
+      
+      if (error.response?.status === 404) {
+        alert("Usuario no encontrado");
+      } else if (error.response?.status === 403) {
+        alert("No puedes chatear con este usuario");
+      } else {
+        alert("Error al iniciar el chat. Intenta nuevamente.");
+      }
     }
   };
 
-  // Guardar configuración
   const handleSaveConfig = async () => {
     if (!selectedChat) return;
 
@@ -478,64 +499,62 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Obtener estilo de fondo del chat
- // Actualizar la función getChatBackground
-const getChatBackground = () => {
-  if (chatConfig.fondo_chat === "personalizado" && chatConfig.fondo_personalizado) {
-    return {
-      backgroundImage: `url(http://localhost:8000${chatConfig.fondo_personalizado})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat'
-    };
-  }
+  const getChatBackground = () => {
+    if (chatConfig.fondo_chat === "personalizado" && chatConfig.fondo_personalizado) {
+      return {
+        backgroundImage: `url(http://localhost:8000${chatConfig.fondo_personalizado})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      };
+    }
 
-  switch (chatConfig.fondo_chat) {
-    case "light-gray": 
-      return { backgroundColor: "#f5f5f5" };
-    case "dark": 
-      return { backgroundColor: "#1a1a1a" };
-    case "blue": 
-      return { backgroundColor: "#0d47a1" };
-    case "green": 
-      return { backgroundColor: "#1b5e20" };
-    case "purple": 
-      return { backgroundColor: "#4a148c" };
-    case "pink": 
-      return { backgroundColor: "#880e4f" };
-    case "orange": 
-      return { backgroundColor: "#e65100" };
-    case "gradient-blue":
-      return { 
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
-      };
-    case "gradient-sunset":
-      return { 
-        background: "linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%)" 
-      };
-    case "gradient-forest":
-      return { 
-        background: "linear-gradient(135deg, #0ba360 0%, #3cba92 100%)" 
-      };
-    case "pattern-dots":
-      return { 
-        backgroundColor: "#f0f0f0",
-        backgroundImage: `radial-gradient(#6C63FF 1px, transparent 1px)`,
-        backgroundSize: '20px 20px'
-      };
-    case "pattern-grid":
-      return { 
-        backgroundColor: "#ffffff",
-        backgroundImage: `
-          linear-gradient(#e0e0e0 1px, transparent 1px),
-          linear-gradient(90deg, #e0e0e0 1px, transparent 1px)
-        `,
-        backgroundSize: '20px 20px'
-      };
-    default: 
-      return { backgroundColor: "#ffffff" };
-  }
-};
+    switch (chatConfig.fondo_chat) {
+      case "light-gray": 
+        return { backgroundColor: "#f5f5f5" };
+      case "dark": 
+        return { backgroundColor: "#1a1a1a" };
+      case "blue": 
+        return { backgroundColor: "#0d47a1" };
+      case "green": 
+        return { backgroundColor: "#1b5e20" };
+      case "purple": 
+        return { backgroundColor: "#4a148c" };
+      case "pink": 
+        return { backgroundColor: "#880e4f" };
+      case "orange": 
+        return { backgroundColor: "#e65100" };
+      case "gradient-blue":
+        return { 
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+        };
+      case "gradient-sunset":
+        return { 
+          background: "linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%)" 
+        };
+      case "gradient-forest":
+        return { 
+          background: "linear-gradient(135deg, #0ba360 0%, #3cba92 100%)" 
+        };
+      case "pattern-dots":
+        return { 
+          backgroundColor: "#f0f0f0",
+          backgroundImage: `radial-gradient(#6C63FF 1px, transparent 1px)`,
+          backgroundSize: '20px 20px'
+        };
+      case "pattern-grid":
+        return { 
+          backgroundColor: "#ffffff",
+          backgroundImage: `
+            linear-gradient(#e0e0e0 1px, transparent 1px),
+            linear-gradient(90deg, #e0e0e0 1px, transparent 1px)
+          `,
+          backgroundSize: '20px 20px'
+        };
+      default: 
+        return { backgroundColor: "#ffffff" };
+    }
+  };
 
   return (
     <div className="messages-layout">
@@ -839,210 +858,259 @@ const getChatBackground = () => {
       )}
 
       {/* Modal de amigos para nuevo chat */}
-      {showConfigModal && (
-  <div className="modal-overlay">
-    <div className="modal-content config-modal">
-      <div className="modal-header">
-        <h3>Configuración del chat</h3>
-        <button 
-          className="btn-close"
-          onClick={() => setShowConfigModal(false)}
-        >
-          ×
-        </button>
-      </div>
-      
-      <div className="config-options">
-        {/* Sección: Fondo del chat */}
-        <div className="config-section">
-          <h4>Fondo del chat</h4>
-          
-          {/* Fondos predefinidos */}
-          <div className="config-group">
-            <label>Fondo predefinido:</label>
-            <select 
-              value={chatConfig.fondo_chat}
-              onChange={(e) => setChatConfig(prev => ({
-                ...prev,
-                fondo_chat: e.target.value
-              }))}
-            >
-              <option value="default">Predeterminado (Blanco)</option>
-              <option value="light-gray">Gris claro</option>
-              <option value="dark">Oscuro</option>
-              <option value="blue">Azul</option>
-              <option value="green">Verde</option>
-              <option value="purple">Púrpura</option>
-              <option value="pink">Rosa</option>
-              <option value="orange">Naranja</option>
-              <option value="gradient-blue">Gradiente Azul</option>
-              <option value="gradient-sunset">Gradiente Atardecer</option>
-              <option value="gradient-forest">Gradiente Bosque</option>
-              <option value="pattern-dots">Patrón: Puntos</option>
-              <option value="pattern-grid">Patrón: Cuadrícula</option>
-            </select>
-          </div>
-
-          {/* Fondo personalizado */}
-          <div className="config-group">
-            <label>Fondo personalizado:</label>
-            <div className="custom-background-options">
-              <input
-                type="file"
-                ref={backgroundInputRef}
-                style={{ display: 'none' }}
-                onChange={handleBackgroundSelect}
-                accept="image/*"
-              />
+      {showFriendsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Seleccionar amigo para chatear</h3>
               <button 
-                className="btn-upload-background"
-                onClick={() => backgroundInputRef.current?.click()}
-                disabled={uploadingBackground}
+                className="btn-close"
+                onClick={() => setShowFriendsModal(false)}
               >
-                {uploadingBackground ? "Subiendo..." : "Subir imagen"}
+                ×
               </button>
-              
-              {(chatConfig.fondo_personalizado || backgroundPreview) && (
-                <button 
-                  className="btn-remove-background"
-                  onClick={handleRemoveBackground}
-                >
-                  Eliminar fondo personalizado
-                </button>
+            </div>
+            
+            <div className="friends-list-modal">
+              {amigos.length === 0 ? (
+                <div className="no-friends">
+                  <p>No tienes amigos agregados</p>
+                  <p>Agrega amigos para poder chatear con ellos</p>
+                </div>
+              ) : (
+                amigos.map((amigo) => (
+                  <div
+                    key={amigo.id_usuario}
+                    className="friend-item"
+                    onClick={() => handleStartChat(amigo)}
+                  >
+                    <div className="friend-avatar">
+                      {amigo.foto_perfil ? (
+                        <img src={amigo.foto_perfil} alt={amigo.nombre_usuario} />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          {amigo.nombre_usuario.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="friend-info">
+                      <span className="friend-username">@{amigo.nombre_usuario}</span>
+                      <span className="friend-name">{amigo.nombre_completo}</span>
+                    </div>
+                    <button className="btn-start-chat">
+                      Chatear
+                    </button>
+                  </div>
+                ))
               )}
             </div>
             
-            {/* Vista previa del fondo personalizado */}
-            {(chatConfig.fondo_personalizado || backgroundPreview) && (
-              <div className="background-preview">
-                <p>Vista previa del fondo:</p>
-                <div 
-                  className="preview-container"
-                  style={{
-                    backgroundImage: `url(${backgroundPreview || `http://localhost:8000${chatConfig.fondo_personalizado}`})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                />
-                <small>Imagen se ajustará automáticamente al chat</small>
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel"
+                onClick={() => setShowFriendsModal(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de configuración del chat */}
+      {showConfigModal && (
+        <div className="modal-overlay">
+          <div className="modal-content config-modal">
+            <div className="modal-header">
+              <h3>Configuración del chat</h3>
+              <button 
+                className="btn-close"
+                onClick={() => setShowConfigModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="config-options">
+              <div className="config-section">
+                <h4>Fondo del chat</h4>
+                
+                <div className="config-group">
+                  <label>Fondo predefinido:</label>
+                  <select 
+                    value={chatConfig.fondo_chat}
+                    onChange={(e) => setChatConfig(prev => ({
+                      ...prev,
+                      fondo_chat: e.target.value
+                    }))}
+                  >
+                    <option value="default">Predeterminado (Blanco)</option>
+                    <option value="light-gray">Gris claro</option>
+                    <option value="dark">Oscuro</option>
+                    <option value="blue">Azul</option>
+                    <option value="green">Verde</option>
+                    <option value="purple">Púrpura</option>
+                    <option value="pink">Rosa</option>
+                    <option value="orange">Naranja</option>
+                    <option value="gradient-blue">Gradiente Azul</option>
+                    <option value="gradient-sunset">Gradiente Atardecer</option>
+                    <option value="gradient-forest">Gradiente Bosque</option>
+                    <option value="pattern-dots">Patrón: Puntos</option>
+                    <option value="pattern-grid">Patrón: Cuadrícula</option>
+                  </select>
+                </div>
+
+                <div className="config-group">
+                  <label>Fondo personalizado:</label>
+                  <div className="custom-background-options">
+                    <input
+                      type="file"
+                      ref={backgroundInputRef}
+                      style={{ display: 'none' }}
+                      onChange={handleBackgroundSelect}
+                      accept="image/*"
+                    />
+                    <button 
+                      className="btn-upload-background"
+                      onClick={() => backgroundInputRef.current?.click()}
+                      disabled={uploadingBackground}
+                    >
+                      {uploadingBackground ? "Subiendo..." : "Subir imagen"}
+                    </button>
+                    
+                    {(chatConfig.fondo_personalizado || backgroundPreview) && (
+                      <button 
+                        className="btn-remove-background"
+                        onClick={handleRemoveBackground}
+                      >
+                        Eliminar fondo personalizado
+                      </button>
+                    )}
+                  </div>
+                  
+                  {(chatConfig.fondo_personalizado || backgroundPreview) && (
+                    <div className="background-preview">
+                      <p>Vista previa del fondo:</p>
+                      <div 
+                        className="preview-container"
+                        style={{
+                          backgroundImage: `url(${backgroundPreview || `http://localhost:8000${chatConfig.fondo_personalizado}`})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }}
+                      />
+                      <small>Imagen se ajustará automáticamente al chat</small>
+                    </div>
+                  )}
+                </div>
+
+                <div className="background-previews">
+                  <p>Vista previa de fondos:</p>
+                  <div className="preview-grid">
+                    {[
+                      { value: "default", name: "Predeterminado", color: "#ffffff" },
+                      { value: "light-gray", name: "Gris", color: "#f5f5f5" },
+                      { value: "dark", name: "Oscuro", color: "#1a1a1a" },
+                      { value: "blue", name: "Azul", color: "#0d47a1" },
+                      { value: "green", name: "Verde", color: "#1b5e20" },
+                      { value: "purple", name: "Púrpura", color: "#4a148c" }
+                    ].map(bg => (
+                      <div
+                        key={bg.value}
+                        className={`preview-item ${chatConfig.fondo_chat === bg.value ? 'selected' : ''}`}
+                        onClick={() => setChatConfig(prev => ({ ...prev, fondo_chat: bg.value }))}
+                        style={{ backgroundColor: bg.color }}
+                        title={bg.name}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Vista previa de fondos predefinidos */}
-          <div className="background-previews">
-            <p>Vista previa de fondos:</p>
-            <div className="preview-grid">
-              {[
-                { value: "default", name: "Predeterminado", color: "#ffffff" },
-                { value: "light-gray", name: "Gris", color: "#f5f5f5" },
-                { value: "dark", name: "Oscuro", color: "#1a1a1a" },
-                { value: "blue", name: "Azul", color: "#0d47a1" },
-                { value: "green", name: "Verde", color: "#1b5e20" },
-                { value: "purple", name: "Púrpura", color: "#4a148c" }
-              ].map(bg => (
-                <div
-                  key={bg.value}
-                  className={`preview-item ${chatConfig.fondo_chat === bg.value ? 'selected' : ''}`}
-                  onClick={() => setChatConfig(prev => ({ ...prev, fondo_chat: bg.value }))}
-                  style={{ backgroundColor: bg.color }}
-                  title={bg.name}
-                />
-              ))}
+              <div className="config-section">
+                <h4>Colores de mensajes</h4>
+                
+                <div className="config-group">
+                  <label>Color de tus mensajes:</label>
+                  <div className="color-picker-container">
+                    <input
+                      type="color"
+                      value={chatConfig.color_burbuja}
+                      onChange={(e) => setChatConfig(prev => ({
+                        ...prev,
+                        color_burbuja: e.target.value
+                      }))}
+                      className="color-picker"
+                    />
+                    <span className="color-value">{chatConfig.color_burbuja}</span>
+                  </div>
+                </div>
+
+                <div className="config-group">
+                  <label>Colores sugeridos:</label>
+                  <div className="color-presets">
+                    {[
+                      "#6C63FF", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", 
+                      "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE"
+                    ].map(color => (
+                      <div
+                        key={color}
+                        className="color-preset"
+                        style={{ backgroundColor: color }}
+                        onClick={() => setChatConfig(prev => ({ ...prev, color_burbuja: color }))}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="config-section">
+                <h4>Opciones de visualización</h4>
+                
+                <div className="config-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      onChange={() => {}}
+                    />
+                    Mostrar hora en todos los mensajes
+                  </label>
+                </div>
+
+                <div className="config-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      onChange={() => {}}
+                    />
+                    Notificaciones de mensajes nuevos
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel"
+                onClick={() => {
+                  setShowConfigModal(false);
+                  setBackgroundPreview(null);
+                  cargarConfiguracionChat();
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-save"
+                onClick={handleSaveConfig}
+              >
+                Guardar configuración
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Sección: Colores de mensajes */}
-        <div className="config-section">
-          <h4>Colores de mensajes</h4>
-          
-          <div className="config-group">
-            <label>Color de tus mensajes:</label>
-            <div className="color-picker-container">
-              <input
-                type="color"
-                value={chatConfig.color_burbuja}
-                onChange={(e) => setChatConfig(prev => ({
-                  ...prev,
-                  color_burbuja: e.target.value
-                }))}
-                className="color-picker"
-              />
-              <span className="color-value">{chatConfig.color_burbuja}</span>
-            </div>
-          </div>
-
-          {/* Colores predefinidos */}
-          <div className="config-group">
-            <label>Colores sugeridos:</label>
-            <div className="color-presets">
-              {[
-                "#6C63FF", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", 
-                "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE"
-              ].map(color => (
-                <div
-                  key={color}
-                  className="color-preset"
-                  style={{ backgroundColor: color }}
-                  onClick={() => setChatConfig(prev => ({ ...prev, color_burbuja: color }))}
-                  title={color}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Sección: Opciones de visualización */}
-        <div className="config-section">
-          <h4>Opciones de visualización</h4>
-          
-          <div className="config-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                // Aquí puedes agregar más opciones de configuración
-                onChange={() => {}}
-              />
-              Mostrar hora en todos los mensajes
-            </label>
-          </div>
-
-          <div className="config-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                onChange={() => {}}
-              />
-              Notificaciones de mensajes nuevos
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <div className="modal-actions">
-        <button 
-          className="btn-cancel"
-          onClick={() => {
-            setShowConfigModal(false);
-            setBackgroundPreview(null);
-            cargarConfiguracionChat(); // Recargar configuración original
-          }}
-        >
-          Cancelar
-        </button>
-        <button 
-          className="btn-save"
-          onClick={handleSaveConfig}
-        >
-          Guardar configuración
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-      {/* Panel derecho de iconos - ELIMINADO para simplificar */}
+      )}
     </div>
   );
 };
