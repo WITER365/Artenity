@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Home,
-  Compass,
   Grid,
   MessageSquare,
   Settings,
@@ -150,16 +149,33 @@ const ComentarioComponent = ({
 }) => {
   const [mostrarRespuestas, setMostrarRespuestas] = useState(nivel < 2);
   const [respondiendo, setRespondiendo] = useState(false);
+  const [mostrarInputRespuesta, setMostrarInputRespuesta] = useState(false);
 
   const toggleRespuesta = useCallback(() => {
     const nuevoEstado = !respondiendo;
     setRespondiendo(nuevoEstado);
+    setMostrarInputRespuesta(nuevoEstado);
+    
     if (nuevoEstado) {
       onResponder(idPublicacion, comentario.id_comentario);
     } else {
       onCancelarRespuesta(idPublicacion);
     }
   }, [respondiendo, idPublicacion, comentario.id_comentario, onResponder, onCancelarRespuesta]);
+
+  const manejarPublicarRespuesta = () => {
+    if (nuevoComentario[idPublicacion]?.contenido.trim()) {
+      onPublicarComentario(idPublicacion, comentario.id_comentario);
+      setMostrarInputRespuesta(false);
+      setRespondiendo(false);
+    }
+  };
+
+  const manejarCancelarRespuesta = () => {
+    setMostrarInputRespuesta(false);
+    setRespondiendo(false);
+    onCancelarRespuesta(idPublicacion);
+  };
 
   return (
     <div className={`comentario ${nivel > 0 ? 'comentario-respuesta' : ''}`} style={{ marginLeft: `${nivel * 20}px` }}>
@@ -213,27 +229,39 @@ const ComentarioComponent = ({
             )}
           </div>
 
-          {respondiendo && (
+          {/* Mostrar el campo de respuesta solo cuando el botón se ha clickeado */}
+          {mostrarInputRespuesta && respondiendoA[idPublicacion] === comentario.id_comentario && (
             <div className="respuesta-directa">
-              <input
-                type="text"
-                placeholder="Escribe tu respuesta..."
-                value={nuevoComentario[idPublicacion]?.contenido || ""}
-                onChange={(e) => onNuevoComentarioChange(idPublicacion, e.target.value)}
-              />
-              <div className="acciones-respuesta">
-                <button 
-                  onClick={() => onPublicarComentario(idPublicacion, comentario.id_comentario)}
-                  className="btn-enviar"
-                >
-                  Responder
-                </button>
-                <button 
-                  onClick={toggleRespuesta}
-                  className="btn-cancelar"
-                >
-                  Cancelar
-                </button>
+              <div className="respuesta-input-container">
+                <input
+                  type="text"
+                  placeholder="Escribe tu respuesta..."
+                  value={nuevoComentario[idPublicacion]?.contenido || ""}
+                  onChange={(e) => onNuevoComentarioChange(idPublicacion, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      manejarPublicarRespuesta();
+                    }
+                  }}
+                  className="respuesta-input"
+                  autoFocus
+                />
+                <div className="acciones-respuesta">
+                  <button 
+                    onClick={manejarPublicarRespuesta}
+                    className="btn-enviar"
+                    disabled={!nuevoComentario[idPublicacion]?.contenido.trim()}
+                  >
+                    Responder
+                  </button>
+                  <button 
+                    onClick={manejarCancelarRespuesta}
+                    className="btn-cancelar"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -272,7 +300,7 @@ export default function PaginaPrincipal() {
   const [contenido, setContenido] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   
-  // ✅ ESTADOS PARA LA BÚSQUEDA
+  //  ESTADOS PARA LA BÚSQUEDA
   const [busqueda, setBusqueda] = useState("");
   const [resultadosBusqueda, setResultadosBusqueda] = useState<UsuarioBusqueda[]>([]);
   const [mostrarResultados, setMostrarResultados] = useState(false);
@@ -320,7 +348,7 @@ export default function PaginaPrincipal() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // ✅ FUNCIÓN PARA BUSCAR USUARIOS
+  //  FUNCIÓN PARA BUSCAR USUARIOS
   const buscarUsuariosHandler = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
       setResultadosBusqueda([]);
@@ -341,7 +369,7 @@ export default function PaginaPrincipal() {
     }
   }, []);
 
-  // ✅ EFFECT PARA BÚSQUEDA EN TIEMPO REAL
+  //  EFFECT PARA BÚSQUEDA EN TIEMPO REAL
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (busqueda.trim()) {
@@ -355,7 +383,7 @@ export default function PaginaPrincipal() {
     return () => clearTimeout(timeoutId);
   }, [busqueda, buscarUsuariosHandler]);
 
-  // ✅ FUNCIÓN PARA MANEJAR CLIC EN RESULTADO DE BÚSQUEDA
+  //  FUNCIÓN PARA MANEJAR CLIC EN RESULTADO DE BÚSQUEDA
   const manejarClicUsuario = (idUsuario: number) => {
     navigate(`/usuario/${idUsuario}`);
     setBusqueda("");
@@ -363,7 +391,7 @@ export default function PaginaPrincipal() {
     setResultadosBusqueda([]);
   };
 
-  // ✅ FUNCIÓN PARA CERRAR RESULTADOS AL HACER CLIC FUERA
+  //  FUNCIÓN PARA CERRAR RESULTADOS AL HACER CLIC FUERA
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -376,7 +404,7 @@ export default function PaginaPrincipal() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // ✅ Funciones de carga de datos
+  //  Funciones de carga de datos
   const cargarAmigos = async () => {
     try {
       const amigosData = await obtenerAmigos();
@@ -410,7 +438,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  // ✅ Función mejorada para cargar publicaciones
+  //  Función mejorada para cargar publicaciones
   const cargarPublicaciones = async () => {
     try {
       const posts = await getPublicaciones();
@@ -423,7 +451,7 @@ export default function PaginaPrincipal() {
           fotoPerfil = `${p.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`;
         }
 
-        // 🔥 PROCESAMIENTO CORREGIDO DE MEDIOS
+        //  PROCESAMIENTO CORREGIDO DE MEDIOS
         let mediosArray: string[] = [];
         
         if (p.medios && Array.isArray(p.medios)) {
@@ -486,7 +514,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  // ✅ Funciones de manejo de archivos
+  //  Funciones de manejo de archivos
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
@@ -524,7 +552,7 @@ export default function PaginaPrincipal() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // ✅ Función corregida para crear publicación
+  //  Función corregida para crear publicación
   const handlePost = async () => {
     if (!contenido.trim() && files.length === 0) {
       alert("Debes escribir algo o agregar una imagen/video");
@@ -571,7 +599,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  // ✅ Funciones de interacción con publicaciones
+  //  Funciones de interacción con publicaciones
   const handleMeGusta = async (idPublicacion: number) => {
     try {
       const stats = estadisticas[idPublicacion];
@@ -614,7 +642,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  // ✅ Funciones de comentarios
+  //  Funciones de comentarios
   const toggleComentarios = async (idPublicacion: number) => {
     const nuevoEstado = !comentariosAbiertos[idPublicacion];
     setComentariosAbiertos(prev => ({
@@ -692,7 +720,7 @@ export default function PaginaPrincipal() {
     return null;
   };
 
-  // ✅ Funciones de compartir
+  //  Funciones de compartir
   const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") => {
     try {
       let amigosIdsParam: number[] = [];
@@ -775,7 +803,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  // ✅ Funciones del menú
+  //  Funciones del menú
   const toggleMenu = (postId: number) => {
     setMenuAbierto(menuAbierto === postId ? null : postId);
   };
@@ -823,7 +851,7 @@ export default function PaginaPrincipal() {
     window.location.href = "/login";
   };
 
-  // ✅ Función helper para determinar tipo de medio
+  //  Función helper para determinar tipo de medio
   const esVideo = (medio: string): boolean => {
     return (
       medio.toLowerCase().includes('.mp4') || 
@@ -968,7 +996,6 @@ export default function PaginaPrincipal() {
           <nav>
             <ul className="space-y-4">
               <li><button className="nav-btn" onClick={() => navigate("/principal")}><Home /> Home</button></li>
-              <li><button className="nav-btn"><Compass /> Explorar</button></li>
               <li><button className="nav-btn"><Grid /> Categorías</button></li>
               <li><button className="nav-btn" onClick={() => navigate("/mensajes")}><MessageSquare /> Mensajes</button></li>
               <li><button className="nav-btn"><Settings /> Configuración</button></li>
@@ -981,9 +1008,7 @@ export default function PaginaPrincipal() {
       {/* Sección central */}
       <section className="center-section">
         <div className="tabs">
-          <button>PARA TI</button>
-          <button>SEGUIR</button>
-          <button>GUARDADO</button>
+        
         </div>
 
         {/* Crear nuevo post */}
@@ -1091,11 +1116,11 @@ export default function PaginaPrincipal() {
                 </div>
               </div>
 
-              {/* Contenido del post - VERSIÓN CORREGIDA */}
+              {/* Contenido del post*/}
               <div className="post-content">
                 <p>{post.contenido}</p>
                 
-                {/* Renderizado de medios CORREGIDO */}
+                {/* Renderizado de medios  */}
                 {post.medios && post.medios.length > 0 && (
                   <div className={`post-media ${post.medios.length > 1 ? 'multiple-media' : 'single-media'}`}>
                     {post.medios.map((medio: string, index: number) => (
@@ -1311,9 +1336,22 @@ export default function PaginaPrincipal() {
                       type="text"
                       placeholder={respondiendoA[post.id_publicacion] ? "Escribe tu respuesta..." : "Escribe un comentario..."}
                       value={nuevoComentario[post.id_publicacion]?.contenido || ""}
-                      onChange={(e) => setNuevoComentario(prev => ({ ...prev, [post.id_publicacion]: { contenido: e.target.value } }))}
+                      onChange={(e) => setNuevoComentario(prev => ({ 
+                        ...prev, 
+                        [post.id_publicacion]: { contenido: e.target.value } 
+                      }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          publicarComentario(post.id_publicacion, respondiendoA[post.id_publicacion] || null);
+                        }
+                      }}
                     />
-                    <button onClick={() => publicarComentario(post.id_publicacion, respondiendoA[post.id_publicacion] || null)} className="btn-comentar">
+                    <button 
+                      onClick={() => publicarComentario(post.id_publicacion, respondiendoA[post.id_publicacion] || null)} 
+                      className="btn-comentar"
+                      disabled={!nuevoComentario[post.id_publicacion]?.contenido.trim()}
+                    >
                       {respondiendoA[post.id_publicacion] ? 'Responder' : 'Comentar'}
                     </button>
                   </div>
@@ -1328,7 +1366,10 @@ export default function PaginaPrincipal() {
                           onMeGusta={handleMeGustaComentario}
                           onResponder={manejarRespuesta}
                           nuevoComentario={nuevoComentario}
-                          onNuevoComentarioChange={(idPublicacion, contenido) => setNuevoComentario(prev => ({ ...prev, [idPublicacion]: { contenido } }))}
+                          onNuevoComentarioChange={(idPublicacion, contenido) => setNuevoComentario(prev => ({ 
+                            ...prev, 
+                            [idPublicacion]: { contenido } 
+                          }))}
                           onPublicarComentario={publicarComentario}
                           respondiendoA={respondiendoA}
                           onCancelarRespuesta={cancelarRespuesta}

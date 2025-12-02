@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom"; // Añade esto
+import { ArrowLeft } from "lucide-react"; // Añade esto
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -52,6 +54,7 @@ interface PublicacionConEstadisticas {
 }
 
 const Perfil: React.FC = () => {
+  const navigate = useNavigate(); 
   const { usuario, actualizarFotoPerfil, forzarActualizacionPerfil } = useAuth();
   const [descripcion, setDescripcion] = useState("");
   const [biografia, setBiografia] = useState("");
@@ -97,7 +100,7 @@ const Perfil: React.FC = () => {
     }
   }, [usuario?.id_usuario]);
 
-  // ✅ Cargar estadísticas
+
   const cargarEstadisticas = useCallback(async () => {
     if (!usuario?.id_usuario) return;
     try {
@@ -118,9 +121,6 @@ const Perfil: React.FC = () => {
     }
   }, [usuario?.id_usuario]);
 
-  // ✅ Cargar publicaciones del usuario con estadísticas
-  // En cargarPublicaciones, cargarPublicacionesGuardadas, etc., asegúrate de procesar los medios
-// En cargarPublicaciones, asegúrate de procesar los medios correctamente
 const cargarPublicaciones = useCallback(async () => {
   if (!usuario?.id_usuario) return;
   try {
@@ -167,8 +167,8 @@ const cargarPublicaciones = useCallback(async () => {
   }
 }, [usuario?.id_usuario]);
 
-  // ✅ Cargar publicaciones guardadas
- // En cargarPublicacionesGuardadas - ACTUALIZADA
+
+ // En cargarPublicacionesGuardadas 
 const cargarPublicacionesGuardadas = useCallback(async () => {
   try {
     const posts = await obtenerPublicacionesGuardadas();
@@ -205,7 +205,7 @@ const cargarPublicacionesGuardadas = useCallback(async () => {
         } catch (error) {
           console.error(`Error cargando estadísticas para publicación guardada ${post.id_publicacion}:`, error);
           
-          // 🔥 PROCESAR MEDIOS INCLUSO EN ERROR
+          //  PROCESAR MEDIOS INCLUSO EN ERROR
           let mediosArray: string[] = [];
           if (post.medios && Array.isArray(post.medios)) {
             mediosArray = post.medios;
@@ -389,7 +389,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
 
           const stats = await obtenerEstadisticasPublicacion(publicacionCompleta.id_publicacion);
           
-          // 🔥 PROCESAR MEDIOS PARA LA PUBLICACIÓN COMPARTIDA
+          //  PROCESAR MEDIOS PARA LA PUBLICACIÓN COMPARTIDA
           let mediosArray: string[] = [];
           if (publicacionCompleta.medios && Array.isArray(publicacionCompleta.medios)) {
             mediosArray = publicacionCompleta.medios;
@@ -513,7 +513,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   };
 
-  // ✅ Cargar amigos
+  //  Cargar amigos
   const cargarAmigos = useCallback(async () => {
     try {
       const amigosData = await getAmigos();
@@ -529,7 +529,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   }, []);
 
-  // ✅ Cargar seguidores
+  //  Cargar seguidores
   const cargarSeguidores = useCallback(async () => {
     try {
       const data = await obtenerSeguidores();
@@ -548,7 +548,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   }, []);
 
-  // ✅ Cargar siguiendo
+  //  Cargar siguiendo
   const cargarSiguiendo = useCallback(async () => {
     try {
       const data = await obtenerSiguiendo();
@@ -567,7 +567,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   }, []);
 
-  // ✅ Cargar usuarios bloqueados
+  //  Cargar usuarios bloqueados
   const cargarUsuariosBloqueados = useCallback(async () => {
     try {
       const bloqueados = await obtenerUsuariosBloqueados();
@@ -586,7 +586,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   }, []);
 
-  // ✅ Cargar "No me interesa"
+  //  Cargar "No me interesa"
   const cargarNoMeInteresa = useCallback(async () => {
     try {
       const noInteresa = await obtenerNoMeInteresa();
@@ -608,7 +608,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   }, []);
 
-  // ✅ Cargar todo al montar
+  //  Cargar todo al montar
   useEffect(() => {
     cargarPerfil();
     cargarAmigos();
@@ -637,7 +637,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     cargarCompartidos,
   ]);
 
-  // 📸 Seleccionar imagen
+  //  Seleccionar imagen
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -648,7 +648,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
     }
   };
 
-  // 💾 Guardar perfil
+  // Guardar perfil
   const handleSubmit = async () => {
     if (!usuario?.id_usuario) return;
     setCargando(true);
@@ -808,6 +808,7 @@ const cargarPublicacionesConLike = useCallback(async () => {
           className="publicacion-foto-perfil"
           onError={handleProfileImageError}
         />
+        
         <div className="publicacion-info-usuario">
           <span className="publicacion-usuario">
             {publicacion.usuario?.nombre_usuario || "Usuario desconocido"}
@@ -1103,9 +1104,21 @@ const CompartidoCard = ({ compartido }: { compartido: any }) => {
   if (!usuario) return <div className="cargando">Cargando perfil...</div>;
 
   return (
+    
     <div className="perfil-container">
       {/* 🧩 COLUMNA PRINCIPAL */}
+      
       <div className="perfil-main">
+        <div className="perfil-navegacion">
+        <button 
+          className="btn-regresar"
+          onClick={() => navigate("/principal")}
+          title="Volver a la página principal"
+        >
+          <ArrowLeft size={20} />
+          <span>Volver</span>
+        </button>
+      </div>
         {/* Header del Perfil */}
         <div className="perfil-header">
           <div className="perfil-avatar">
@@ -1113,7 +1126,7 @@ const CompartidoCard = ({ compartido }: { compartido: any }) => {
           </div>
           <h1 className="perfil-nombre">{usuario.nombre_usuario}</h1>
           <p className="perfil-correo">{usuario.correo_electronico}</p>
-
+          
           {/* Estadísticas */}
           <div className="estadisticas-perfil">
             <div className="estadistica-item">

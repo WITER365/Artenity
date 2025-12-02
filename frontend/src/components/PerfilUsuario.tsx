@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { 
   getPerfil, 
   seguirUsuario, 
@@ -28,6 +28,7 @@ interface PublicacionConEstadisticas {
   id_usuario: number;
   contenido: string;
   imagen?: string;
+  medios?: string[]; // 🔥 AGREGAR ESTA PROPIEDAD
   fecha_creacion: string;
   usuario: {
     id_usuario: number;
@@ -48,6 +49,7 @@ interface PublicacionConEstadisticas {
 
 export default function PerfilUsuario() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { usuario: usuarioActual } = useAuth();
   const [perfil, setPerfil] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -162,23 +164,66 @@ export default function PerfilUsuario() {
     }
   };
 
+  // ✅ Cargar publicaciones con procesamiento de medios
   const cargarPublicaciones = async (idUsuario: number) => {
     try {
       const posts = await obtenerPublicacionesUsuario(idUsuario);
       
-      // Cargar estadísticas para cada publicación
+      // Cargar estadísticas para cada publicación y procesar medios
       const postsConEstadisticas = await Promise.all(
         posts.map(async (post: any) => {
           try {
             const stats = await obtenerEstadisticasPublicacion(post.id_publicacion);
+            
+            // 🔥 PROCESAR MEDIOS CORRECTAMENTE
+            let mediosArray: string[] = [];
+            if (post.medios && Array.isArray(post.medios)) {
+              mediosArray = post.medios;
+            } else if (post.imagen) {
+              mediosArray = [post.imagen];
+            }
+
+            const fotoPerfil = post.usuario?.perfil?.foto_perfil
+              ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+              : defaultProfile;
+
             return {
               ...post,
+              medios: mediosArray, // 🔥 INCLUIR LA PROPIEDAD medios
+              usuario: {
+                ...post.usuario,
+                perfil: {
+                  ...post.usuario.perfil,
+                  foto_perfil: fotoPerfil
+                }
+              },
               estadisticas: stats
             };
           } catch (error) {
             console.error(`Error cargando estadísticas para publicación ${post.id_publicacion}:`, error);
+            
+            // 🔥 PROCESAR MEDIOS INCLUSO EN ERROR
+            let mediosArray: string[] = [];
+            if (post.medios && Array.isArray(post.medios)) {
+              mediosArray = post.medios;
+            } else if (post.imagen) {
+              mediosArray = [post.imagen];
+            }
+
+            const fotoPerfil = post.usuario?.perfil?.foto_perfil
+              ? `${post.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`
+              : defaultProfile;
+
             return {
               ...post,
+              medios: mediosArray, // 🔥 INCLUIR medios incluso en error
+              usuario: {
+                ...post.usuario,
+                perfil: {
+                  ...post.usuario.perfil,
+                  foto_perfil: fotoPerfil
+                }
+              },
               estadisticas: {
                 total_me_gusta: 0,
                 total_comentarios: 0,
@@ -200,7 +245,13 @@ export default function PerfilUsuario() {
   const cargarSeguidores = async (idUsuario: number) => {
     try {
       const data = await obtenerSeguidoresUsuario(idUsuario);
-      setSeguidores(data);
+      const seguidoresConFoto = data.map((s: any) => ({
+        ...s,
+        foto_perfil: s.foto_perfil
+          ? `${s.foto_perfil}?t=${new Date().getTime()}`
+          : defaultProfile,
+      }));
+      setSeguidores(seguidoresConFoto);
     } catch (error) {
       console.error("Error cargando seguidores:", error);
     }
@@ -209,7 +260,13 @@ export default function PerfilUsuario() {
   const cargarSiguiendo = async (idUsuario: number) => {
     try {
       const data = await obtenerSiguiendoUsuario(idUsuario);
-      setSiguiendo(data);
+      const siguiendoConFoto = data.map((s: any) => ({
+        ...s,
+        foto_perfil: s.foto_perfil
+          ? `${s.foto_perfil}?t=${new Date().getTime()}`
+          : defaultProfile,
+      }));
+      setSiguiendo(siguiendoConFoto);
     } catch (error) {
       console.error("Error cargando siguiendo:", error);
     }
@@ -322,66 +379,158 @@ export default function PerfilUsuario() {
     setPreview(null);
   };
 
-  // Componente para mostrar publicaciones con botones funcionales
-  const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisticas }) => (
-    <div key={publicacion.id_publicacion} className="publicacion-card">
-      <div className="publicacion-header">
-        <img
-          src={publicacion.usuario?.perfil?.foto_perfil || defaultProfile}
-          alt="Foto perfil"
-          className="publicacion-foto-perfil"
-        />
-        <div className="publicacion-info-usuario">
-          <span className="publicacion-usuario">
-            {publicacion.usuario?.nombre_usuario || "Usuario"}
-          </span>
-          <span className="publicacion-fecha">
-            {new Date(publicacion.fecha_creacion).toLocaleString()}
-          </span>
+  // Componente para mostrar publicaciones con videos e imágenes
+  const PublicacionCard = ({ publicacion }: { publicacion: PublicacionConEstadisticas }) => {
+    const [imgError, setImgError] = useState(false);
+    const [profileImgError, setProfileImgError] = useState(false);
+    const [videoError, setVideoError] = useState(false);
+
+    const handleImageError = () => setImgError(true);
+    const handleProfileImageError = () => setProfileImgError(true);
+    const handleVideoError = () => setVideoError(true);
+
+    const fotoPerfil = publicacion.usuario?.perfil?.foto_perfil && !profileImgError 
+      ? publicacion.usuario.perfil.foto_perfil 
+      : defaultProfile;
+
+    // Función para determinar si es video
+    const esVideo = (url: string): boolean => {
+      if (!url) return false;
+      const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+      return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+    };
+
+    // Función para obtener medios
+    const obtenerMedios = (): string[] => {
+      if (publicacion.medios && Array.isArray(publicacion.medios) && publicacion.medios.length > 0) {
+        return publicacion.medios;
+      }
+      if (publicacion.imagen) {
+        return [publicacion.imagen];
+      }
+      return [];
+    };
+
+    const medios = obtenerMedios();
+
+    return (
+      <div key={publicacion.id_publicacion} className="publicacion-card">
+        <div className="publicacion-header">
+          <img
+            src={fotoPerfil}
+            alt="Foto perfil"
+            className="publicacion-foto-perfil"
+            onError={handleProfileImageError}
+          />
+          <div className="publicacion-info-usuario">
+            <span className="publicacion-usuario">
+              {publicacion.usuario?.nombre_usuario || "Usuario"}
+            </span>
+            <span className="publicacion-fecha">
+              {new Date(publicacion.fecha_creacion).toLocaleString()}
+            </span>
+          </div>
+        </div>
+        
+        <div className="publicacion-contenido">
+          <p className="publicacion-texto">{publicacion.contenido}</p>
+          
+          {/* Renderizado de medios con videos */}
+          {medios.length > 0 && (
+            <div className={`publicacion-medios ${medios.length > 1 ? 'multiples-medios' : 'unico-medio'}`}>
+              {medios.map((medio: string, index: number) => {
+                const esVideoMedio = esVideo(medio);
+                const medioConTimestamp = medio.includes('?') 
+                  ? medio 
+                  : `${medio}?t=${new Date().getTime()}`;
+                
+                return (
+                  <div key={index} className="medio-item">
+                    {esVideoMedio ? (
+                      <div className="video-container">
+                        <video 
+                          controls 
+                          className="post-video"
+                          preload="metadata"
+                          onError={handleVideoError}
+                        >
+                          <source src={medioConTimestamp} type="video/mp4" />
+                          <source src={medioConTimestamp} type="video/webm" />
+                          Tu navegador no soporta el elemento video.
+                        </video>
+                        {videoError && (
+                          <div className="video-error">
+                            ❌ Error al cargar el video
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <img
+                        src={medioConTimestamp}
+                        alt={`Publicación ${index + 1}`}
+                        className="publicacion-imagen"
+                        onError={handleImageError}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        
+        <div className="publicacion-acciones">
+          <button 
+            className={`accion-btn ${publicacion.estadisticas?.me_gusta_dado ? 'liked' : ''}`}
+            onClick={() => handleMeGusta(publicacion)}
+          >
+            ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
+          </button>
+          <button className="accion-btn">
+            💬 {publicacion.estadisticas?.total_comentarios || 0}
+          </button>
+          <button 
+            className={`accion-btn ${publicacion.estadisticas?.guardado ? 'saved' : ''}`}
+            onClick={() => handleGuardar(publicacion)}
+          >
+            📤
+          </button>
         </div>
       </div>
-      <div className="publicacion-contenido">
-        <p className="publicacion-texto">{publicacion.contenido}</p>
-        {publicacion.imagen && (
-          <img
-            src={publicacion.imagen}
-            alt="Publicación"
-            className="publicacion-imagen"
-          />
-        )}
-      </div>
-      <div className="publicacion-acciones">
-        <button 
-          className={`accion-btn ${publicacion.estadisticas?.me_gusta_dado ? 'liked' : ''}`}
-          onClick={() => handleMeGusta(publicacion)}
-        >
-          ❤️ {publicacion.estadisticas?.total_me_gusta || 0}
-        </button>
-        <button className="accion-btn">
-          💬 {publicacion.estadisticas?.total_comentarios || 0}
-        </button>
-        <button 
-          className={`accion-btn ${publicacion.estadisticas?.guardado ? 'saved' : ''}`}
-          onClick={() => handleGuardar(publicacion)}
-        >
-          📤
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   if (cargando) return <div className="cargando">Cargando perfil...</div>;
   if (!perfil) return <div className="error">Usuario no encontrado</div>;
+
+  // Función para obtener foto de perfil con timestamp
+  const obtenerFotoPerfil = () => {
+    if (!perfil.foto_perfil) return defaultProfile;
+    return perfil.foto_perfil.includes('?')
+      ? perfil.foto_perfil
+      : `${perfil.foto_perfil}?t=${new Date().getTime()}`;
+  };
 
   return (
     <div className="perfil-container">
       {/* ===== COLUMNA PRINCIPAL ===== */}
       <div className="perfil-main">
+        {/* Botón de regreso */}
+        <div className="perfil-navegacion">
+          <button 
+            className="btn-regresar"
+            onClick={() => navigate("/principal")}
+            title="Volver a la página principal"
+          >
+            ← Volver
+          </button>
+        </div>
+
         {/* Header del Perfil */}
         <div className="perfil-header">
           <div className="perfil-avatar">
             <img
-              src={perfil.foto_perfil || defaultProfile}
+              src={obtenerFotoPerfil()}
               alt="Foto de perfil"
               className="perfil-foto"
             />
@@ -415,7 +564,7 @@ export default function PerfilUsuario() {
             </div>
           </div>
 
-          {/* ✅ BOTONES DE ACCIÓN - VERSIÓN MEJORADA */}
+          {/* ✅ BOTONES DE ACCIÓN */}
           {usuarioActual && !esMiPerfil && (
             <div className="acciones-perfil">
               <h4>Acciones</h4>
@@ -483,7 +632,7 @@ export default function PerfilUsuario() {
           </div>
         )}
 
-        {/* Publicaciones del Usuario CON BOTONES FUNCIONALES */}
+        {/* Publicaciones del Usuario CON VIDEOS */}
         <div className="perfil-section">
           <div className="section-header">
             <h3 className="section-title">
@@ -600,7 +749,7 @@ export default function PerfilUsuario() {
             <h2 className="titulo-reporte">⚠️ Reportar Usuario</h2>
 
             <div className="info-usuario-reportado">
-              <img src={perfil.foto_perfil || defaultProfile} alt="Usuario" className="reporte-foto" />
+              <img src={obtenerFotoPerfil()} alt="Usuario" className="reporte-foto" />
               <span>@{perfil.usuario?.nombre_usuario}</span>
             </div>
 

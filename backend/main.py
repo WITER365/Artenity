@@ -163,7 +163,7 @@ def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
     db.commit()
     return usuario
 
-# ------------------ LOGIN UNIFICADO ------------------
+# ------------------ LOGIN  ------------------
 class LoginRequest(BaseModel):
     correo_electronico: EmailStr
     contrasena: str
@@ -2556,8 +2556,8 @@ def eliminar_mensaje(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar mensaje: {str(e)}")
 
-# Eliminar chat completo
-# ------------------ ELIMINAR CHAT COMPLETO - VERSIÓN CORREGIDA ------------------
+
+# ------------------ ELIMINAR CHAT COMPLETO  ------------------
 @app.delete("/chats/{id_chat}")
 def eliminar_chat(
     id_chat: int,

@@ -1705,3 +1705,85 @@
   object-fit: cover;
 }
 
+/* src/styles/perfil.css */
+
+/* Estilos para la navegación */
+.perfil-navegacion {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.btn-regresar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-regresar:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-regresar:active {
+  transform: translateY(1px);
+}
+
+/* Opcional: Para que el botón se vea más integrado con el diseño */
+.perfil-navegacion {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Alternativa: Si prefieres un diseño más simple */
+.btn-regresar-simple {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-regresar-simple:hover {
+  background-color: #f0f2f5;
+  color: #333;
+}
+
+/* Alternativa: Botón flotante (si prefieres que no esté en el flujo normal) */
+.btn-regresar-flotante {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+
+.btn-regresar-flotante:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
