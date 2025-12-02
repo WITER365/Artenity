@@ -1,4 +1,3 @@
-# backend/main.py
 import os
 import shutil
 from datetime import datetime, timedelta
@@ -14,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session, joinedload
+from jose import jwt
 
 from backend import database, models, schemas
 from backend.config import settings
@@ -30,6 +30,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ------------------ CONFIGURACIÓN JWT ------------------
+SECRET_KEY = "tu-secreto-aqui"  # Cambia esto por una clave segura
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
 # ------------------ CONFIGURACIÓN DE CORREO ------------------
 conf = None
@@ -121,7 +133,6 @@ def save_chat_file(file: UploadFile, file_type: str) -> str:
     
     return f"/{file_path}"
 
-
 # ------------------ USUARIOS ------------------
 @app.post("/usuarios", response_model=schemas.UsuarioResponse)
 def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
@@ -136,11 +147,9 @@ def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)
 
     return nuevo_usuario
 
-
 @app.get("/usuarios", response_model=List[schemas.UsuarioResponse])
 def get_usuarios(db: Session = Depends(get_db)):
     return db.query(models.Usuario).all()
-
 
 @app.delete("/usuarios/{usuario_id}", response_model=schemas.UsuarioResponse)
 def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
@@ -154,55 +163,127 @@ def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
     db.commit()
     return usuario
 
-# ------------------ LOGIN ------------------
+# ------------------ LOGIN UNIFICADO ------------------
 class LoginRequest(BaseModel):
     correo_electronico: EmailStr
     contrasena: str
 
 @app.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
-    # Buscar usuario por correo
+    correo = data.correo_electronico
+    contrasena = data.contrasena
+    
+    # Buscar usuario por correo con perfil cargado
     usuario = (
         db.query(models.Usuario)
         .options(joinedload(models.Usuario.perfil))
-        .filter(models.Usuario.correo_electronico == data.correo_electronico)
+        .filter(models.Usuario.correo_electronico == correo)
         .first()
     )
 
-    if not usuario:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    # ---------------------------
+    # LOGIN CON GOOGLE / FACEBOOK (OAuth)
+    # ---------------------------
+    if contrasena == "firebase_oauth":
+        # Si el usuario no existe, crearlo
+        if not usuario:
+            # Generar nombre de usuario único
+            base_username = correo.split("@")[0]
+            username = base_username
+            counter = 1
+            
+            # Verificar si el nombre de usuario ya existe
+            while db.query(models.Usuario).filter_by(nombre_usuario=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            # Crear nuevo usuario
+            nuevo_usuario = models.Usuario(
+                nombre=correo.split("@")[0],
+                apellido="",
+                correo_electronico=correo,
+                contrasena="",  # Contraseña vacía para OAuth
+                fecha_nacimiento=None,
+                genero="",
+                tipo_arte_preferido="",
+                telefono="",
+                nombre_usuario=username,
+                fecha_registro=datetime.utcnow()
+            )
+            db.add(nuevo_usuario)
+            db.commit()
+            db.refresh(nuevo_usuario)
+            
+            # Actualizar la variable usuario
+            usuario = (
+                db.query(models.Usuario)
+                .options(joinedload(models.Usuario.perfil))
+                .filter(models.Usuario.id_usuario == nuevo_usuario.id_usuario)
+                .first()
+            )
     
-    # Comparar contraseña
-    if usuario.contrasena != data.contrasena:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    # ---------------------------
+    # LOGIN NORMAL (email + password)
+    # ---------------------------
+    else:
+        if not usuario:
+            raise HTTPException(
+                status_code=401, 
+                detail="Credenciales incorrectas"
+            )
+        
+        # Verificar contraseña (considera usar hashing en producción)
+        if usuario.contrasena != contrasena:
+            raise HTTPException(
+                status_code=401, 
+                detail="Credenciales incorrectas"
+            )
 
-    # Asegurarse de que existe un perfil
+    # Asegurarse de que existe un perfil (para ambos casos)
     if not usuario.perfil:
-        perfil = models.Perfil(id_usuario=usuario.id_usuario)
+        perfil = models.Perfil(
+            id_usuario=usuario.id_usuario,
+            descripcion="",
+            biografia="",
+            foto_perfil=""
+        )
         db.add(perfil)
         db.commit()
         db.refresh(usuario)
 
-    return {
-        "token": "fake-token",
+    # Crear token JWT
+    token_data = {
+        "id_usuario": usuario.id_usuario,
+        "correo": usuario.correo_electronico,
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    }
+    token = create_access_token(token_data)
+
+    # Preparar respuesta
+    response_data = {
+        "token": token,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # en segundos
         "usuario": {
             "id_usuario": usuario.id_usuario,
             "nombre": usuario.nombre,
             "apellido": usuario.apellido,
             "correo_electronico": usuario.correo_electronico,
-            "fecha_nacimiento": usuario.fecha_nacimiento,
+            "fecha_nacimiento": usuario.fecha_nacimiento.isoformat() if usuario.fecha_nacimiento else None,
             "genero": usuario.genero,
             "tipo_arte_preferido": usuario.tipo_arte_preferido,
             "telefono": usuario.telefono,
             "nombre_usuario": usuario.nombre_usuario,
             "perfil": {
-                "id_perfil": usuario.perfil.id_perfil if usuario.perfil else None,
-                "descripcion": usuario.perfil.descripcion if usuario.perfil else None,
-                "biografia": usuario.perfil.biografia if usuario.perfil else None,
-                "foto_perfil": usuario.perfil.foto_perfil if usuario.perfil else None
+                "id_perfil": usuario.perfil.id_perfil,
+                "descripcion": usuario.perfil.descripcion,
+                "biografia": usuario.perfil.biografia,
+                "foto_perfil": usuario.perfil.foto_perfil
             } if usuario.perfil else None
         }
     }
+
+    return response_data
 
 # ------------------ PERFILES ------------------
 @app.get("/perfiles/{id_usuario}")

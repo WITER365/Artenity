@@ -327,5 +327,7 @@ class ConfiguracionChat(Base):
     chat = relationship("Chat", back_populates="configuraciones")
     usuario = relationship("Usuario")
     
-    # Índice único para evitar configuraciones duplicadas
-    __table_args__ = (UniqueConstraint('id_chat', 'id_usuario', name='uq_chat_usuario'),)
+    # Índice único para evitar configuraciones duplicadas (uno por usuario por chat)
+    __table_args__ = (
+        UniqueConstraint("id_chat", "id_usuario", name="uq_chat_usuario"),
+    )
