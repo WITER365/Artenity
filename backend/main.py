@@ -2891,6 +2891,59 @@ def eliminar_fondo_personalizado(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar fondo: {str(e)}")
 
+# ------------------ CATEGORÍAS------------------
+# backend/main.py - después de las importaciones y antes de los endpoints
+
+def inicializar_categorias(db: Session):
+    """Inserta categorías por defecto si la tabla está vacía."""
+    CATEGORIAS_INICIALES = [
+        {"nombre": "Danza", "descripcion": "Precisión, elegancia y expresión corporal."},
+        {"nombre": "Música", "descripcion": "Melodía, ritmo, armonía y composición."},
+        {"nombre": "Cine", "descripcion": "Arte visual y narrativo en movimiento."},
+        {"nombre": "Literatura", "descripcion": "El mundo de la palabra escrita y la narrativa."},
+        {"nombre": "Artes Visuales", "descripcion": "Pintura, escultura, fotografía e ilustración."},
+        {"nombre": "Arquitectura", "descripcion": "Diseño de espacios y estructuras funcionales."},
+    ]
+    
+    count = db.query(models.Categoria).count()
+    if count == 0:
+        print(">>> Inicializando categorías de arte...")
+        for cat_data in CATEGORIAS_INICIALES:
+            categoria = models.Categoria(**cat_data)
+            db.add(categoria)
+        db.commit()
+        print(">>> Categorías iniciales creadas.")
+
+@app.get("/categorias", response_model=List[schemas.CategoriaResponse])
+def obtener_categorias(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Retorna la lista de todas las categorías de arte disponibles.
+    """
+    try:
+        # Inicializar categorías si no existen
+        count = db.query(models.Categoria).count()
+        if count == 0:
+            inicializar_categorias(db)
+        
+        categorias = db.query(models.Categoria).order_by(models.Categoria.nombre).all()
+        
+        if not categorias:
+            raise HTTPException(
+                status_code=404, 
+                detail="No se encontraron categorías de arte."
+            )
+            
+        return categorias
+        
+    except Exception as e:
+        print(f"Error obteniendo categorías: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno del servidor: {str(e)}"
+        )
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

@@ -19,9 +19,7 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // -----------------------------------------
-  //  LOGIN NORMAL (email + password)
-  // -----------------------------------------
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -115,7 +113,7 @@ const facebookLogin = async () => {
             Iniciar Sesión!!
           </button>
         </form>
-
+        
         <div className="header-box">
           <h1>ARTENITY</h1>
           <img src={logoImg} alt="Logo" className="logo" />

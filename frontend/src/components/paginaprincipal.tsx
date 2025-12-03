@@ -21,6 +21,7 @@ import {
   User
 } from "lucide-react";
 import "../styles/paginaprincipal.css";
+import logoImg from "../assets/img/logo.png";
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import {
   getPublicaciones, 
@@ -988,22 +989,34 @@ export default function PaginaPrincipal() {
         </button>
         <button className="icon-btn" onClick={handleLogout}>⏻</button>
       </div>
-
-      {/* Sidebar izquierda */}
+       
       <aside className="sidebar">
-        <div>
-          <div className="text-center text-2xl font-bold mb-8">🎨 Artenity</div>
-          <nav>
-            <ul className="space-y-4">
-              <li><button className="nav-btn" onClick={() => navigate("/principal")}><Home /> Home</button></li>
-              <li><button className="nav-btn"><Grid /> Categorías</button></li>
-              <li><button className="nav-btn" onClick={() => navigate("/mensajes")}><MessageSquare /> Mensajes</button></li>
-              <li><button className="nav-btn"><Settings /> Configuración</button></li>
-              <li><button className="nav-btn"><Image /> Galería de Arte</button></li>
-            </ul>
-          </nav>
-        </div>
-      </aside>
+  <div>
+    {/* Logo de Artenity como botón */}
+    <div className="header-botton">
+  {/* Solo el logo es clickeable */}
+  <button 
+    className="logo-btn"
+    onClick={() => navigate("/")}
+  >
+    <img src={logoImg} alt="Logo Artenity" className="logo" />
+  </button>
+  
+  {/* Título separado */}
+  <h1>ARTENITY</h1>
+</div>
+    
+    <nav>
+      <ul className="space-y-4">
+        <li><button className="nav-btn" onClick={() => navigate("/principal")}><Home /> Home</button></li>
+        <li><button className="nav-btn" onClick={() => navigate("/categorias")}><Grid /> Categorías</button></li>
+        <li><button className="nav-btn" onClick={() => navigate("/mensajes")}><MessageSquare /> Mensajes</button></li>
+        <li><button className="nav-btn"><Settings /> Configuración</button></li>
+        <li><button className="nav-btn"><Image /> Galería de Arte</button></li>
+      </ul>
+    </nav>
+  </div>
+</aside>
 
       {/* Sección central */}
       <section className="center-section">

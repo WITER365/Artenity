@@ -40,7 +40,7 @@ const Artenity: React.FC = () => {
       </div>
 
       <div className="banner-buttons">
-        <button className="banner-button">LO MÁS VISTO SOBRE EL ARTE</button>
+        <button className="banner-button">LO QUE SUCEDE CON EL MUNDO DEL ARTE</button>
         <Link to="/login" className="bannor-button">INGRESAR</Link>
         <Link to="/register" className="bannar-button">REGISTRAR</Link>
       </div>

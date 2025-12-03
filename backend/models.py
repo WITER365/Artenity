@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from .database import Base
 import json
 
+
 # ------------------ USUARIO ------------------
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -331,3 +332,11 @@ class ConfiguracionChat(Base):
     __table_args__ = (
         UniqueConstraint("id_chat", "id_usuario", name="uq_chat_usuario"),
     )
+
+    # ------------------ CATEGORÍA ------------------
+class Categoria(Base): 
+    __tablename__ = "categorias"
+
+    id_categoria = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), unique=True, index=True, nullable=False)
+    descripcion = Column(String(255), nullable=True)

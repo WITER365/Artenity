@@ -269,11 +269,7 @@ export async function reportarUsuario(id_reportado: number, motivo: string, evid
   return res.data;
 }
 
-// ================== CATEGORÍAS ==================
-export async function obtenerCategorias() {
-  const res = await api.get("/categorias");
-  return res.data;
-}
+
 
 // ================== ESTADÍSTICAS ==================
 export async function obtenerEstadisticasPerfil(id_usuario: number) {
@@ -678,3 +674,34 @@ export const eliminarFondoPersonalizado = async (idChat: number): Promise<any> =
   });
   return res.data;
 };
+
+// ================== CATEGORÍAS ==================
+// ================== CATEGORÍAS ==================
+// Esta es la función principal
+export async function obtenerCategorias(): Promise<any[]> {
+  try {
+    const res = await api.get("/categorias", { 
+      headers: getAuthHeaders() 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo categorías:", error);
+    throw error;
+  }
+}
+
+export async function obtenerPublicacionesPorCategoria(categoria: string): Promise<any[]> {
+  try {
+    const res = await api.get(`/categorias/${categoria}/publicaciones`, { 
+      headers: getAuthHeaders() 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo publicaciones por categoría:", error);
+    throw error;
+  }
+}
+
+// ================== ALIASES COMPATIBILIDAD ========
+// Agrega este alias para compatibilidad
+

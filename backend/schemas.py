@@ -238,7 +238,7 @@ class NotificacionResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# backend/schemas.py - ESQUEMAS PARA CONFIGURACIÓN
+# ------------------ CONFIGURACIÓN CHAT ------------------
 
 class ConfiguracionChatBase(BaseModel):
     fondo_chat: str = "default"
@@ -250,5 +250,21 @@ class ConfiguracionChatUpdate(ConfiguracionChatBase):
 class ConfiguracionChatResponse(ConfiguracionChatBase):
     fondo_personalizado: Optional[str] = None
     
+    class Config:
+        from_attributes = True
+
+
+# backend/schemas.py - Agregar estos esquemas
+
+class CategoriaBase(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+
+class CategoriaCreate(CategoriaBase):
+    pass
+
+class CategoriaResponse(CategoriaBase):
+    id_categoria: int
+
     class Config:
         from_attributes = True
