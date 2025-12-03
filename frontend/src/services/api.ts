@@ -676,8 +676,7 @@ export const eliminarFondoPersonalizado = async (idChat: number): Promise<any> =
 };
 
 // ================== CATEGORÍAS ==================
-// ================== CATEGORÍAS ==================
-// Esta es la función principal
+
 export async function obtenerCategorias(): Promise<any[]> {
   try {
     const res = await api.get("/categorias", { 
@@ -690,18 +689,41 @@ export async function obtenerCategorias(): Promise<any[]> {
   }
 }
 
-export async function obtenerPublicacionesPorCategoria(categoria: string): Promise<any[]> {
+
+// ================== PUBLICACIONES POR CATEGORÍA ==================
+export async function obtenerPublicacionesPorCategoria(categoriaNombre: string): Promise<any[]> {
   try {
-    const res = await api.get(`/categorias/${categoria}/publicaciones`, { 
-      headers: getAuthHeaders() 
+    const res = await api.get(`/publicaciones/categoria/${encodeURIComponent(categoriaNombre)}`, {
+      headers: getAuthHeaders(),
     });
     return res.data;
   } catch (error) {
-    console.error("Error obteniendo publicaciones por categoría:", error);
+    console.error(`Error obteniendo publicaciones para categoría ${categoriaNombre}:`, error);
     throw error;
   }
 }
 
-// ================== ALIASES COMPATIBILIDAD ========
-// Agrega este alias para compatibilidad
+export async function obtenerPublicacionesPorCategorias(categorias: string[]): Promise<any[]> {
+  try {
+    const categoriasString = categorias.join(",");
+    const res = await api.get(`/publicaciones/categorias/${encodeURIComponent(categoriasString)}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error(`Error obteniendo publicaciones para categorías ${categorias.join(", ")}:`, error);
+    throw error;
+  }
+}
 
+export async function obtenerCategoriasPopulares(): Promise<any[]> {
+  try {
+    const res = await api.get("/categorias/populares", { 
+      headers: getAuthHeaders() 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error obteniendo categorías populares:", error);
+    return []; // Devolver array vacío en caso de error
+  }
+}

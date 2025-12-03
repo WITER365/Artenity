@@ -74,10 +74,11 @@ class Publicacion(Base):
     id_usuario = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="CASCADE"))
     contenido = Column(Text, nullable=False)
     
-    # Usar el campo existente 'imagen' pero almacenar JSON para múltiples archivos
-    imagen = Column(Text, nullable=True)  # Cambiado de String a Text para almacenar JSON
+    # Campo para etiquetas/categorías (JSON array de strings)
+    etiquetas = Column(Text, nullable=True)  # Ej: ["danza", "música"]
     
-    # Agregar tipo_medio si no existe
+    # Usar el campo existente 'imagen' pero almacenar JSON para múltiples archivos
+    imagen = Column(Text, nullable=True)
     tipo_medio = Column(String(20), default="imagen")
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
@@ -88,21 +89,29 @@ class Publicacion(Base):
     comentarios = relationship("Comentario", back_populates="publicacion", cascade="all, delete-orphan")
     compartidos = relationship("Compartido", back_populates="publicacion", cascade="all, delete-orphan")
 
-    # Propiedad para compatibilidad - parsear JSON de imagen como medios
     @property
     def medios(self):
         if self.imagen:
             try:
-                # Si imagen contiene JSON, parsearlo
                 if self.imagen.startswith('[') and self.imagen.endswith(']'):
                     return json.loads(self.imagen)
                 else:
-                    # Si es una URL simple, devolverla como lista de un elemento
                     return [self.imagen]
             except:
                 return [self.imagen] if self.imagen else []
         return []
 
+    @property
+    def lista_etiquetas(self):
+        if self.etiquetas:
+            try:
+                if self.etiquetas.startswith('[') and self.etiquetas.endswith(']'):
+                    return json.loads(self.etiquetas)
+                else:
+                    return [self.etiquetas] if self.etiquetas else []
+            except:
+                return [self.etiquetas] if self.etiquetas else []
+        return []
 # ------------------ SEGUIR USUARIO ------------------
 class SeguirUsuario(Base):
     __tablename__ = "seguir_usuario"

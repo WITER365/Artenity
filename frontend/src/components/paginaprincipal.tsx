@@ -18,7 +18,8 @@ import {
   FileImage,
   X as CloseIcon,
   Search,
-  User
+  User,
+  Tag
 } from "lucide-react";
 import "../styles/paginaprincipal.css";
 import logoImg from "../assets/img/logo.png";
@@ -301,7 +302,18 @@ export default function PaginaPrincipal() {
   const [contenido, setContenido] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   
-  //  ESTADOS PARA LA BÚSQUEDA
+  // Estados para etiquetas
+  const [etiquetas, setEtiquetas] = useState<string[]>([]);
+  const [inputEtiqueta, setInputEtiqueta] = useState("");
+  
+  // Lista de categorías disponibles
+  const categoriasDisponibles = [
+    "Danza", "Música", "Cine", "Literatura", 
+    "Pintura", "Teatro", "Fotografía", "Escultura",
+    "Arquitectura", "Artes Visuales"
+  ];
+  
+  // ESTADOS PARA LA BÚSQUEDA
   const [busqueda, setBusqueda] = useState("");
   const [resultadosBusqueda, setResultadosBusqueda] = useState<UsuarioBusqueda[]>([]);
   const [mostrarResultados, setMostrarResultados] = useState(false);
@@ -349,7 +361,21 @@ export default function PaginaPrincipal() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  //  FUNCIÓN PARA BUSCAR USUARIOS
+  // FUNCIÓN PARA AGREGAR ETIQUETA
+  const agregarEtiqueta = (etiqueta: string) => {
+    const etiquetaFormateada = etiqueta.trim();
+    if (etiquetaFormateada && !etiquetas.includes(etiquetaFormateada) && etiquetas.length < 5) {
+      setEtiquetas([...etiquetas, etiquetaFormateada]);
+      setInputEtiqueta("");
+    }
+  };
+
+  // FUNCIÓN PARA ELIMINAR ETIQUETA
+  const eliminarEtiqueta = (index: number) => {
+    setEtiquetas(etiquetas.filter((_, i) => i !== index));
+  };
+
+  // FUNCIÓN PARA BUSCAR USUARIOS
   const buscarUsuariosHandler = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
       setResultadosBusqueda([]);
@@ -370,7 +396,7 @@ export default function PaginaPrincipal() {
     }
   }, []);
 
-  //  EFFECT PARA BÚSQUEDA EN TIEMPO REAL
+  // EFFECT PARA BÚSQUEDA EN TIEMPO REAL
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (busqueda.trim()) {
@@ -384,7 +410,7 @@ export default function PaginaPrincipal() {
     return () => clearTimeout(timeoutId);
   }, [busqueda, buscarUsuariosHandler]);
 
-  //  FUNCIÓN PARA MANEJAR CLIC EN RESULTADO DE BÚSQUEDA
+  // FUNCIÓN PARA MANEJAR CLIC EN RESULTADO DE BÚSQUEDA
   const manejarClicUsuario = (idUsuario: number) => {
     navigate(`/usuario/${idUsuario}`);
     setBusqueda("");
@@ -392,7 +418,7 @@ export default function PaginaPrincipal() {
     setResultadosBusqueda([]);
   };
 
-  //  FUNCIÓN PARA CERRAR RESULTADOS AL HACER CLIC FUERA
+  // FUNCIÓN PARA CERRAR RESULTADOS AL HACER CLIC FUERA
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -405,7 +431,7 @@ export default function PaginaPrincipal() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  //  Funciones de carga de datos
+  // Funciones de carga de datos
   const cargarAmigos = async () => {
     try {
       const amigosData = await obtenerAmigos();
@@ -439,7 +465,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  //  Función mejorada para cargar publicaciones
+  // Función mejorada para cargar publicaciones
   const cargarPublicaciones = async () => {
     try {
       const posts = await getPublicaciones();
@@ -452,7 +478,7 @@ export default function PaginaPrincipal() {
           fotoPerfil = `${p.usuario.perfil.foto_perfil}?t=${new Date().getTime()}`;
         }
 
-        //  PROCESAMIENTO CORREGIDO DE MEDIOS
+        // PROCESAMIENTO CORREGIDO DE MEDIOS
         let mediosArray: string[] = [];
         
         if (p.medios && Array.isArray(p.medios)) {
@@ -515,7 +541,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  //  Funciones de manejo de archivos
+  // Funciones de manejo de archivos
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFiles = Array.from(e.target.files);
@@ -553,7 +579,7 @@ export default function PaginaPrincipal() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  //  Función corregida para crear publicación
+  // Función corregida para crear publicación CON ETIQUETAS
   const handlePost = async () => {
     if (!contenido.trim() && files.length === 0) {
       alert("Debes escribir algo o agregar una imagen/video");
@@ -569,6 +595,11 @@ export default function PaginaPrincipal() {
     data.append("id_usuario", usuario!.id_usuario.toString());
     data.append("contenido", contenido);
     
+    // Agregar etiquetas como JSON
+    if (etiquetas.length > 0) {
+      data.append("etiquetas", JSON.stringify(etiquetas));
+    }
+    
     files.forEach((file) => {
       data.append("files", file);
     });
@@ -576,8 +607,12 @@ export default function PaginaPrincipal() {
     try {
       await crearPublicacion(data);
       
+      // Limpiar formulario
       setContenido("");
       setFiles([]);
+      setEtiquetas([]);
+      setInputEtiqueta("");
+      
       await cargarPublicaciones();
       
       // Notificación de éxito
@@ -600,7 +635,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  //  Funciones de interacción con publicaciones
+  // Funciones de interacción con publicaciones
   const handleMeGusta = async (idPublicacion: number) => {
     try {
       const stats = estadisticas[idPublicacion];
@@ -643,7 +678,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  //  Funciones de comentarios
+  // Funciones de comentarios
   const toggleComentarios = async (idPublicacion: number) => {
     const nuevoEstado = !comentariosAbiertos[idPublicacion];
     setComentariosAbiertos(prev => ({
@@ -721,7 +756,7 @@ export default function PaginaPrincipal() {
     return null;
   };
 
-  //  Funciones de compartir
+  // Funciones de compartir
   const handleCompartir = async (idPublicacion: number, tipo: string = "perfil") => {
     try {
       let amigosIdsParam: number[] = [];
@@ -804,7 +839,7 @@ export default function PaginaPrincipal() {
     }
   };
 
-  //  Funciones del menú
+  // Funciones del menú
   const toggleMenu = (postId: number) => {
     setMenuAbierto(menuAbierto === postId ? null : postId);
   };
@@ -852,7 +887,7 @@ export default function PaginaPrincipal() {
     window.location.href = "/login";
   };
 
-  //  Función helper para determinar tipo de medio
+  // Función helper para determinar tipo de medio
   const esVideo = (medio: string): boolean => {
     return (
       medio.toLowerCase().includes('.mp4') || 
@@ -864,67 +899,45 @@ export default function PaginaPrincipal() {
     );
   };
 
-return (
-  <div className="main-container">
-    
-    {/* Barra superior */}
-    <div className="topbar">
+  return (
+    <div className="main-container">
+      
+      {/* Barra superior */}
+      <div className="topbar">
+        {/* 🔥 BÚSQUEDA DE USUARIOS */}
+        <div className="search-container"
+          style={{
+            position: 'relative',
+            width: '300px',
+            top: '30PX',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            
+            <Search 
+              size={18} 
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#666'
+              }} 
+            />
 
-      {/* 🔥 AQUÍ SOLO AÑADÍ LO QUE PEDISTE */}
-      <div className="search-container"
-        style={{
-          position: 'relative',
-          width: '300px',
-          top: '30PX',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <div style={{ position: 'relative' }}>
-          
-          <Search 
-            size={18} 
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#666'
-            }} 
-          />
+            <input 
+              type="text" 
+              placeholder="Buscar usuarios..." 
+              className="search-input"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              onFocus={() => busqueda.length >= 2 && setMostrarResultados(true)}
+              style={{ paddingLeft: '40px', width: '240px' }}
+            />
 
-          <input 
-            type="text" 
-            placeholder="Buscar usuarios..." 
-            className="search-input"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            onFocus={() => busqueda.length >= 2 && setMostrarResultados(true)}
-            style={{ paddingLeft: '40px', width: '240px' }}
-          />
-
-        </div>
-
-        {/* Resultado de búsqueda (NO LO TOQUÉ) */}
-        {mostrarResultados && (
-          <div className="search-results" style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: 'white',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            zIndex: 1000,
-            maxHeight: '400px',
-            overflowY: 'auto',
-            marginTop: '4px'
-          }}>
-            {/* ...tu código original sigue igual */}
           </div>
-        )}
-
 
           {/* Resultados de búsqueda */}
           {mostrarResultados && (
@@ -1026,37 +1039,33 @@ return (
       </div>
        
       <aside className="sidebar">
-  <div>
-    {/* Logo de Artenity como botón */}
-    <div className="header-botton">
-  {/* Solo el logo es clickeable */}
-  <button 
-    className="logo-btn"
-    onClick={() => navigate("/")}
-  >
-    <img src={logoImg} alt="Logo Artenity" className="logo" />
-  </button>
-  
-
-</div>
-    
-    <nav>
-      <ul className="space-y-4">
-        <li><button className="nav-btn" onClick={() => navigate("/principal")}><Home /> Home</button></li>
-        <li><button className="nav-btn" onClick={() => navigate("/categorias")}><Grid /> Categorías</button></li>
-        <li><button className="nav-btn" onClick={() => navigate("/mensajes")}><MessageSquare /> Mensajes</button></li>
-        <li><button className="nav-btn"><Settings /> Configuración</button></li>
-        <li><button className="nav-btn"><Image /> Galería de Arte</button></li>
-      </ul>
-    </nav>
-  </div>
-</aside>
+        <div>
+          {/* Logo de Artenity como botón */}
+          <div className="header-botton">
+            {/* Solo el logo es clickeable */}
+            <button 
+              className="logo-btn"
+              onClick={() => navigate("/")}
+            >
+              <img src={logoImg} alt="Logo Artenity" className="logo" />
+            </button>
+          </div>
+          
+          <nav>
+            <ul className="space-y-4">
+              <li><button className="nav-btn" onClick={() => navigate("/principal")}><Home /> Home</button></li>
+              <li><button className="nav-btn" onClick={() => navigate("/categorias")}><Grid /> Categorías</button></li>
+              <li><button className="nav-btn" onClick={() => navigate("/mensajes")}><MessageSquare /> Mensajes</button></li>
+              <li><button className="nav-btn"><Settings /> Configuración</button></li>
+              <li><button className="nav-btn"><Image /> Galería de Arte</button></li>
+            </ul>
+          </nav>
+        </div>
+      </aside>
 
       {/* Sección central */}
       <section className="center-section">
-        <div className="tabs">
-        
-        </div>
+        <div className="tabs"></div>
 
         {/* Crear nuevo post */}
         <div className="post-input">
@@ -1066,6 +1075,64 @@ return (
             value={contenido}
             onChange={(e) => setContenido(e.target.value)}
           />
+          
+          {/* Selector de etiquetas */}
+          <div className="etiquetas-container">
+            <div className="etiquetas-input-wrapper">
+              <div className="input-with-icon">
+                <Tag size={16} className="tag-icon" />
+                <input
+                  type="text"
+                  placeholder="Agregar etiquetas (ej: Danza, Música)..."
+                  value={inputEtiqueta}
+                  onChange={(e) => setInputEtiqueta(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && inputEtiqueta.trim()) {
+                      agregarEtiqueta(inputEtiqueta.trim());
+                    }
+                  }}
+                  list="categorias-lista"
+                  className="etiqueta-input"
+                />
+              </div>
+              <datalist id="categorias-lista">
+                {categoriasDisponibles.map((cat) => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
+              <button 
+                type="button" 
+                onClick={() => inputEtiqueta.trim() && agregarEtiqueta(inputEtiqueta.trim())}
+                className="btn-agregar-etiqueta"
+              >
+                Agregar
+              </button>
+            </div>
+            
+            {/* Etiquetas seleccionadas */}
+            {etiquetas.length > 0 && (
+              <div className="etiquetas-seleccionadas">
+                <div className="etiquetas-header">
+                  <span className="etiquetas-titulo">Etiquetas:</span>
+                  <span className="etiquetas-contador">{etiquetas.length}/5</span>
+                </div>
+                <div className="etiquetas-chips">
+                  {etiquetas.map((etiqueta, index) => (
+                    <div key={index} className="etiqueta-chip">
+                      {etiqueta}
+                      <button 
+                        type="button" 
+                        onClick={() => eliminarEtiqueta(index)}
+                        className="btn-eliminar-etiqueta"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="file-upload-section">
             <input
@@ -1167,7 +1234,7 @@ return (
               <div className="post-content">
                 <p>{post.contenido}</p>
                 
-                {/* Renderizado de medios  */}
+                {/* Renderizado de medios */}
                 {post.medios && post.medios.length > 0 && (
                   <div className={`post-media ${post.medios.length > 1 ? 'multiple-media' : 'single-media'}`}>
                     {post.medios.map((medio: string, index: number) => (

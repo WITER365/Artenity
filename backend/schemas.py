@@ -53,6 +53,7 @@ class PublicacionBase(BaseModel):
     contenido: str
     medios: Optional[List[str]] = None
     tipo_medio: Optional[str] = "imagen"
+    etiquetas: Optional[List[str]] = None  # Agregar campo etiquetas
 
 class PublicacionCreate(PublicacionBase):
     id_usuario: int
@@ -62,26 +63,33 @@ class PublicacionResponse(PublicacionBase):
     id_usuario: int
     fecha_creacion: datetime
     usuario: UsuarioPerfil
-    # Para compatibilidad
     imagen: Optional[str] = None
 
     @validator('imagen', pre=True, always=True)
     def set_imagen(cls, v, values):
-        # Usar la primera imagen de medios para compatibilidad
         if 'medios' in values and values['medios'] and len(values['medios']) > 0:
             return values['medios'][0]
         return None
 
     @validator('medios', pre=True)
     def parse_medios(cls, v):
-        # Parsear medios desde el campo imagen que contiene JSON
         if isinstance(v, str):
             try:
-                # Si es un JSON string, parsearlo
                 if v.startswith('[') and v.endswith(']'):
                     return json.loads(v)
                 else:
-                    # Si es una URL simple, convertir a lista
+                    return [v] if v else []
+            except:
+                return [v] if v else []
+        return v
+
+    @validator('etiquetas', pre=True)
+    def parse_etiquetas(cls, v):
+        if isinstance(v, str):
+            try:
+                if v.startswith('[') and v.endswith(']'):
+                    return json.loads(v)
+                else:
                     return [v] if v else []
             except:
                 return [v] if v else []
@@ -89,7 +97,6 @@ class PublicacionResponse(PublicacionBase):
 
     class Config:
         from_attributes = True
-
 # ------------------ SEGUIDORES / SIGUIENDO ------------------
 class SeguidorResponse(BaseModel):
     id_seguimiento: int
@@ -253,9 +260,7 @@ class ConfiguracionChatResponse(ConfiguracionChatBase):
     class Config:
         from_attributes = True
 
-
-# backend/schemas.py - Agregar estos esquemas
-
+# ------------------ CATEGORÍA ------------------
 class CategoriaBase(BaseModel):
     nombre: str
     descripcion: Optional[str] = None

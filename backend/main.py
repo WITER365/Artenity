@@ -367,6 +367,7 @@ async def actualizar_perfil(
 async def crear_publicacion(
     id_usuario: int = Form(...),
     contenido: str = Form(None),  # Cambiar a None para permitir posts sin texto
+    etiquetas: str = Form(None),  # Recibir etiquetas como string JSON (nuevo)
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
@@ -415,12 +416,23 @@ async def crear_publicacion(
                     url_medio = f"http://localhost:8000/{folder}/{unique_filename}"
                     medios_urls.append(url_medio)
         
-        # Crear publicación
+        # Parsear etiquetas si existen (nuevo)
+        lista_etiquetas = []
+        if etiquetas:
+            try:
+                lista_etiquetas = json.loads(etiquetas)
+                if not isinstance(lista_etiquetas, list):
+                    lista_etiquetas = [lista_etiquetas]
+            except:
+                lista_etiquetas = [etiquetas]
+        
+        # Crear publicación con etiquetas
         nueva_pub = models.Publicacion(
             id_usuario=id_usuario, 
             contenido=contenido or "",  # Permitir contenido vacío
             imagen=medios_urls[0] if medios_urls else None,  # Primer medio para compatibilidad
-            tipo_medio=tipo_medio
+            tipo_medio=tipo_medio,
+            etiquetas=json.dumps(lista_etiquetas) if lista_etiquetas else None  # Nuevo campo
         )
         
         db.add(nueva_pub)
@@ -480,6 +492,171 @@ def obtener_publicaciones(
 
     return publicaciones
 
+@app.get("/publicaciones/categoria/{categoria_nombre}", response_model=List[schemas.PublicacionResponse])
+def obtener_publicaciones_por_categoria(
+    categoria_nombre: str,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Obtiene publicaciones filtradas por categoría (etiqueta).
+    """
+    try:
+        # Normalizar nombre de categoría
+        categoria_normalizada = categoria_nombre.lower().strip()
+        
+        # Obtener filtros de bloqueo y "no me interesa"
+        usuarios_bloqueados = db.query(models.BloqueoUsuario.id_bloqueado).filter(
+            models.BloqueoUsuario.id_bloqueador == user_id
+        ).all()
+        ids_usuarios_bloqueados = [ub[0] for ub in usuarios_bloqueados]
+
+        usuarios_que_me_bloquearon = db.query(models.BloqueoUsuario.id_bloqueador).filter(
+            models.BloqueoUsuario.id_bloqueado == user_id
+        ).all()
+        ids_usuarios_que_me_bloquearon = [ub[0] for ub in usuarios_que_me_bloquearon]
+
+        no_me_interesa = db.query(models.NoMeInteresa.id_publicacion).filter(
+            models.NoMeInteresa.id_usuario == user_id
+        ).all()
+        ids_no_me_interesa = [nmi[0] for nmi in no_me_interesa]
+
+        # Obtener todas las publicaciones con filtros aplicados
+        todas_publicaciones = (
+            db.query(models.Publicacion)
+            .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
+            .filter(
+                ~models.Publicacion.id_usuario.in_(ids_usuarios_bloqueados),
+                ~models.Publicacion.id_usuario.in_(ids_usuarios_que_me_bloquearon),
+                ~models.Publicacion.id_publicacion.in_(ids_no_me_interesa)
+            )
+            .order_by(models.Publicacion.fecha_creacion.desc())
+            .all()
+        )
+        
+        # Filtrar por etiqueta
+        publicaciones_filtradas = []
+        for pub in todas_publicaciones:
+            if pub.etiquetas:
+                try:
+                    # Parsear etiquetas JSON
+                    etiquetas_lista = json.loads(pub.etiquetas) if isinstance(pub.etiquetas, str) else pub.etiquetas
+                    
+                    # Verificar si alguna etiqueta coincide con la categoría buscada
+                    if etiquetas_lista:
+                        # Normalizar etiquetas para comparación
+                        etiquetas_normalizadas = [str(tag).lower().strip() for tag in etiquetas_lista]
+                        
+                        # Buscar coincidencia exacta o parcial
+                        if (categoria_normalizada in etiquetas_normalizadas or
+                            any(categoria_normalizada in tag for tag in etiquetas_normalizadas)):
+                            publicaciones_filtradas.append(pub)
+                except Exception as e:
+                    print(f"Error al parsear etiquetas para publicación {pub.id_publicacion}: {e}")
+                    # Si hay error al parsear, verificar si el string contiene la categoría
+                    if (pub.etiquetas and 
+                        isinstance(pub.etiquetas, str) and 
+                        categoria_normalizada in pub.etiquetas.lower()):
+                        publicaciones_filtradas.append(pub)
+        
+        print(f"📊 Encontradas {len(publicaciones_filtradas)} publicaciones para categoría '{categoria_nombre}'")
+        
+        if not publicaciones_filtradas:
+            # Si no hay publicaciones, devolver lista vacía
+            return []
+        
+        return publicaciones_filtradas
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo publicaciones por categoría: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+    
+@app.get("/publicaciones/categorias/{categorias}")
+def obtener_publicaciones_por_categorias(
+    categorias: str,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Obtiene publicaciones filtradas por múltiples categorías separadas por coma.
+    Ej: /publicaciones/categorias/danza,música
+    """
+    try:
+        # Dividir categorías por coma
+        categorias_lista = [cat.strip().lower() for cat in categorias.split(",") if cat.strip()]
+        
+        if not categorias_lista:
+            raise HTTPException(
+                status_code=400, 
+                detail="Debe proporcionar al menos una categoría"
+            )
+        
+        # Obtener filtros de bloqueo y "no me interesa"
+        usuarios_bloqueados = db.query(models.BloqueoUsuario.id_bloqueado).filter(
+            models.BloqueoUsuario.id_bloqueador == user_id
+        ).all()
+        ids_usuarios_bloqueados = [ub[0] for ub in usuarios_bloqueados]
+
+        usuarios_que_me_bloquearon = db.query(models.BloqueoUsuario.id_bloqueador).filter(
+            models.BloqueoUsuario.id_bloqueado == user_id
+        ).all()
+        ids_usuarios_que_me_bloquearon = [ub[0] for ub in usuarios_que_me_bloquearon]
+
+        no_me_interesa = db.query(models.NoMeInteresa.id_publicacion).filter(
+            models.NoMeInteresa.id_usuario == user_id
+        ).all()
+        ids_no_me_interesa = [nmi[0] for nmi in no_me_interesa]
+
+        # Obtener todas las publicaciones con filtros aplicados
+        todas_publicaciones = (
+            db.query(models.Publicacion)
+            .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
+            .filter(
+                ~models.Publicacion.id_usuario.in_(ids_usuarios_bloqueados),
+                ~models.Publicacion.id_usuario.in_(ids_usuarios_que_me_bloquearon),
+                ~models.Publicacion.id_publicacion.in_(ids_no_me_interesa)
+            )
+            .order_by(models.Publicacion.fecha_creacion.desc())
+            .all()
+        )
+        
+        # Filtrar por múltiples categorías
+        publicaciones_filtradas = []
+        for pub in todas_publicaciones:
+            if pub.etiquetas:
+                try:
+                    etiquetas_lista = json.loads(pub.etiquetas) if isinstance(pub.etiquetas, str) else pub.etiquetas
+                    
+                    if etiquetas_lista:
+                        etiquetas_normalizadas = [str(tag).lower().strip() for tag in etiquetas_lista]
+                        
+                        # Verificar si alguna etiqueta coincide con alguna categoría buscada
+                        for categoria in categorias_lista:
+                            if (categoria in etiquetas_normalizadas or
+                                any(categoria in tag for tag in etiquetas_normalizadas)):
+                                publicaciones_filtradas.append(pub)
+                                break  # Si coincide con alguna categoría, agregar y pasar a siguiente publicación
+                except:
+                    if pub.etiquetas and isinstance(pub.etiquetas, str):
+                        etiquetas_str = pub.etiquetas.lower()
+                        for categoria in categorias_lista:
+                            if categoria in etiquetas_str:
+                                publicaciones_filtradas.append(pub)
+                                break
+        
+        print(f"📊 Encontradas {len(publicaciones_filtradas)} publicaciones para categorías: {categorias_lista}")
+        
+        return publicaciones_filtradas
+        
+    except Exception as e:
+        print(f"Error obteniendo publicaciones por múltiples categorías: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno del servidor: {str(e)}"
+        )
 # ------------------ SEGUIR USUARIO ------------------
 @app.post("/seguir/{id_seguido}")
 def seguir_usuario(
@@ -2940,6 +3117,50 @@ def obtener_categorias(
         
     except Exception as e:
         print(f"Error obteniendo categorías: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error interno del servidor: {str(e)}"
+        )
+@app.get("/categorias/populares")
+def obtener_categorias_populares(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Obtiene las categorías más populares basadas en las etiquetas de las publicaciones.
+    """
+    try:
+        # Obtener todas las publicaciones
+        publicaciones = db.query(models.Publicacion).all()
+        
+        categorias_count = {}
+        
+        for pub in publicaciones:
+            if pub.etiquetas:
+                try:
+                    etiquetas = json.loads(pub.etiquetas) if isinstance(pub.etiquetas, str) else pub.etiquetas
+                    
+                    if etiquetas and isinstance(etiquetas, list):
+                        for etiqueta in etiquetas:
+                            etiqueta_limpia = str(etiqueta).strip().title()
+                            if etiqueta_limpia:
+                                categorias_count[etiqueta_limpia] = categorias_count.get(etiqueta_limpia, 0) + 1
+                except:
+                    pass
+        
+        # Ordenar por popularidad
+        categorias_ordenadas = sorted(categorias_count.items(), key=lambda x: x[1], reverse=True)
+        
+        # Limitar a las 10 más populares
+        categorias_populares = [
+            {"nombre": cat, "cantidad": count} 
+            for cat, count in categorias_ordenadas[:10]
+        ]
+        
+        return categorias_populares
+        
+    except Exception as e:
+        print(f"Error obteniendo categorías populares: {str(e)}")
         raise HTTPException(
             status_code=500, 
             detail=f"Error interno del servidor: {str(e)}"

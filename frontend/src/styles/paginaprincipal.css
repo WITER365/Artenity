@@ -1717,3 +1717,170 @@ nav ul {
   background-color: rgba(29, 155, 240, 0.2);
   color: #1d9bf0;
 }
+
+
+
+/* Estilos para el sistema de etiquetas */
+.etiquetas-container {
+  margin: 12px 0;
+  width: 100%;
+}
+
+.etiquetas-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.input-with-icon {
+  position: relative;
+  flex: 1;
+}
+
+.tag-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  z-index: 1;
+}
+
+.etiqueta-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background: white;
+}
+
+.etiqueta-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.btn-agregar-etiqueta {
+  padding: 10px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.btn-agregar-etiqueta:hover {
+  background-color: #2563eb;
+}
+
+.btn-agregar-etiqueta:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.etiquetas-seleccionadas {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.etiquetas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.etiquetas-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.etiquetas-contador {
+  font-size: 12px;
+  color: #64748b;
+  background-color: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.etiquetas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.etiqueta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-eliminar-etiqueta {
+  background: none;
+  border: none;
+  color: #1e40af;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.btn-eliminar-etiqueta:hover {
+  background-color: rgba(30, 64, 175, 0.1);
+}
+
+/* Ajustes para el campo de búsqueda */
+.search-input {
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  width: 100%;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.search-results {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
