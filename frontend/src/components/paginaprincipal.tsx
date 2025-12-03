@@ -864,33 +864,68 @@ export default function PaginaPrincipal() {
     );
   };
 
-  return (
-    <div className="main-container">
-      {/* Barra superior - MODIFICADA CON BÚSQUEDA */}
-      <div className="topbar">
-        <div className="search-container" style={{ position: 'relative', width: '300px' }}>
-          <div style={{ position: 'relative' }}>
-            <Search 
-              size={18} 
-              style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#666'
-              }} 
-            />
-            <input 
-              type="text" 
-              placeholder="Buscar usuarios..." 
-              className="search-input"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              onFocus={() => busqueda.length >= 2 && setMostrarResultados(true)}
-              style={{ paddingLeft: '40px', width: '100%' }}
-            />
-          </div>
+return (
+  <div className="main-container">
+    
+    {/* Barra superior */}
+    <div className="topbar">
+
+      {/* 🔥 AQUÍ SOLO AÑADÍ LO QUE PEDISTE */}
+      <div className="search-container"
+        style={{
+          position: 'relative',
+          width: '300px',
+          top: '30PX',
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        <div style={{ position: 'relative' }}>
           
+          <Search 
+            size={18} 
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#666'
+            }} 
+          />
+
+          <input 
+            type="text" 
+            placeholder="Buscar usuarios..." 
+            className="search-input"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onFocus={() => busqueda.length >= 2 && setMostrarResultados(true)}
+            style={{ paddingLeft: '40px', width: '240px' }}
+          />
+
+        </div>
+
+        {/* Resultado de búsqueda (NO LO TOQUÉ) */}
+        {mostrarResultados && (
+          <div className="search-results" style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: 'white',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            zIndex: 1000,
+            maxHeight: '400px',
+            overflowY: 'auto',
+            marginTop: '4px'
+          }}>
+            {/* ...tu código original sigue igual */}
+          </div>
+        )}
+
+
           {/* Resultados de búsqueda */}
           {mostrarResultados && (
             <div className="search-results" style={{
@@ -1002,8 +1037,7 @@ export default function PaginaPrincipal() {
     <img src={logoImg} alt="Logo Artenity" className="logo" />
   </button>
   
-  {/* Título separado */}
-  <h1>ARTENITY</h1>
+
 </div>
     
     <nav>

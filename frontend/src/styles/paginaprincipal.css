@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'BrittanySignature';
+  src: url('../assets/fonts/BrittanySignature.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Adlery';
+  src: url('../assets/fonts/Adlery_TRIAL.ttf') format('truetype');
+}
 body {
   overflow: hidden;   /* 🚫 bloquea el scroll */
 }
@@ -23,7 +32,7 @@ body.pagina-principal {
 .sidebar {
   width: 350px;                 /* ancho del recuadro */
   height: 900px;                 /* puedes cambiarlo a un valor fijo si quieres */
-  background: rgba(10, 10, 40, 0.85);
+  background: #0e1c51;
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
@@ -39,6 +48,7 @@ body.pagina-principal {
   bottom: auto;                 /* si lo quieres mover abajo */
   transform: none;              /* puedes usar transform para centrar, rotar, etc */
   z-index: 1000;                /* se mantiene por encima del contenido */
+  background: rgba(14, 28, 81, 0.81); 
 }
 /* Contenedor principal */
 .main-container {
@@ -144,7 +154,7 @@ body.pagina-principal {
   /* mover dentro de la sección */
   margin-left: -20px;
   margin-right: auto; 
-  margin-top: 80px;
+  margin-top: 130px;
 }
 .right-sidebar {
   position: relative; /* contenedor base para posicionar tarjetas absolutas */
@@ -154,7 +164,7 @@ body.pagina-principal {
 
 /* Tarjeta general */
 .right-sidebar .card {
-  position: absolute; /* para moverlas libremente */
+  position: fixed; /* para moverlas libremente */
   width: 400px;       /* ancho fijo para todas */
   height: 200px;      /* alto fijo para todas */
   background: rgba(20, 20, 40, 0.85);
@@ -165,14 +175,14 @@ body.pagina-principal {
 }
 
 .right-sidebar {
-  position: relative; /* contenedor base para posicionar tarjetas absolutas */
+  position: static; /* contenedor base para posicionar tarjetas absolutas */
   width: 500px;       /* ancho fijo para que quepan las tarjetas */
   height: 900px;      /* alto suficiente para las tarjetas y moverlas */
 }
 
 /* Tarjeta general */
 .right-sidebar .card {
-  position: absolute; /* para moverlas libremente */
+  position: fixed; /* para moverlas libremente */
   width: 450px;       /* ancho fijo para todas */
   height: 300px;      /* alto fijo para todas */
   background: rgba(20, 20, 40, 0.85);
@@ -183,9 +193,9 @@ body.pagina-principal {
 }
 
 /* Posiciones personalizables */
-.right-sidebar .card:nth-child(1) { top: 50px; left: 230px; }
-.right-sidebar .card:nth-child(2) { top: 370px; left: 230px; }
-.right-sidebar .card:nth-child(3) { top: 690px; left: 230px; }
+.right-sidebar .card:nth-child(1) { top: 90px; left: 1380px; }
+.right-sidebar .card:nth-child(2) { top: 400px; left: 1380px; }
+.right-sidebar .card:nth-child(3) { top: 1710px; left: 230px; }
 
 
 /* Títulos */
@@ -204,11 +214,10 @@ body.pagina-principal {
   gap: 16px;
   padding: 12px 24px;
   position: fixed;
-  top: 5px;
-  right: 60px;
+  top: -5px;
+  right: 40px;
   z-index: 1100;
 }
-
 
 
 .search-input::placeholder {
@@ -233,6 +242,40 @@ body.pagina-principal {
   color: #9333ea;
   transform: scale(1.2);
 }
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 30px;              /* Espacio entre icono y texto */
+    color: #ffffff;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: 'Pacifico', cursive;  /* Estilo manuscrito como la imagen */
+    font-size: 35px;
+    padding: 8px 4px;
+    transition: all 0.3s ease;
+}
+
+/* Tamaño del icono */
+.nav-btn svg {
+    width: 28px;
+    height: 80px;
+    stroke-width: 1.8;
+}
+
+/* Hover estilo imagen */
+.nav-btn:hover {
+    color: #32e0ff;           /* Celeste brillante */
+    transform: translateX(6px);
+}
+
+
 
 /* Botón con imagen */
 .img-btn {
@@ -254,7 +297,7 @@ body.pagina-principal {
   transform: scale(1.1);
   border-color: #ec4899;
 }
-/* Estilos específicos para publicaciones tipo Twitter */
+/* Estilos específicos para publicaciones */
 .posts {
   display: flex;
   flex-direction: column;
@@ -263,7 +306,7 @@ body.pagina-principal {
 }
 
 .post-card {
-  background: white;
+  background: rgba(14, 28, 81, 0.81); 
   border-radius: 16px;
   padding: 16px;
   border: 1px solid #e0e0e0;
@@ -285,8 +328,11 @@ body.pagina-principal {
 .post-header {
   display: flex;
   align-items: center;
+  background: rgb(0, 0, 0);
   gap: 12px;
   margin-bottom: 12px;
+  border-radius: 40px; /* Más redondo */
+
 }
 
 /* Avatar redondo */
@@ -308,17 +354,17 @@ body.pagina-principal {
 
 .username {
   font-weight: 700;
-  color: #000;
+  color: #ffffff;
   font-size: 15px;
 }
 
 .user-handle {
-  color: #6b7280;
+  color: #ffffff;
   font-size: 14px;
 }
 
 .timestamp {
-  color: #6b7280;
+  color: #ffffff;
   font-size: 14px;
 }
 
@@ -328,11 +374,13 @@ body.pagina-principal {
 }
 
 .post-content p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.4;
-  color: #1f2937;
-  word-break: break-word;
+  background: black; /* Fondo semitransparente */
+  padding: 10px 15px;
+  margin: 10px 0;
+  border-radius: 12px; /* Bordes redondeados */
+  border: 1px solid black;
+  color: white;
+  font-size: 14px;
 }
 
 /* Imagen de la publicación */
@@ -504,7 +552,7 @@ body.pagina-principal {
   height: 55px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ccc;
+  border: 2px solid #000000;
   margin-right: 12px;
   transition: transform 0.2s ease;
   flex-shrink: 0; /* evita que se deforme si hay texto largo */
@@ -536,9 +584,9 @@ body.pagina-principal {
 
 /* Estilos para comentarios */
 .comentarios-section {
-  border-top: 1px solid #eee;
+  border-top: 1px solid #000000;
   padding: 15px 0;
-  background: #fafafa;
+  background: #000000;
   border-radius: 0 0 8px 8px;
 }
 
