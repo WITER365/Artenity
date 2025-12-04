@@ -1116,7 +1116,7 @@ const Configuraciones: React.FC = () => {
             <div className="sidebar-menu">
               {[
                 { id: "tu-cuenta", label: "Tu Cuenta", icon: User, color: "blue" },
-                { id: "pantalla-idiomas", label: "Pantalla e Idiomas", icon: Globe, color: "purple" },
+             
                 { id: "notificaciones", label: "Notificaciones", icon: Bell, color: "pink" },
                 { id: "privacidad-seguridad", label: "Privacidad y Seguridad", icon: Shield, color: "green" },
                 { id: "centro-ayuda", label: "Centro de Ayuda", icon: HelpCircle, color: "orange" },
