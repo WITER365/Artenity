@@ -1930,7 +1930,7 @@ nav ul {
 
 /* Contenedor principal de post */
 .post-card {
-  overflow: visible !important; /* Cambia de hidden a visible si es necesario */
+  overflow: visible !important; 
 }
 
 /* Contenedor del contenido del post */
@@ -2034,7 +2034,7 @@ nav ul {
 /* ESTILOS PARA SUGERENCIAS DE SEGUIR */
 .sugerencias-seguir {
   padding: 15px;
-  max-height: 500px; /* Altura máxima para el contenedor */
+  max-height: 500px; 
   display: flex;
   flex-direction: column;
 }
@@ -2070,10 +2070,10 @@ nav ul {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto; /* Habilita scroll vertical */
-  flex: 1; /* Ocupa el espacio disponible */
-  max-height: 380px; /* Altura máxima para el scroll */
-  padding-right: 5px; /* Espacio para el scroll */
+  overflow-y: auto; 
+  flex: 1; 
+  max-height: 380px; 
+  padding-right: 5px; 
   margin-bottom: 15px;
 }
 
@@ -2102,7 +2102,7 @@ nav ul {
   justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid #f5f5f5;
-  min-height: 60px; /* Altura mínima para cada item */
+  min-height: 60px; 
 }
 
 .sugerencia-item:last-child {
@@ -2116,7 +2116,7 @@ nav ul {
   flex: 1;
   text-decoration: none;
   color: inherit;
-  min-width: 0; /* Para que el texto no desborde */
+  min-width: 0; 
 }
 
 .sugerencia-link:hover {
@@ -2136,8 +2136,8 @@ nav ul {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 0; /* Permite que el texto se trunque */
-  overflow: hidden; /* Evita desbordamiento */
+  min-width: 0; 
+  overflow: hidden; 
 }
 
 .sugerencia-username {
@@ -2194,20 +2194,7 @@ nav ul {
   flex-shrink: 0;
 }
 
-.btn-seguir-sugerencia {
-  background-color: #3498db;
-  
-  border: none;
-  border-radius: 15px;
-  padding: 6px 15px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0; /* Evita que se reduzca el botón */
-  margin-left: 8px;
-}
+
 
 .btn-seguir-sugerencia:hover {
   background-color: #2980b9;
@@ -2219,8 +2206,8 @@ nav ul {
 }
 
 .sugerencias-footer {
-  padding-top: 15px;
-  border-top: 1px solid #00000034;
+  padding-top: -5px;
+  border-top: -8px solid #00000034;
   text-align: center;
   position: sticky;
   bottom: 0;
