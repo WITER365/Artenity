@@ -78,7 +78,7 @@ const Configuraciones: React.FC = () => {
     { codigo: "pt", nombre: "Portugués", nativo: "Português" },
   ]);
   
-  const [modoOscuro, setModoOscuro] = useState<boolean>(false);
+  const [modoOscuro, setModoOscuro] = useState<boolean>(true);
   const [tamanoFuente, setTamanoFuente] = useState<number>(16);
   const [notificaciones, setNotificaciones] = useState({
     meGusta: true,
@@ -124,28 +124,28 @@ const Configuraciones: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string>("");
 
   // Cargar datos iniciales
-  useEffect(() => {
-    cargarDatosUsuario();
-    cargarCategorias();
-    
-    // Cargar preferencias del localStorage
-    const modoOscuroGuardado = localStorage.getItem("modoOscuro") === "true";
-    const tamanoFuenteGuardado = localStorage.getItem("tamanoFuente");
-    const notificacionesGuardadas = localStorage.getItem("notificaciones");
-    
-    setModoOscuro(modoOscuroGuardado);
-    if (tamanoFuenteGuardado) {
-      setTamanoFuente(parseInt(tamanoFuenteGuardado));
-    }
-    if (notificacionesGuardadas) {
-      setNotificaciones(JSON.parse(notificacionesGuardadas));
-    }
-    
-    // Aplicar modo oscuro si está activado
-    if (modoOscuroGuardado) {
-      document.documentElement.classList.add("dark-mode");
-    }
-  }, []);
+useEffect(() => {
+  cargarDatosUsuario();
+  cargarCategorias();
+  
+  // Cargar preferencias del localStorage
+  const modoOscuroGuardado = localStorage.getItem("modoOscuro");
+  const tamanoFuenteGuardado = localStorage.getItem("tamanoFuente");
+  const notificacionesGuardadas = localStorage.getItem("notificaciones");
+  
+  // Si no hay valor guardado, usar true (modo oscuro por defecto)
+  setModoOscuro(modoOscuroGuardado !== null ? modoOscuroGuardado === "true" : true);
+  
+  if (tamanoFuenteGuardado) {
+    setTamanoFuente(parseInt(tamanoFuenteGuardado));
+  }
+  if (notificacionesGuardadas) {
+    setNotificaciones(JSON.parse(notificacionesGuardadas));
+  }
+  
+  // Aplicar modo oscuro por defecto
+  document.documentElement.classList.add("dark-mode");
+}, []);
 
   const cargarDatosUsuario = () => {
     try {

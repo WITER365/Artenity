@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 01-12-2025 a las 02:20:01
+-- Tiempo de generación: 05-12-2025 a las 18:36:05
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -20,6 +20,21 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `artenity`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `advertencias_usuarios`
+--
+
+CREATE TABLE `advertencias_usuarios` (
+  `id_advertencia` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `motivo` text NOT NULL,
+  `severidad` varchar(50) DEFAULT NULL,
+  `fecha_advertencia` datetime DEFAULT NULL,
+  `leida` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -48,6 +63,23 @@ INSERT INTO `amistades` (`id_amistad`, `id_usuario1`, `id_usuario2`, `estado`) V
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `ayuda_reportes`
+--
+
+CREATE TABLE `ayuda_reportes` (
+  `id_reporte` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `correo` varchar(255) NOT NULL,
+  `tipo_problema` varchar(100) NOT NULL,
+  `descripcion` text NOT NULL,
+  `estado` varchar(50) DEFAULT NULL,
+  `fecha_reporte` datetime DEFAULT NULL,
+  `fecha_resolucion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `bloqueos_usuarios`
 --
 
@@ -61,55 +93,41 @@ CREATE TABLE `bloqueos_usuarios` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `categorias_obra`
+-- Estructura de tabla para la tabla `categorias`
 --
 
-CREATE TABLE `categorias_obra` (
+CREATE TABLE `categorias` (
   `id_categoria` int(11) NOT NULL,
   `nombre` varchar(100) NOT NULL,
-  `descripcion` text DEFAULT NULL
+  `descripcion` varchar(255) DEFAULT NULL,
+  `etiquetas` text DEFAULT NULL,
+  `imagen_url` varchar(500) DEFAULT NULL,
+  `etiqueta_default` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `categorias_obra`
+-- Volcado de datos para la tabla `categorias`
 --
 
-INSERT INTO `categorias_obra` (`id_categoria`, `nombre`, `descripcion`) VALUES
-(1, 'Pintura', 'Obras creadas con pigmentos sobre una superficie.'),
-(2, 'Escultura', 'Arte tridimensional realizado en piedra, metal, madera u otros materiales.'),
-(3, 'Dibujo', 'Técnica artística basada en líneas y trazos.'),
-(4, 'Grabado', 'Reproducción de imágenes mediante matrices entintadas.'),
-(5, 'Fotografía', 'Captura de imágenes con cámara.'),
-(6, 'Cine', 'Arte audiovisual mediante secuencias fílmicas.'),
-(7, 'Arquitectura', 'Diseño y construcción de estructuras con valor estético.'),
-(8, 'Diseño', 'Creación visual funcional (gráfico, industrial, de moda, etc.).'),
-(9, 'Teatro', 'Representación dramática en vivo.'),
-(10, 'Danza', 'Expresión artística mediante el movimiento corporal.'),
-(11, 'Ópera', 'Arte escénico que une música y canto lírico.'),
-(12, 'Ballet', 'Danza clásica de alto rigor técnico.'),
-(13, 'Circo', 'Espectáculos con acrobacia, magia, humor y más.'),
-(14, 'Mímica', 'Expresión escénica basada en gestos y silencios.'),
-(15, 'Música clásica', 'Composiciones académicas de tradición europea.'),
-(16, 'Jazz', 'Género musical con énfasis en la improvisación.'),
-(17, 'Rock', 'Género musical contemporáneo con guitarras y percusión.'),
-(18, 'Pop', 'Música popular contemporánea de fácil acceso.'),
-(19, 'Folclórica', 'Música tradicional de culturas populares.'),
-(20, 'Electrónica', 'Música generada o manipulada digitalmente.'),
-(21, 'Poesía', 'Composición literaria que expresa belleza o sentimiento.'),
-(22, 'Narrativa', 'Relatos en forma de cuento o novela.'),
-(23, 'Drama', 'Textos teatrales con carga emocional y conflicto.'),
-(24, 'Ensayo', 'Texto argumentativo breve sobre un tema.'),
-(25, 'Arte digital', 'Obras creadas usando medios digitales.'),
-(26, 'Arte interactivo', 'Obras que requieren la participación del espectador.'),
-(27, 'Arte de nuevos medios', 'Creaciones basadas en tecnología emergente.'),
-(28, 'Animación', 'Imágenes en movimiento generadas por técnicas gráficas.'),
-(29, 'Videojuegos', 'Medio interactivo con narrativa y diseño artístico.'),
-(30, 'Artesanía', 'Producción manual con identidad cultural.'),
-(31, 'Cerámica', 'Objetos artísticos modelados en arcilla.'),
-(32, 'Textiles', 'Creaciones con tela, hilos y técnicas manuales.'),
-(33, 'Joyería', 'Diseño artístico de adornos y accesorios.'),
-(34, 'Orfebrería', 'Trabajo artístico en metales preciosos.'),
-(35, 'Música y danza folclóricas', 'Expresiones musicales y coreográficas tradicionales.');
+INSERT INTO `categorias` (`id_categoria`, `nombre`, `descripcion`, `etiquetas`, `imagen_url`, `etiqueta_default`) VALUES
+(1, 'Pintura', 'Arte visual con pigmentos', '[\"pintura\", \"arte\", \"dibujo\", \"acuarela\", \"\\u00f3leo\", \"abstracto\"]', NULL, 'arte'),
+(2, 'Danza', 'Expresión corporal artística', '[\"danza\", \"baile\", \"coreograf\\u00eda\", \"ballet\", \"contempor\\u00e1neo\", \"flamenco\"]', NULL, 'danza'),
+(3, 'Música', 'Arte del sonido organizado', '[\"m\\u00fasica\", \"instrumento\", \"cantar\", \"composici\\u00f3n\", \"ritmo\", \"melod\\u00eda\"]', NULL, 'música'),
+(4, 'Cine', 'Arte cinematográfico', '[\"cine\", \"pel\\u00edcula\", \"director\", \"guion\", \"producci\\u00f3n\", \"edici\\u00f3n\"]', NULL, 'cine'),
+(5, 'Literatura', 'Arte de la escritura', '[\"literatura\", \"escritura\", \"poes\\u00eda\", \"novela\", \"cuento\", \"ensayo\"]', NULL, 'literatura');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `categoria_publicaciones`
+--
+
+CREATE TABLE `categoria_publicaciones` (
+  `id_relacion` int(11) NOT NULL,
+  `id_publicacion` int(11) DEFAULT NULL,
+  `id_categoria` int(11) DEFAULT NULL,
+  `fecha_asignacion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -137,7 +155,7 @@ INSERT INTO `chats` (`id_chat`, `id_usuario1`, `id_usuario2`, `fecha_creacion`, 
 (1, 56, 57, '2025-11-28 06:58:33', '2025-12-01 00:59:06', 'default', '#61ff88', 'default', '#6C63FF'),
 (4, 58, 1, '2025-12-01 03:01:52', '2025-12-01 03:02:23', 'default', '#ff00ea', 'default', '#6C63FF'),
 (5, 58, 57, '2025-12-01 03:01:54', '2025-12-01 03:02:27', 'default', '#6C63FF', 'default', '#6C63FF'),
-(6, 56, 58, '2025-12-01 03:14:10', '2025-12-01 06:16:42', 'blue', '#000000', 'default', '#6C63FF'),
+(6, 56, 58, '2025-12-01 03:14:10', '2025-12-04 06:35:24', 'blue', '#000000', 'default', '#6C63FF'),
 (7, 56, 22, '2025-12-01 06:15:11', '2025-12-01 06:15:25', 'default', '#6C63FF', 'default', '#6C63FF');
 
 -- --------------------------------------------------------
@@ -324,7 +342,9 @@ INSERT INTO `comentarios` (`id_comentario`, `id_usuario`, `id_publicacion`, `id_
 (43, 56, 18, 41, 'bbbgbgbgbgbgb', '2025-12-01 00:13:23'),
 (44, 56, 18, 43, ' v v v v v v ', '2025-12-01 00:13:30'),
 (45, 56, 18, NULL, ' v v v v v v', '2025-12-01 00:13:39'),
-(46, 56, 18, NULL, ' c c c c c ', '2025-12-01 00:13:46');
+(46, 56, 18, NULL, ' c c c c c ', '2025-12-01 00:13:46'),
+(47, 56, 74, NULL, '@ozuna', '2025-12-03 20:39:22'),
+(48, 56, 92, NULL, 'si', '2025-12-03 22:39:39');
 
 -- --------------------------------------------------------
 
@@ -407,9 +427,7 @@ INSERT INTO `compartidos` (`id_compartido`, `id_usuario`, `id_publicacion`, `tip
 (60, 56, 16, 'amigos', '', '2025-11-25 23:55:19', NULL),
 (61, 56, 15, 'amigos', '', '2025-11-25 23:55:44', NULL),
 (62, 56, 14, 'perfil', '', '2025-11-25 23:56:03', NULL),
-(63, 56, 18, 'amigos', '', '2025-11-27 20:17:25', NULL),
-(64, 57, 66, 'perfil', 'si', '2025-11-27 21:09:45', NULL),
-(66, 56, 66, 'amigos', '', '2025-12-01 00:12:50', NULL);
+(63, 56, 18, 'amigos', '', '2025-11-27 20:17:25', NULL);
 
 -- --------------------------------------------------------
 
@@ -436,6 +454,21 @@ INSERT INTO `configuraciones_chat` (`id`, `id_chat`, `id_usuario`, `fondo_chat`,
 (2, 1, 56, 'pattern-dots', '#BB8FCE', NULL, '2025-12-01 01:17:28'),
 (3, 7, 56, 'gradient-sunset', '#e4a572', NULL, '2025-12-01 01:17:46'),
 (4, 6, 58, 'pink', '#BB8FCE', NULL, '2025-12-01 01:16:55');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `configuraciones_sistema`
+--
+
+CREATE TABLE `configuraciones_sistema` (
+  `id_configuracion` int(11) NOT NULL,
+  `clave` varchar(100) NOT NULL,
+  `valor` text NOT NULL,
+  `tipo` varchar(50) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `fecha_actualizacion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -569,8 +602,9 @@ INSERT INTO `guardados` (`id_guardado`, `id_usuario`, `id_publicacion`, `fecha`)
 (27, 56, 13, '2025-11-25 02:23:51'),
 (34, 57, 16, '2025-11-25 23:40:54'),
 (37, 56, 18, '2025-11-27 20:17:52'),
-(38, 57, 66, '2025-11-27 20:31:40'),
-(39, 56, 66, '2025-11-28 02:07:40');
+(41, 56, 74, '2025-12-03 20:39:01'),
+(43, 56, 92, '2025-12-03 22:02:59'),
+(44, 56, 95, '2025-12-04 01:06:11');
 
 -- --------------------------------------------------------
 
@@ -754,7 +788,8 @@ INSERT INTO `mensajes` (`id_mensaje`, `id_chat`, `id_emisor`, `contenido`, `tipo
 (45, 6, 56, '📎 video 1 pruebas.mp4', 'video', '/static/chat_files/videos/28109ab2-6b9d-4d5f-903a-62d317f6b598.mp4', '2025-12-01 03:35:10', 1),
 (47, 7, 56, 'hola', 'texto', NULL, '2025-12-01 06:15:25', 0),
 (48, 6, 58, '📎 6.jpg', 'imagen', '/static/chat_files/images/8a84f21a-889a-4cfa-96c0-189659646f03.jpg', '2025-12-01 06:16:42', 1),
-(49, 6, 58, 'si', 'texto', NULL, '2025-12-01 06:16:42', 1);
+(49, 6, 58, 'si', 'texto', NULL, '2025-12-01 06:16:42', 1),
+(50, 6, 56, 'fdff', 'texto', NULL, '2025-12-04 06:35:24', 0);
 
 -- --------------------------------------------------------
 
@@ -779,7 +814,8 @@ INSERT INTO `mensajes_eliminados` (`id`, `id_mensaje`, `id_usuario`, `fecha_elim
 (4, 42, 56, '2025-11-30 22:34:45'),
 (7, 40, 56, '2025-11-30 22:34:49'),
 (11, 7, 56, '2025-12-01 01:15:59'),
-(12, 45, 58, '2025-12-01 01:16:59');
+(12, 45, 58, '2025-12-01 01:16:59'),
+(13, 48, 56, '2025-12-04 01:35:26');
 
 -- --------------------------------------------------------
 
@@ -810,10 +846,11 @@ INSERT INTO `me_gusta` (`id_megusta`, `id_usuario`, `id_publicacion`, `fecha`) V
 (27, 57, 21, '2025-11-23 14:27:56'),
 (30, 56, 22, '2025-11-25 02:20:56'),
 (36, 57, 16, '2025-11-25 23:40:53'),
-(41, 57, 66, '2025-11-27 20:31:39'),
-(42, 56, 66, '2025-11-28 02:07:39'),
 (45, 56, 18, '2025-11-30 21:58:12'),
-(46, 56, 16, '2025-12-01 00:05:08');
+(46, 56, 16, '2025-12-01 00:05:08'),
+(47, 56, 74, '2025-12-03 20:39:00'),
+(49, 56, 92, '2025-12-03 22:02:59'),
+(50, 56, 95, '2025-12-04 01:06:10');
 
 -- --------------------------------------------------------
 
@@ -827,6 +864,14 @@ CREATE TABLE `me_gusta_comentarios` (
   `id_comentario` int(11) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `me_gusta_comentarios`
+--
+
+INSERT INTO `me_gusta_comentarios` (`id_megusta_comentario`, `id_usuario`, `id_comentario`, `fecha`) VALUES
+(5, 56, 47, '2025-12-03 20:39:25'),
+(6, 56, 48, '2025-12-03 22:39:43');
 
 -- --------------------------------------------------------
 
@@ -1089,7 +1134,14 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leido
 (381, 58, 'and comentó tu publicación', 1, '2025-12-01 00:13:46', 'comentario', 46),
 (382, 58, 'Tienes un nuevo mensaje de and', 1, '2025-12-01 00:43:20', 'nuevo_mensaje', 6),
 (383, 22, 'Tienes un nuevo mensaje de and', 0, '2025-12-01 01:15:25', 'nuevo_mensaje', 7),
-(384, 56, 'Tienes un nuevo mensaje de laurapintora', 1, '2025-12-01 01:16:42', 'nuevo_mensaje', 6);
+(384, 56, 'Tienes un nuevo mensaje de laurapintora', 1, '2025-12-01 01:16:42', 'nuevo_mensaje', 6),
+(385, 58, 'Tienes un nuevo mensaje de and', 0, '2025-12-04 01:35:24', 'nuevo_mensaje', 6),
+(386, 49, 'and comenzó a seguirte', 0, '2025-12-04 02:13:10', 'nuevo_seguidor', 45),
+(387, 55, 'and comenzó a seguirte', 0, '2025-12-04 02:32:43', 'nuevo_seguidor', 46),
+(388, 51, 'and comenzó a seguirte', 0, '2025-12-04 02:32:47', 'nuevo_seguidor', 47),
+(389, 1, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 48),
+(390, 24, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 49),
+(391, 61, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 50);
 
 -- --------------------------------------------------------
 
@@ -1162,7 +1214,6 @@ INSERT INTO `perfiles` (`id_perfil`, `id_usuario`, `descripcion`, `foto_perfil`,
 (38, 38, NULL, NULL, NULL),
 (39, 39, NULL, NULL, NULL),
 (40, 40, NULL, NULL, NULL),
-(41, 41, NULL, NULL, NULL),
 (42, 46, NULL, NULL, NULL),
 (43, 49, NULL, NULL, NULL),
 (44, 51, NULL, NULL, NULL),
@@ -1170,11 +1221,12 @@ INSERT INTO `perfiles` (`id_perfil`, `id_usuario`, `descripcion`, `foto_perfil`,
 (46, 53, NULL, NULL, NULL),
 (47, 54, NULL, NULL, NULL),
 (48, 55, NULL, 'http://localhost:8000/static/perfiles/perfil_55_1761516857.jpg', NULL),
-(49, 56, 'tan poco se', 'http://localhost:8000/static/perfiles/perfil_56_1764539818.jpg', 'me gusta el arte y dormi\r\n'),
+(49, 56, 'tan poco se', 'http://localhost:8000/static/perfiles/perfil_56_1764783789.jpg', 'me gusta el arte y dormi\r\n'),
 (50, 57, 'me gusta dormir SI', 'http://localhost:8000/static/perfiles/perfil_57_1762299627.jpg', 'tengo hambre SI'),
 (51, 58, '\"Artista digital especializado en surrealismo moderno.\"', 'http://localhost:8000/static/perfiles/perfil_58_1761516762.jpg', '\"Desde 2015 exploro el arte digital fusionando elementos de fantasía y tecnología.\"'),
 (52, 59, NULL, NULL, NULL),
-(53, 60, NULL, NULL, NULL);
+(53, 60, NULL, NULL, NULL),
+(54, 61, '', '', '');
 
 -- --------------------------------------------------------
 
@@ -1246,30 +1298,35 @@ CREATE TABLE `publicaciones` (
   `contenido` varchar(255) NOT NULL,
   `imagen` varchar(255) DEFAULT NULL,
   `fecha_creacion` datetime DEFAULT current_timestamp(),
-  `tipo_medio` varchar(20) DEFAULT 'texto'
+  `tipo_medio` varchar(20) DEFAULT 'texto',
+  `etiquetas` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `publicaciones`
 --
 
-INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `imagen`, `fecha_creacion`, `tipo_medio`) VALUES
-(1, 1, 'Esta es una publicación de prueba', 'imagen1.jpg', '2025-10-05 15:00:28', 'texto'),
-(2, 1, 'hola', NULL, '2025-10-05 20:09:32', 'texto'),
-(3, 1, 'hola', NULL, '2025-10-05 20:11:58', 'texto'),
-(4, 1, '', 'http://localhost:8000/static/posts\\1_1.png', '2025-10-05 20:12:19', 'texto'),
-(5, 51, 'hola si', 'http://localhost:8000/static/posts\\51_ARTIVERSE.drawio.png', '2025-10-05 20:16:42', 'texto'),
-(6, 49, 'HOLA COMO ESTAN EPERO QUE BIEN ', 'http://localhost:8000/static/posts\\49_8d3bec423a4c16808c32fdb6f28a44e8.jpg', '2025-10-05 20:59:16', 'texto'),
-(7, 56, 'bgbgbgb', 'http://localhost:8000/static/posts\\56_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-06 21:48:48', 'texto'),
-(12, 24, 'hola ', 'http://localhost:8000/static/posts/24_Captura de pantalla 2025-10-10 183230.png', '2025-10-11 19:55:53', 'texto'),
-(13, 22, 'ya casi', 'http://localhost:8000/static/posts/22_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-11 20:05:30', 'texto'),
-(14, 57, 'ya casi se logra', 'http://localhost:8000/static/posts/57_3.jpg', '2025-10-11 20:06:46', 'texto'),
-(15, 57, 'bvbvbvb', 'http://localhost:8000/static/posts/57_2.jpg', '2025-10-11 20:27:39', 'texto'),
-(16, 56, 'vhgghg', 'http://localhost:8000/static/posts/56_3.jpg', '2025-10-11 23:10:03', 'texto'),
-(18, 58, 'Primera publicación de prueba desde Artenity', 'http://localhost:8000/static/posts/58_4.avif', '2025-10-24 13:59:55', 'texto'),
-(21, 55, 'hola ahí esperanza', NULL, '2025-10-26 22:14:46', 'texto'),
-(22, 58, 'AHI HAMBRE GENTE ', NULL, '2025-11-01 22:38:01', 'texto'),
-(66, 56, '', 'http://localhost:8000/static/videos/9325cde1-4972-4594-830c-5261774655a4_video 1 pruebas.mp4', '2025-11-27 20:17:58', 'video');
+INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `imagen`, `fecha_creacion`, `tipo_medio`, `etiquetas`) VALUES
+(1, 1, 'Esta es una publicación de prueba', 'imagen1.jpg', '2025-10-05 15:00:28', 'texto', NULL),
+(2, 1, 'hola', NULL, '2025-10-05 20:09:32', 'texto', NULL),
+(3, 1, 'hola', NULL, '2025-10-05 20:11:58', 'texto', NULL),
+(4, 1, '', 'http://localhost:8000/static/posts\\1_1.png', '2025-10-05 20:12:19', 'texto', NULL),
+(5, 51, 'hola si', 'http://localhost:8000/static/posts\\51_ARTIVERSE.drawio.png', '2025-10-05 20:16:42', 'texto', NULL),
+(6, 49, 'HOLA COMO ESTAN EPERO QUE BIEN ', 'http://localhost:8000/static/posts\\49_8d3bec423a4c16808c32fdb6f28a44e8.jpg', '2025-10-05 20:59:16', 'texto', NULL),
+(7, 56, 'bgbgbgb', 'http://localhost:8000/static/posts\\56_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-06 21:48:48', 'texto', NULL),
+(12, 24, 'hola ', 'http://localhost:8000/static/posts/24_Captura de pantalla 2025-10-10 183230.png', '2025-10-11 19:55:53', 'texto', NULL),
+(13, 22, 'ya casi', 'http://localhost:8000/static/posts/22_Gráfico de Línea de Tiempo Profesional Moderno Multicolor.png', '2025-10-11 20:05:30', 'texto', NULL),
+(14, 57, 'ya casi se logra', 'http://localhost:8000/static/posts/57_3.jpg', '2025-10-11 20:06:46', 'texto', NULL),
+(15, 57, 'bvbvbvb', 'http://localhost:8000/static/posts/57_2.jpg', '2025-10-11 20:27:39', 'texto', NULL),
+(16, 56, 'vhgghg', 'http://localhost:8000/static/posts/56_3.jpg', '2025-10-11 23:10:03', 'texto', NULL),
+(18, 58, 'Primera publicación de prueba desde Artenity', 'http://localhost:8000/static/posts/58_4.avif', '2025-10-24 13:59:55', 'texto', NULL),
+(21, 55, 'hola ahí esperanza', NULL, '2025-10-26 22:14:46', 'texto', NULL),
+(22, 58, 'AHI HAMBRE GENTE ', NULL, '2025-11-01 22:38:01', 'texto', NULL),
+(74, 56, 'un video de prueba', 'http://localhost:8000/static/videos/3649fc88-3147-47ff-8e65-17ec62557cc4_video 1 pruebas.mp4', '2025-12-03 18:51:35', 'video', NULL),
+(92, 56, 'En el corazón de la Ciénega Esmeralda, donde el aire erapeso y olía a tierra húmeda y flor de loto, vivía un joven caimán llamado Croco.', 'http://localhost:8000/static/posts/8ea273e1-66e4-46d9-85a9-d457dfff4ba3_9.png', '2025-12-03 22:02:54', 'imagen', '[\"Literatura\"]'),
+(93, 56, 'si la literatura', NULL, '2025-12-03 22:22:01', 'texto', '[\"Literatura\"]'),
+(95, 56, 'si', 'http://localhost:8000/static/posts/e2bcd45c-7cb5-4727-b8c1-117325b1f08b_6.jpg', '2025-12-04 01:06:03', 'imagen', '[\"Pintura\"]'),
+(96, 61, 'ffff', 'http://localhost:8000/static/videos/76246312-bb42-4276-a62b-d2dc266a428e_video 1 pruebas.mp4', '2025-12-04 01:06:56', 'video', '[\"Cine\"]');
 
 -- --------------------------------------------------------
 
@@ -1323,6 +1380,22 @@ INSERT INTO `registro_actividad` (`id_actividad`, `id_usuario`, `accion`, `fecha
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `reportes_problemas`
+--
+
+CREATE TABLE `reportes_problemas` (
+  `id_reporte` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `tipo_problema` varchar(100) NOT NULL,
+  `descripcion` text NOT NULL,
+  `email_contacto` varchar(255) NOT NULL,
+  `fecha_reporte` datetime DEFAULT NULL,
+  `estado` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `reportes_usuarios`
 --
 
@@ -1369,7 +1442,8 @@ CREATE TABLE `reset_password_tokens` (
 
 INSERT INTO `reset_password_tokens` (`id`, `id_usuario`, `token`, `expiracion`) VALUES
 (18, 59, '224ccb4f-211b-47e2-a3d4-c0cc1900337f', '2025-11-01 23:15:25'),
-(31, 57, 'a8b1c4b8-a305-4875-9d2b-3175b8b6cdf1', '2025-11-14 02:02:35');
+(31, 57, 'a8b1c4b8-a305-4875-9d2b-3175b8b6cdf1', '2025-11-14 02:02:35'),
+(38, 56, '96161c70-e234-485d-93e6-04ea2e0be23f', '2025-12-04 03:34:15');
 
 -- --------------------------------------------------------
 
@@ -1399,9 +1473,13 @@ INSERT INTO `seguir_usuario` (`id_seguimiento`, `id_seguidor`, `id_seguido`, `fe
 (37, 57, 56, '2025-11-24 23:57:27'),
 (38, 56, 22, '2025-11-25 02:21:08'),
 (41, 57, 24, '2025-11-27 20:37:00'),
-(42, 56, 58, '2025-11-28 02:02:37'),
 (43, 56, 57, '2025-11-28 02:09:05'),
-(44, 56, 2, '2025-11-28 02:09:15');
+(44, 56, 2, '2025-11-28 02:09:15'),
+(45, 56, 49, '2025-12-04 02:13:10'),
+(46, 56, 55, '2025-12-04 02:32:43'),
+(47, 56, 51, '2025-12-04 02:32:47'),
+(48, 56, 1, '2025-12-04 02:32:48'),
+(49, 56, 24, '2025-12-04 02:32:48');
 
 -- --------------------------------------------------------
 
@@ -1415,6 +1493,22 @@ CREATE TABLE `solicitud_de_amistad` (
   `id_receptor` int(11) DEFAULT NULL,
   `estado` varchar(50) DEFAULT NULL,
   `fecha_envio` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `suspensiones_usuarios`
+--
+
+CREATE TABLE `suspensiones_usuarios` (
+  `id_suspension` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `motivo` text NOT NULL,
+  `duracion_horas` int(11) NOT NULL,
+  `fecha_inicio` datetime DEFAULT NULL,
+  `fecha_fin` datetime DEFAULT NULL,
+  `activa` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1480,7 +1574,6 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo_electronico`
 (38, 'Sofía Herrera', '', 'sofia.herrera@example.com', 'pass123', '2000-09-20', 'Femenino', 'Cine', '3008889900', ''),
 (39, 'Andrés Ríos', '', 'andres.rios@example.com', 'pass123', '1994-03-25', 'Masculino', 'Diseño', '3009990011', ''),
 (40, 'Valentina Cruz', '', 'valentina.cruz@example.com', 'pass123', '1996-05-17', 'Femenino', 'Arte digital', '3011112233', ''),
-(41, 'string', 'string', 'string', 'string', '2025-09-14', 'string', 'string', 'string', 'string'),
 (46, 'ozuna', 'Roldán', 'ozuna@test.com', '123456', '2000-05-20', 'femenino', 'pintura', '3201234567', 'ozunaR'),
 (49, 'nolan', 'sin ', 'wrf@gmail.com', '1234ewrt', '2025-09-15', 'Delfin', 'rock', '31431735', '57'),
 (51, 'artenity', 'sexo v', 'wtr.falso1@gmail.com', 'qa1122222', '2007-06-20', 'Hombre', 'jazz', '31232303546', 'wtr123'),
@@ -1488,15 +1581,24 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo_electronico`
 (53, 'anderson', 'dcdcdcd', 'cdcdcdcdc@gmail.com', 'cscscscsc', '2025-10-13', 'Hombre', 'circo', '3197255375', 'cscs'),
 (54, 'anderson', 'roldan', 'roldan@gmail.com', '12345', '2018-05-30', 'Hombre', 'dibujo', '314315545445', 'roldan'),
 (55, 'seba', 'rodriguez', 'seba@gmail.com', '123456', '2018-06-12', 'Hombre', 'circo', '65365436546354364', 'seba'),
-(56, 'wáter', 'sena2', 'anderson.17cardenas@gmail.com', '1234', '2010-10-06', 'Personalizado', 'circo', '223232323', 'and'),
+(56, 'witer el verdadero', 'sena2', 'anderson.17cardenas@gmail.com', '1234', '2010-10-06', 'Personalizado', 'circo', '454 588 7447', 'and'),
 (57, 'witer365', 'real', 'anderson@gmail.com', '12345', '2006-07-09', 'Hombre', 'dibujo', '653654365463543645', 'witer365'),
 (58, 'Laura', 'Pérez', 'laura.perez@example.com', 'Laura123*', '1998-05-10', 'Mujer', 'pintura', '3005678910', 'laurapintora'),
 (59, 'artenity', 'agirre', 'w59345907@gmail.com', 'wtr#56789', '2009-02-18', 'Hombre', 'escultura', '3232025652', 'wtr856'),
-(60, 'erca', 'asassa', 'and@gmail.com', 'and3', '2007-09-11', 'Hombre', 'ballet', '321455698225', 'and2');
+(60, 'erca', 'asassa', 'and@gmail.com', 'and3', '2007-09-11', 'Hombre', 'ballet', '321455698225', 'and2'),
+(61, 'cadymartinezcardenas1234', '', 'cadymartinezcardenas1234@gmail.com', '', NULL, '', '', '', 'cadymartinezcardenas1234');
 
 --
 -- Índices para tablas volcadas
 --
+
+--
+-- Indices de la tabla `advertencias_usuarios`
+--
+ALTER TABLE `advertencias_usuarios`
+  ADD PRIMARY KEY (`id_advertencia`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_advertencias_usuarios_id_advertencia` (`id_advertencia`);
 
 --
 -- Indices de la tabla `amistades`
@@ -1505,6 +1607,14 @@ ALTER TABLE `amistades`
   ADD PRIMARY KEY (`id_amistad`),
   ADD KEY `id_usuario1` (`id_usuario1`),
   ADD KEY `id_usuario2` (`id_usuario2`);
+
+--
+-- Indices de la tabla `ayuda_reportes`
+--
+ALTER TABLE `ayuda_reportes`
+  ADD PRIMARY KEY (`id_reporte`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_ayuda_reportes_id_reporte` (`id_reporte`);
 
 --
 -- Indices de la tabla `bloqueos_usuarios`
@@ -1516,11 +1626,21 @@ ALTER TABLE `bloqueos_usuarios`
   ADD KEY `ix_bloqueos_usuarios_id_bloqueo` (`id_bloqueo`);
 
 --
--- Indices de la tabla `categorias_obra`
+-- Indices de la tabla `categorias`
 --
-ALTER TABLE `categorias_obra`
+ALTER TABLE `categorias`
   ADD PRIMARY KEY (`id_categoria`),
-  ADD UNIQUE KEY `nombre` (`nombre`);
+  ADD UNIQUE KEY `ix_categorias_nombre` (`nombre`),
+  ADD KEY `ix_categorias_id_categoria` (`id_categoria`);
+
+--
+-- Indices de la tabla `categoria_publicaciones`
+--
+ALTER TABLE `categoria_publicaciones`
+  ADD PRIMARY KEY (`id_relacion`),
+  ADD UNIQUE KEY `uq_publicacion_categoria` (`id_publicacion`,`id_categoria`),
+  ADD KEY `id_categoria` (`id_categoria`),
+  ADD KEY `ix_categoria_publicaciones_id_relacion` (`id_relacion`);
 
 --
 -- Indices de la tabla `chats`
@@ -1582,6 +1702,14 @@ ALTER TABLE `configuraciones_chat`
   ADD UNIQUE KEY `uq_chat_usuario` (`id_chat`,`id_usuario`),
   ADD KEY `id_usuario` (`id_usuario`),
   ADD KEY `ix_configuraciones_chat_id` (`id`);
+
+--
+-- Indices de la tabla `configuraciones_sistema`
+--
+ALTER TABLE `configuraciones_sistema`
+  ADD PRIMARY KEY (`id_configuracion`),
+  ADD UNIQUE KEY `clave` (`clave`),
+  ADD KEY `ix_configuraciones_sistema_id_configuracion` (`id_configuracion`);
 
 --
 -- Indices de la tabla `configuracion_usuario`
@@ -1712,6 +1840,14 @@ ALTER TABLE `registro_actividad`
   ADD KEY `id_usuario` (`id_usuario`);
 
 --
+-- Indices de la tabla `reportes_problemas`
+--
+ALTER TABLE `reportes_problemas`
+  ADD PRIMARY KEY (`id_reporte`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_reportes_problemas_id_reporte` (`id_reporte`);
+
+--
 -- Indices de la tabla `reportes_usuarios`
 --
 ALTER TABLE `reportes_usuarios`
@@ -1746,6 +1882,14 @@ ALTER TABLE `solicitud_de_amistad`
   ADD KEY `ix_solicitud_de_amistad_id_solicitud` (`id_solicitud`);
 
 --
+-- Indices de la tabla `suspensiones_usuarios`
+--
+ALTER TABLE `suspensiones_usuarios`
+  ADD PRIMARY KEY (`id_suspension`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_suspensiones_usuarios_id_suspension` (`id_suspension`);
+
+--
 -- Indices de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
@@ -1756,16 +1900,40 @@ ALTER TABLE `usuarios`
 --
 
 --
+-- AUTO_INCREMENT de la tabla `advertencias_usuarios`
+--
+ALTER TABLE `advertencias_usuarios`
+  MODIFY `id_advertencia` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `amistades`
 --
 ALTER TABLE `amistades`
   MODIFY `id_amistad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
+-- AUTO_INCREMENT de la tabla `ayuda_reportes`
+--
+ALTER TABLE `ayuda_reportes`
+  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `bloqueos_usuarios`
 --
 ALTER TABLE `bloqueos_usuarios`
   MODIFY `id_bloqueo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+
+--
+-- AUTO_INCREMENT de la tabla `categorias`
+--
+ALTER TABLE `categorias`
+  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `categoria_publicaciones`
+--
+ALTER TABLE `categoria_publicaciones`
+  MODIFY `id_relacion` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `chats`
@@ -1777,7 +1945,7 @@ ALTER TABLE `chats`
 -- AUTO_INCREMENT de la tabla `comentarios`
 --
 ALTER TABLE `comentarios`
-  MODIFY `id_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT de la tabla `compartidos`
@@ -1792,40 +1960,46 @@ ALTER TABLE `configuraciones_chat`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `configuraciones_sistema`
+--
+ALTER TABLE `configuraciones_sistema`
+  MODIFY `id_configuracion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `guardados`
 --
 ALTER TABLE `guardados`
-  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT de la tabla `mensajes`
 --
 ALTER TABLE `mensajes`
-  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT de la tabla `mensajes_eliminados`
 --
 ALTER TABLE `mensajes_eliminados`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta`
 --
 ALTER TABLE `me_gusta`
-  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta_comentarios`
 --
 ALTER TABLE `me_gusta_comentarios`
-  MODIFY `id_megusta_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_megusta_comentario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=385;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=392;
 
 --
 -- AUTO_INCREMENT de la tabla `no_me_interesa`
@@ -1837,13 +2011,19 @@ ALTER TABLE `no_me_interesa`
 -- AUTO_INCREMENT de la tabla `perfiles`
 --
 ALTER TABLE `perfiles`
-  MODIFY `id_perfil` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id_perfil` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT de la tabla `publicaciones`
 --
 ALTER TABLE `publicaciones`
-  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
+  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
+
+--
+-- AUTO_INCREMENT de la tabla `reportes_problemas`
+--
+ALTER TABLE `reportes_problemas`
+  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `reportes_usuarios`
@@ -1855,13 +2035,13 @@ ALTER TABLE `reportes_usuarios`
 -- AUTO_INCREMENT de la tabla `reset_password_tokens`
 --
 ALTER TABLE `reset_password_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de la tabla `seguir_usuario`
 --
 ALTER TABLE `seguir_usuario`
-  MODIFY `id_seguimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id_seguimiento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT de la tabla `solicitud_de_amistad`
@@ -1870,14 +2050,26 @@ ALTER TABLE `solicitud_de_amistad`
   MODIFY `id_solicitud` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
+-- AUTO_INCREMENT de la tabla `suspensiones_usuarios`
+--
+ALTER TABLE `suspensiones_usuarios`
+  MODIFY `id_suspension` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `advertencias_usuarios`
+--
+ALTER TABLE `advertencias_usuarios`
+  ADD CONSTRAINT `advertencias_usuarios_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `amistades`
@@ -1887,11 +2079,24 @@ ALTER TABLE `amistades`
   ADD CONSTRAINT `amistades_ibfk_2` FOREIGN KEY (`id_usuario2`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `ayuda_reportes`
+--
+ALTER TABLE `ayuda_reportes`
+  ADD CONSTRAINT `ayuda_reportes_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE SET NULL;
+
+--
 -- Filtros para la tabla `bloqueos_usuarios`
 --
 ALTER TABLE `bloqueos_usuarios`
   ADD CONSTRAINT `bloqueos_usuarios_ibfk_1` FOREIGN KEY (`id_bloqueador`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
   ADD CONSTRAINT `bloqueos_usuarios_ibfk_2` FOREIGN KEY (`id_bloqueado`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `categoria_publicaciones`
+--
+ALTER TABLE `categoria_publicaciones`
+  ADD CONSTRAINT `categoria_publicaciones_ibfk_1` FOREIGN KEY (`id_publicacion`) REFERENCES `publicaciones` (`id_publicacion`) ON DELETE CASCADE,
+  ADD CONSTRAINT `categoria_publicaciones_ibfk_2` FOREIGN KEY (`id_categoria`) REFERENCES `categorias` (`id_categoria`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `chats`
@@ -1977,6 +2182,12 @@ ALTER TABLE `publicaciones`
   ADD CONSTRAINT `publicaciones_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`);
 
 --
+-- Filtros para la tabla `reportes_problemas`
+--
+ALTER TABLE `reportes_problemas`
+  ADD CONSTRAINT `reportes_problemas_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `reportes_usuarios`
 --
 ALTER TABLE `reportes_usuarios`
@@ -2002,6 +2213,12 @@ ALTER TABLE `seguir_usuario`
 ALTER TABLE `solicitud_de_amistad`
   ADD CONSTRAINT `solicitud_de_amistad_ibfk_1` FOREIGN KEY (`id_emisor`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
   ADD CONSTRAINT `solicitud_de_amistad_ibfk_2` FOREIGN KEY (`id_receptor`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `suspensiones_usuarios`
+--
+ALTER TABLE `suspensiones_usuarios`
+  ADD CONSTRAINT `suspensiones_usuarios_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
