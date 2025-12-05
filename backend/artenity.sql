@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-12-2025 a las 18:36:05
+-- Tiempo de generación: 05-12-2025 a las 23:22:31
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -527,51 +527,76 @@ INSERT INTO `configuracion_usuario` (`id_configuracion`, `id_usuario`, `modo_osc
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `galeria_arte`
+-- Estructura de tabla para la tabla `galeria_archivos`
 --
 
-CREATE TABLE `galeria_arte` (
-  `id_galeria` int(11) NOT NULL,
-  `id_publicacion` int(11) NOT NULL,
-  `tipo` enum('destacada','nueva','popular','recomendada') DEFAULT 'nueva',
-  `fecha_agregado` datetime DEFAULT current_timestamp()
+CREATE TABLE `galeria_archivos` (
+  `id_archivo` int(11) NOT NULL,
+  `id_carpeta` int(11) DEFAULT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `nombre_original` varchar(255) NOT NULL,
+  `nombre_archivo` varchar(255) NOT NULL,
+  `tipo` varchar(50) NOT NULL,
+  `extension` varchar(20) NOT NULL,
+  `tamano` int(11) NOT NULL,
+  `ruta` varchar(500) NOT NULL,
+  `miniatura` varchar(500) DEFAULT NULL,
+  `duracion` int(11) DEFAULT NULL,
+  `resolucion` varchar(20) DEFAULT NULL,
+  `descripcion` varchar(500) DEFAULT NULL,
+  `etiquetas` text DEFAULT NULL,
+  `es_publico` tinyint(1) DEFAULT NULL,
+  `fecha_subida` datetime DEFAULT NULL,
+  `fecha_actualizacion` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `galeria_arte`
+-- Volcado de datos para la tabla `galeria_archivos`
 --
 
-INSERT INTO `galeria_arte` (`id_galeria`, `id_publicacion`, `tipo`, `fecha_agregado`) VALUES
-(1, 1, 'destacada', '2025-01-18 08:00:00'),
-(2, 2, 'nueva', '2025-01-18 08:05:00'),
-(3, 3, 'popular', '2025-01-18 08:10:00'),
-(4, 4, 'recomendada', '2025-01-18 08:15:00'),
-(5, 5, 'destacada', '2025-01-18 08:20:00'),
-(6, 6, 'nueva', '2025-01-18 08:25:00'),
-(7, 7, 'popular', '2025-01-18 08:30:00'),
-(8, 8, 'recomendada', '2025-01-18 08:35:00'),
-(9, 9, 'destacada', '2025-01-18 08:40:00'),
-(10, 10, 'nueva', '2025-01-18 08:45:00'),
-(11, 11, 'popular', '2025-01-18 08:50:00'),
-(12, 12, 'recomendada', '2025-01-18 08:55:00'),
-(13, 13, 'destacada', '2025-01-18 09:00:00'),
-(14, 14, 'nueva', '2025-01-18 09:05:00'),
-(15, 15, 'popular', '2025-01-18 09:10:00'),
-(16, 16, 'recomendada', '2025-01-18 09:15:00'),
-(17, 17, 'destacada', '2025-01-18 09:20:00'),
-(18, 18, 'nueva', '2025-01-18 09:25:00'),
-(19, 19, 'popular', '2025-01-18 09:30:00'),
-(20, 20, 'recomendada', '2025-01-18 09:35:00'),
-(21, 21, 'destacada', '2025-01-18 09:40:00'),
-(22, 22, 'nueva', '2025-01-18 09:45:00'),
-(23, 23, 'popular', '2025-01-18 09:50:00'),
-(24, 24, 'recomendada', '2025-01-18 09:55:00'),
-(25, 25, 'destacada', '2025-01-18 10:00:00'),
-(26, 26, 'nueva', '2025-01-18 10:05:00'),
-(27, 27, 'popular', '2025-01-18 10:10:00'),
-(28, 28, 'recomendada', '2025-01-18 10:15:00'),
-(29, 29, 'destacada', '2025-01-18 10:20:00'),
-(30, 30, 'nueva', '2025-01-18 10:25:00');
+INSERT INTO `galeria_archivos` (`id_archivo`, `id_carpeta`, `id_usuario`, `nombre_original`, `nombre_archivo`, `tipo`, `extension`, `tamano`, `ruta`, `miniatura`, `duracion`, `resolucion`, `descripcion`, `etiquetas`, `es_publico`, `fecha_subida`, `fecha_actualizacion`) VALUES
+(12, 6, 56, '9.png', '56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', 'imagen', 'png', 379879, '/static/galeria\\imagenes\\56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', '/static/galeria\\imagenes\\56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', NULL, '400x603', NULL, NULL, 0, '2025-12-05 21:53:50', '2025-12-05 21:53:50'),
+(13, 6, 56, '8.png', '56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', 'imagen', 'png', 479671, '/static/galeria/imagens/56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', '/static/galeria/imagens/56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', NULL, NULL, NULL, NULL, 0, '2025-12-05 22:17:03', '2025-12-05 22:17:03'),
+(15, 6, 56, 'video 1 pruebas.mp4', '56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', 'video', 'mp4', 2041358, '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', NULL, NULL, NULL, NULL, 0, '2025-12-05 22:19:50', '2025-12-05 22:19:50');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `galeria_carpetas`
+--
+
+CREATE TABLE `galeria_carpetas` (
+  `id_carpeta` int(11) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` varchar(500) DEFAULT NULL,
+  `color` varchar(20) DEFAULT NULL,
+  `icono` varchar(50) DEFAULT NULL,
+  `es_publica` tinyint(1) DEFAULT NULL,
+  `fecha_creacion` datetime DEFAULT NULL,
+  `fecha_actualizacion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `galeria_carpetas`
+--
+
+INSERT INTO `galeria_carpetas` (`id_carpeta`, `id_usuario`, `nombre`, `descripcion`, `color`, `icono`, `es_publica`, `fecha_creacion`, `fecha_actualizacion`) VALUES
+(6, 56, 'musica', '', '#c20000', 'folder', 0, '2025-12-05 21:50:36', '2025-12-05 22:19:50');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `galeria_publicaciones`
+--
+
+CREATE TABLE `galeria_publicaciones` (
+  `id_galeria_publicacion` int(11) NOT NULL,
+  `id_archivo` int(11) DEFAULT NULL,
+  `id_publicacion` int(11) DEFAULT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `fecha_publicacion` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1719,11 +1744,31 @@ ALTER TABLE `configuracion_usuario`
   ADD KEY `id_usuario` (`id_usuario`);
 
 --
--- Indices de la tabla `galeria_arte`
+-- Indices de la tabla `galeria_archivos`
 --
-ALTER TABLE `galeria_arte`
-  ADD PRIMARY KEY (`id_galeria`),
-  ADD KEY `id_publicacion` (`id_publicacion`);
+ALTER TABLE `galeria_archivos`
+  ADD PRIMARY KEY (`id_archivo`),
+  ADD KEY `id_carpeta` (`id_carpeta`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_galeria_archivos_id_archivo` (`id_archivo`);
+
+--
+-- Indices de la tabla `galeria_carpetas`
+--
+ALTER TABLE `galeria_carpetas`
+  ADD PRIMARY KEY (`id_carpeta`),
+  ADD UNIQUE KEY `uq_usuario_nombre_carpeta` (`id_usuario`,`nombre`),
+  ADD KEY `ix_galeria_carpetas_id_carpeta` (`id_carpeta`);
+
+--
+-- Indices de la tabla `galeria_publicaciones`
+--
+ALTER TABLE `galeria_publicaciones`
+  ADD PRIMARY KEY (`id_galeria_publicacion`),
+  ADD KEY `id_archivo` (`id_archivo`),
+  ADD KEY `id_publicacion` (`id_publicacion`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `ix_galeria_publicaciones_id_galeria_publicacion` (`id_galeria_publicacion`);
 
 --
 -- Indices de la tabla `guardados`
@@ -1966,6 +2011,24 @@ ALTER TABLE `configuraciones_sistema`
   MODIFY `id_configuracion` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `galeria_archivos`
+--
+ALTER TABLE `galeria_archivos`
+  MODIFY `id_archivo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT de la tabla `galeria_carpetas`
+--
+ALTER TABLE `galeria_carpetas`
+  MODIFY `id_carpeta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `galeria_publicaciones`
+--
+ALTER TABLE `galeria_publicaciones`
+  MODIFY `id_galeria_publicacion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `guardados`
 --
 ALTER TABLE `guardados`
@@ -2126,6 +2189,27 @@ ALTER TABLE `compartidos`
 ALTER TABLE `configuraciones_chat`
   ADD CONSTRAINT `configuraciones_chat_ibfk_1` FOREIGN KEY (`id_chat`) REFERENCES `chats` (`id_chat`),
   ADD CONSTRAINT `configuraciones_chat_ibfk_2` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`);
+
+--
+-- Filtros para la tabla `galeria_archivos`
+--
+ALTER TABLE `galeria_archivos`
+  ADD CONSTRAINT `galeria_archivos_ibfk_1` FOREIGN KEY (`id_carpeta`) REFERENCES `galeria_carpetas` (`id_carpeta`) ON DELETE CASCADE,
+  ADD CONSTRAINT `galeria_archivos_ibfk_2` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `galeria_carpetas`
+--
+ALTER TABLE `galeria_carpetas`
+  ADD CONSTRAINT `galeria_carpetas_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `galeria_publicaciones`
+--
+ALTER TABLE `galeria_publicaciones`
+  ADD CONSTRAINT `galeria_publicaciones_ibfk_1` FOREIGN KEY (`id_archivo`) REFERENCES `galeria_archivos` (`id_archivo`) ON DELETE CASCADE,
+  ADD CONSTRAINT `galeria_publicaciones_ibfk_2` FOREIGN KEY (`id_publicacion`) REFERENCES `publicaciones` (`id_publicacion`) ON DELETE CASCADE,
+  ADD CONSTRAINT `galeria_publicaciones_ibfk_3` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `guardados`
