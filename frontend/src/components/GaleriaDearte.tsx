@@ -6,7 +6,8 @@ import {
   Edit, Trash2, Eye, Share2, Grid, List, Search,
   FolderPlus, Download, X, FolderOpen, FolderTree,
   BarChart3, Globe, Lock, Plus, AlertCircle, Info,
-  File, Music, Image, Video, FileIcon, Loader2
+  File, Music, Image, Video, FileIcon, Loader2,
+  ArrowLeft, Palette, Sparkles, ArrowUp, ArrowDown
 } from 'lucide-react';
 import {
   obtenerEstadisticasGaleria,
@@ -170,7 +171,7 @@ const GaleriaDeArte: React.FC = () => {
   const { usuario } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Estados
+  // Estados principales
   const [estadisticas, setEstadisticas] = useState<EstadisticasGaleria | null>(null);
   const [carpetas, setCarpetas] = useState<CarpetaGaleria[]>([]);
   const [archivos, setArchivos] = useState<ArchivoGaleria[]>([]);
@@ -178,6 +179,19 @@ const GaleriaDeArte: React.FC = () => {
   const [vista, setVista] = useState<'grid' | 'list'>('grid');
   const [cargando, setCargando] = useState(true);
   const [subiendoArchivo, setSubiendoArchivo] = useState(false);
+  const [hoverEffects, setHoverEffects] = useState(false);
+  
+  // NUEVO: Estados para scroll de toda la página
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const mainContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Estados existentes para scroll interno
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
+  const archivosContainerRef = useRef<HTMLDivElement>(null);
+  const carpetasListaRef = useRef<HTMLDivElement>(null);
   
   // Estados para modales
   const [mostrarModalCarpeta, setMostrarModalCarpeta] = useState(false);
@@ -231,6 +245,81 @@ const GaleriaDeArte: React.FC = () => {
   const [tipoFiltro, setTipoFiltro] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState('');
   
+  // NUEVO: Efecto para scroll de toda la página
+  useEffect(() => {
+    const handleGlobalScroll = () => {
+      if (mainContainerRef.current) {
+        const { scrollTop } = mainContainerRef.current;
+        setShowScrollToTop(scrollTop > 300);
+        setIsScrolling(scrollTop > 10);
+      }
+    };
+
+    const container = mainContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleGlobalScroll);
+      return () => container.removeEventListener('scroll', handleGlobalScroll);
+    }
+  }, []);
+
+  // NUEVO: Función para scroll al top de toda la página
+  const scrollToTopGlobal = () => {
+    if (mainContainerRef.current) {
+      mainContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // NUEVO: Función para manejar scroll de toda la página
+  const handleGlobalScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    
+    setScrollPosition(scrollTop);
+    setIsScrolling(scrollTop > 10);
+    
+    // Actualizar estados para botones de navegación
+    setIsAtTop(scrollTop < 100);
+    setIsAtBottom(scrollHeight - scrollTop - clientHeight < 100);
+  }, []);
+
+  // Funciones existentes para scroll interno (modificadas)
+  const scrollToElement = (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (element && mainContainerRef.current) {
+      const elementRect = element.getBoundingClientRect();
+      const containerRect = mainContainerRef.current.getBoundingClientRect();
+      const offset = elementRect.top - containerRect.top + mainContainerRef.current.scrollTop;
+      
+      mainContainerRef.current.scrollTo({
+        top: offset - 100,
+        behavior: 'smooth'
+      });
+    }
+  };
+  
+  const scrollToBottomLocal = () => {
+    if (archivosContainerRef.current) {
+      archivosContainerRef.current.scrollTo({
+        top: archivosContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+  
+  const scrollToTopLocal = () => {
+    if (archivosContainerRef.current) {
+      archivosContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Cargar datos iniciales
   useEffect(() => {
     cargarDatos();
@@ -290,6 +379,16 @@ const GaleriaDeArte: React.FC = () => {
       cargarArchivosFiltrados();
     }
   }, [carpetaSeleccionada, tipoFiltro, cargarArchivosFiltrados]);
+  
+  // Efecto para scroll automático al cambiar filtros
+  useEffect(() => {
+    if (archivos.length > 0 && archivosContainerRef.current) {
+      archivosContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [archivos, tipoFiltro, busqueda]);
   
   const handleCrearCarpeta = async () => {
     try {
@@ -548,23 +647,81 @@ const GaleriaDeArte: React.FC = () => {
   }
   
   return (
-    <div className="galeria-container">
-      {/* Header */}
+    <div 
+      className={`galeria-container ${isScrolling ? 'scrolling' : ''}`} 
+      ref={mainContainerRef} 
+      onScroll={handleGlobalScroll}
+    >
+      {/* Efectos de partículas */}
+      <div className="particulas">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div 
+            key={i}
+            className="particula"
+            style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 20}s`,
+              animationDuration: `${15 + Math.random() * 15}s`,
+              width: `${2 + Math.random() * 2}px`,
+              height: `${2 + Math.random() * 2}px`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Botón flotante para scroll to top */}
+      {showScrollToTop && (
+        <button 
+          className="btn-scroll-top"
+          onClick={scrollToTopGlobal}
+          title="Volver arriba"
+          aria-label="Volver al inicio de la página"
+        >
+          <ArrowUp size={20} />
+        </button>
+      )}
+      
+      {/* Header principal */}
       <div className="galeria-header">
-        <div className="galeria-titulo">
-          <FolderTree size={32} />
-          <div>
-            <h1>Galería de Arte</h1>
-            <p>Organiza y comparte tus obras creativas</p>
+        <div className="header-left">
+          <button 
+            className="btn-back-home"
+            onClick={() => navigate('/principal')}
+            title="Regresar a la página principal"
+          >
+            <ArrowLeft size={18} />
+            <span>Página Principal</span>
+          </button>
+          
+          <div className="galeria-titulo-container">
+            <div className="titulo-icono">
+              <Palette size={28} />
+              <Sparkles size={14} className="sparkle" />
+            </div>
+            <div>
+              <h1>
+                <span className="titulo-gradiente">Galería de Arte</span>
+                
+              </h1>
+              <p className="subtitulo">Tu espacio para organizar tus obras en carpetas separadas </p>
+            </div>
           </div>
         </div>
         
         <div className="galeria-acciones">
           <button 
+            className="btn-galeria btn-magic"
+            onClick={() => setHoverEffects(!hoverEffects)}
+            title={hoverEffects ? "Desactivar efectos" : "Activar efectos mágicos"}
+          >
+            <Sparkles size={16} />
+            {hoverEffects ? "Efectos ON" : "Efectos OFF"}
+          </button>
+          <button 
             className="btn-galeria btn-secondary" 
             onClick={() => setMostrarModalCarpeta(true)}
           >
-            <FolderPlus size={18} />
+            <FolderPlus size={16} />
             Nueva Carpeta
           </button>
           <button 
@@ -578,290 +735,348 @@ const GaleriaDeArte: React.FC = () => {
               }
             }}
           >
-            <Upload size={18} />
-            Subir Archivo
+            <Upload size={16} />
+            Subir Obra
           </button>
         </div>
       </div>
       
-      {/* Estadísticas */}
-      {estadisticas && (
-        <div className="galeria-estadisticas">
-          <div className="estadistica-card">
-            <FolderOpen size={24} />
-            <div>
-              <h3>{estadisticas.total_carpetas}</h3>
-              <p>Carpetas</p>
+      {/* Layout de 2 columnas */}
+      <div className="galeria-main-content">
+        {/* Columna izquierda: Contenido principal */}
+        <div className="galeria-contenido-principal">
+          {/* Sidebar de carpetas */}
+          <div className="galeria-sidebar">
+            <div className="sidebar-header">
+              <h3><Folder size={16} /> Carpetas</h3>
+              <span>{carpetas.length}</span>
             </div>
-          </div>
-          <div className="estadistica-card">
-            <FileImage size={24} />
-            <div>
-              <h3>{estadisticas.total_archivos}</h3>
-              <p>Archivos</p>
-            </div>
-          </div>
-          <div className="estadistica-card">
-            <BarChart3 size={24} />
-            <div>
-              <h3>{estadisticas.tamano_total_mb} MB</h3>
-              <p>Espacio usado</p>
-            </div>
-          </div>
-          <div className="estadistica-card">
-            <Globe size={24} />
-            <div>
-              <h3>{Object.values(estadisticas.tipos_archivos).reduce((a, b) => a + b, 0)}</h3>
-              <p>Tipos de archivos</p>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <div className="galeria-contenido">
-        {/* Sidebar - Carpetas */}
-        <div className="galeria-sidebar">
-          <div className="sidebar-header">
-            <h3><Folder size={18} /> Carpetas</h3>
-            <span>{carpetas.length}</span>
-          </div>
-          
-          <div className="carpetas-lista">
-            {carpetas.map(carpeta => (
-              <div
-                key={carpeta.id_carpeta}
-                className={`carpeta-item ${carpetaSeleccionada === carpeta.id_carpeta ? 'activa' : ''}`}
-                onClick={() => cargarArchivosCarpeta(carpeta.id_carpeta)}
-                style={{ borderLeftColor: carpeta.color }}
-              >
-                <div className="carpeta-info">
-                  <Folder size={20} style={{ color: carpeta.color }} />
-                  <div>
-                    <h4>{carpeta.nombre}</h4>
-                    <p>{carpeta.total_archivos} archivos • {formatTamano(carpeta.tamano_total)}</p>
+            
+            <div 
+              ref={carpetasListaRef}
+              className="carpetas-lista"
+            >
+              {carpetas.map((carpeta, index) => (
+                <div
+                  key={carpeta.id_carpeta}
+                  className={`carpeta-item ${carpetaSeleccionada === carpeta.id_carpeta ? 'activa' : ''}`}
+                  onClick={() => cargarArchivosCarpeta(carpeta.id_carpeta)}
+                  style={{ 
+                    borderLeftColor: carpeta.color,
+                    '--index': index
+                  } as React.CSSProperties}
+                >
+                  <div className="carpeta-info">
+                    <Folder size={18} style={{ color: carpeta.color }} />
+                    <div>
+                      <h4>{carpeta.nombre}</h4>
+                      <p>{carpeta.total_archivos} archivos • {formatTamano(carpeta.tamano_total)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="carpeta-acciones">
+                    <button
+                      className="btn-icon"
+                      title={carpeta.es_publica ? "Carpeta pública" : "Carpeta privada"}
+                      aria-label={carpeta.es_publica ? "Carpeta pública" : "Carpeta privada"}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {carpeta.es_publica ? <Globe size={14} /> : <Lock size={14} />}
+                    </button>
+                    
+                    <button
+                      className="btn-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editarCarpeta(carpeta);
+                      }}
+                      title="Editar carpeta"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    
+                    <button
+                      className="btn-icon btn-danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        solicitarEliminarCarpeta(carpeta.id_carpeta, carpeta.nombre);
+                      }}
+                      title="Eliminar carpeta"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
+              ))}
+              
+              {carpetas.length === 0 && (
+                <div className="sin-carpetas">
+                  <Folder size={48} />
+                  <p>No hay carpetas creadas</p>
+                  <button 
+                    className="btn-galeria btn-outline"
+                    onClick={() => setMostrarModalCarpeta(true)}
+                  >
+                    <Plus size={16} />
+                    Crear primera carpeta
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Área de archivos */}
+          <div className="galeria-main">
+            <div className="archivos-header">
+              <div className="filtros">
+                <div className="search-box">
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    placeholder="Buscar archivos..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && cargarArchivosFiltrados()}
+                  />
+                  {busqueda && (
+                    <button 
+                      className="btn-icon" 
+                      onClick={() => {
+                        setBusqueda('');
+                        cargarArchivosFiltrados();
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
                 
-                <div className="carpeta-acciones">
-                  <button
-                    className="btn-icon"
-                    title={carpeta.es_publica ? "Carpeta pública" : "Carpeta privada"}
-                    aria-label={carpeta.es_publica ? "Carpeta pública" : "Carpeta privada"}
-                    onClick={(e) => e.stopPropagation()}
+                <select 
+                  className="select-filtro"
+                  value={tipoFiltro}
+                  onChange={(e) => setTipoFiltro(e.target.value)}
+                >
+                  <option value="todos">Todos los tipos</option>
+                  <option value="imagen">Imágenes</option>
+                  <option value="video">Videos</option>
+                  <option value="audio">Audio</option>
+                  <option value="documento">Documentos</option>
+                </select>
+                
+                <div className="vista-botones">
+                  <button 
+                    className={`btn-icon ${vista === 'grid' ? 'active' : ''}`}
+                    onClick={() => setVista('grid')}
+                    title="Vista cuadrícula"
                   >
-                    {carpeta.es_publica ? <Globe size={16} /> : <Lock size={16} />}
+                    <Grid size={16} />
                   </button>
-                  
-                  <button
-                    className="btn-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      editarCarpeta(carpeta);
-                    }}
-                    title="Editar carpeta"
+                  <button 
+                    className={`btn-icon ${vista === 'list' ? 'active' : ''}`}
+                    onClick={() => setVista('list')}
+                    title="Vista lista"
                   >
-                    <Edit size={16} />
-                  </button>
-                  
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      solicitarEliminarCarpeta(carpeta.id_carpeta, carpeta.nombre);
-                    }}
-                    title="Eliminar carpeta"
-                  >
-                    <Trash2 size={16} />
+                    <List size={16} />
                   </button>
                 </div>
               </div>
-            ))}
+              
+              <div className="info-carpeta">
+                {carpetaSeleccionada 
+                  ? carpetas.find(c => c.id_carpeta === carpetaSeleccionada)?.nombre
+                  : 'Selecciona una carpeta'}
+                {carpetaSeleccionada && (
+                  <span className="contador-archivos">
+                    {archivos.length} archivo{archivos.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+                
+                {/* Controles de scroll LOCAL (solo para archivos) */}
+                <div className="scroll-controls">
+                  <button 
+                    className="btn-icon"
+                    onClick={scrollToTopLocal}
+                    title="Ir al inicio de archivos"
+                    disabled={isAtTop}
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  
+                  <button 
+                    className="btn-icon"
+                    onClick={scrollToBottomLocal}
+                    title="Ir al final de archivos"
+                    disabled={isAtBottom}
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
             
-            {carpetas.length === 0 && (
-              <div className="sin-carpetas">
-                <Folder size={48} />
-                <p>No hay carpetas creadas</p>
+            {/* Grid de archivos */}
+            {archivos.length > 0 ? (
+              <div 
+                ref={archivosContainerRef}
+                className={`archivos-container ${vista} ${isAtBottom ? 'at-end' : ''}`}
+              >
+                {archivos.map((archivo, index) => (
+                  <div 
+                    key={archivo.id_archivo} 
+                    className={`archivo-card ${hoverEffects ? 'hover-effects neon-effect' : ''}`}
+                    style={{ '--index': index } as React.CSSProperties}
+                  >
+                    <div 
+                      className="archivo-preview" 
+                      onClick={() => verDetalleArchivo(archivo.id_archivo)}
+                    >
+                      <PreviewArchivo archivo={archivo} />
+                      
+                      {archivo.es_publico && (
+                        <div className="badge-publico" title="Archivo público">
+                          <Globe size={10} />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="archivo-info">
+                      <h4 title={archivo.nombre_original}>
+                        {archivo.nombre_original.length > 30 
+                          ? archivo.nombre_original.substring(0, 30) + '...' 
+                          : archivo.nombre_original}
+                      </h4>
+                      
+                      <div className="archivo-meta">
+                        <span className={`tipo-tag ${archivo.tipo}`}>
+                          {getIconoTipo(archivo.tipo)}
+                          {archivo.tipo.charAt(0).toUpperCase() + archivo.tipo.slice(1)}
+                        </span>
+                        <span>•</span>
+                        <span>{formatTamano(archivo.tamano)}</span>
+                        {archivo.resolucion && (
+                          <>
+                            <span>•</span>
+                            <span>{archivo.resolucion}</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      {archivo.descripcion && (
+                        <p className="archivo-descripcion">
+                          {archivo.descripcion.length > 100
+                            ? archivo.descripcion.substring(0, 100) + '...'
+                            : archivo.descripcion}
+                        </p>
+                      )}
+                      
+                      <div className="archivo-acciones">
+                        <button 
+                          className="btn-icon"
+                          onClick={() => verDetalleArchivo(archivo.id_archivo)}
+                          title="Ver detalles"
+                        >
+                          <Eye size={14} />
+                        </button>
+                        
+                        <button 
+                          className="btn-icon"
+                          onClick={() => descargarArchivo(archivo.ruta, archivo.nombre_original)}
+                          title="Descargar"
+                        >
+                          <Download size={14} />
+                        </button>
+                        
+                        <button 
+                          className="btn-icon"
+                          onClick={() => {
+                            setArchivoSeleccionado(archivo);
+                            setMostrarModalPublicar(true);
+                          }}
+                          title="Publicar en página principal"
+                        >
+                          <Share2 size={14} />
+                        </button>
+                        
+                        <button 
+                          className="btn-icon btn-danger"
+                          onClick={() => solicitarEliminarArchivo(archivo.id_archivo, archivo.nombre_original)}
+                          title="Eliminar"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="sin-archivos">
+                <FileImage size={48} />
+                <h3>No hay archivos en esta carpeta</h3>
+                <p>Sube tu primera obra o selecciona otra carpeta</p>
                 <button 
-                  className="btn-galeria btn-outline"
-                  onClick={() => setMostrarModalCarpeta(true)}
+                  className="btn-galeria btn-primary"
+                  onClick={() => setMostrarModalSubir(true)}
                 >
-                  <Plus size={16} />
-                  Crear primera carpeta
+                  <Upload size={16} />
+                  Subir archivo
                 </button>
               </div>
             )}
           </div>
         </div>
         
-        {/* Contenido principal - Archivos */}
-        <div className="galeria-main">
-          <div className="archivos-header">
-            <div className="filtros">
-              <div className="search-box">
-                <Search size={18} />
-                <input
-                  type="text"
-                  placeholder="Buscar archivos..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && cargarArchivosFiltrados()}
-                />
-                {busqueda && (
-                  <button 
-                    className="btn-icon" 
-                    onClick={() => {
-                      setBusqueda('');
-                      cargarArchivosFiltrados();
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-              
-              <select 
-                className="select-filtro"
-                value={tipoFiltro}
-                onChange={(e) => setTipoFiltro(e.target.value)}
-              >
-                <option value="todos">Todos los tipos</option>
-                <option value="imagen">Imágenes</option>
-                <option value="video">Videos</option>
-                <option value="audio">Audio</option>
-                <option value="documento">Documentos</option>
-              </select>
-              
-              <div className="vista-botones">
-                <button 
-                  className={`btn-icon ${vista === 'grid' ? 'active' : ''}`}
-                  onClick={() => setVista('grid')}
-                  title="Vista cuadrícula"
-                >
-                  <Grid size={18} />
-                </button>
-                <button 
-                  className={`btn-icon ${vista === 'list' ? 'active' : ''}`}
-                  onClick={() => setVista('list')}
-                  title="Vista lista"
-                >
-                  <List size={18} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="info-carpeta">
-              {carpetaSeleccionada 
-                ? carpetas.find(c => c.id_carpeta === carpetaSeleccionada)?.nombre
-                : 'Selecciona una carpeta'}
-              {carpetaSeleccionada && (
-                <span className="contador-archivos">
-                  {archivos.length} archivo{archivos.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-          </div>
+        {/* Columna derecha: Estadísticas */}
+        <div className="galeria-estadisticas">
+          <h3 className="titulo-estadisticas">
+            <BarChart3 size={20} />
+            Estadísticas
+          </h3>
           
-          {/* Lista de archivos */}
-          {archivos.length > 0 ? (
-            <div className={`archivos-container ${vista}`}>
-              {archivos.map(archivo => (
-                <div key={archivo.id_archivo} className="archivo-card">
-                  <div 
-                    className="archivo-preview" 
-                    onClick={() => verDetalleArchivo(archivo.id_archivo)}
-                  >
-                    <PreviewArchivo archivo={archivo} />
-                    
-                    {archivo.es_publico && (
-                      <div className="badge-publico" title="Archivo público">
-                        <Globe size={12} />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="archivo-info">
-                    <h4 title={archivo.nombre_original}>
-                      {archivo.nombre_original.length > 30 
-                        ? archivo.nombre_original.substring(0, 30) + '...' 
-                        : archivo.nombre_original}
-                    </h4>
-                    
-                    <div className="archivo-meta">
-                      <span style={{ color: getColorTipo(archivo.tipo) }}>
-                        {getIconoTipo(archivo.tipo)}
-                        {archivo.tipo.charAt(0).toUpperCase() + archivo.tipo.slice(1)}
-                      </span>
-                      <span>•</span>
-                      <span>{formatTamano(archivo.tamano)}</span>
-                      {archivo.resolucion && (
-                        <>
-                          <span>•</span>
-                          <span>{archivo.resolucion}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {archivo.descripcion && (
-                      <p className="archivo-descripcion">
-                        {archivo.descripcion.length > 100
-                          ? archivo.descripcion.substring(0, 100) + '...'
-                          : archivo.descripcion}
-                      </p>
-                    )}
-                    
-                    <div className="archivo-acciones">
-                      <button 
-                        className="btn-icon"
-                        onClick={() => verDetalleArchivo(archivo.id_archivo)}
-                        title="Ver detalles"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      
-                      <button 
-                        className="btn-icon"
-                        onClick={() => descargarArchivo(archivo.ruta, archivo.nombre_original)}
-                        title="Descargar"
-                      >
-                        <Download size={16} />
-                      </button>
-                      
-                      <button 
-                        className="btn-icon"
-                        onClick={() => {
-                          setArchivoSeleccionado(archivo);
-                          setMostrarModalPublicar(true);
-                        }}
-                        title="Publicar en página principal"
-                      >
-                        <Share2 size={16} />
-                      </button>
-                      
-                      <button 
-                        className="btn-icon btn-danger"
-                        onClick={() => solicitarEliminarArchivo(archivo.id_archivo, archivo.nombre_original)}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
+          {estadisticas && (
+            <>
+              <div className="estadistica-card">
+                <div className="icon-stats">
+                  <FolderOpen size={20} />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="sin-archivos">
-              <FileImage size={64} />
-              <h3>No hay archivos en esta carpeta</h3>
-              <p>Sube tu primera obra o selecciona otra carpeta</p>
-              <button 
-                className="btn-galeria btn-primary"
-                onClick={() => setMostrarModalSubir(true)}
-              >
-                <Upload size={18} />
-                Subir archivo
-              </button>
-            </div>
+                <div>
+                  <div className="contador-valor">{estadisticas.total_carpetas}</div>
+                  <div className="contador-label">Carpetas</div>
+                </div>
+              </div>
+              
+              <div className="estadistica-card">
+                <div className="icon-stats">
+                  <FileImage size={20} />
+                </div>
+                <div>
+                  <div className="contador-valor">{estadisticas.total_archivos}</div>
+                  <div className="contador-label">Archivos</div>
+                </div>
+              </div>
+              
+              <div className="estadistica-card">
+                <div className="icon-stats">
+                  <BarChart3 size={20} />
+                </div>
+                <div>
+                  <div className="contador-valor">{estadisticas.tamano_total_mb}</div>
+                  <div className="contador-label">MB Usados</div>
+                </div>
+              </div>
+              
+              <div className="estadistica-card">
+                <div className="icon-stats">
+                  <Globe size={20} />
+                </div>
+                <div>
+                  <div className="contador-valor">
+                    {Object.values(estadisticas.tipos_archivos).reduce((a, b) => a + b, 0)}
+                  </div>
+                  <div className="contador-label">Tipos de Archivos</div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

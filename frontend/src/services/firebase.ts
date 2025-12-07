@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyA51K3DkEB79DWfHwJ_lHgYB7juK0_kj0w",
   authDomain: "artenity-5127c.firebaseapp.com",
   projectId: "artenity-5127c",
-  storageBucket: "artenity-5127c.firebasestorage.app",
+  storageBucket: "artenity-5127c.appspot.com",
   messagingSenderId: "124115018656",
   appId: "1:124115018656:web:9d3ae14dbbcb86ea94bac5",
 };

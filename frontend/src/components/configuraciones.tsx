@@ -1098,16 +1098,17 @@ useEffect(() => {
       <div className="settings-header">
         <div className="header-content">
           <div className="header-left">
-            <button
-              onClick={() => navigate(-1)}
-              className="back-button"
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <div className="header-title">
-              <h1 className="main-title">Configuración</h1>
-              <p className="subtitle">Personaliza tu experiencia en Artiverse</p>
-            </div>
+
+           <div className="header-title">
+  <button
+    onClick={() => navigate(-1)}
+    className="back-button with-label"
+  >
+    <ArrowLeft size={16} />
+    <span className="back-label">VOLVER</span>
+  </button>
+  <h1 className="main-title">Configuración</h1>
+</div>
           </div>
           
           {message && (

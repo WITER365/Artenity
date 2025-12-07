@@ -2001,3 +2001,25 @@
     border: 1px solid #000 !important;
   }
 }
+/* Estilo para botón con etiqueta */
+.back-button.with-label {
+  width: auto;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.back-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c084fc;
+}
+
+@media (max-width: 576px) {
+  .back-button.with-label {
+    padding: 6px 10px;
+  }
+  
+  .back-label {
+    font-size: 12px;
+  }
+}

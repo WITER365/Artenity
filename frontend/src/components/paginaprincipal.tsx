@@ -481,6 +481,7 @@ export default function PaginaPrincipal() {
       window.dispatchEvent(notificacionEvent);
     }
   };
+  
 
   // FUNCIÓN PARA INICIAR EDICIÓN DE ANUNCIO
   const iniciarEdicionAnuncio = () => {
@@ -824,6 +825,58 @@ export default function PaginaPrincipal() {
       console.error("Error con guardar:", error);
     }
   };
+  // Agrega estas funciones en la sección de funciones de manejo de publicaciones (alrededor de la línea 220-250)
+
+// En tu componente React, agrega esta función
+const handleReportarUsuario = (idUsuarioReportado: number) => {
+  if (!usuario || !usuario.id_usuario) {
+    alert("Debes iniciar sesión para reportar usuarios");
+    return;
+  }
+
+  if (usuario.id_usuario === idUsuarioReportado) {
+    alert("No puedes reportarte a ti mismo");
+    return;
+  }
+
+  // Mostrar modal o formulario para reportar
+  const motivo = prompt("¿Por qué quieres reportar a este usuario?\n\nOpciones:\n1. Contenido inapropiado\n2. Comportamiento ofensivo\n3. Spam\n4. Suplantación de identidad\n5. Otro");
+  
+  if (!motivo || motivo.trim() === "") {
+    return;
+  }
+
+  // Llamar a la API para reportar
+  reportarUsuario(idUsuarioReportado, motivo.trim());
+};
+
+// Función para hacer la llamada a la API
+const reportarUsuario = async (idReportado: number, motivo: string) => {
+  try {
+    const formData = new FormData();
+    formData.append('motivo', motivo);
+    
+    const response = await fetch(`http://localhost:8000/reportar/${idReportado}`, {
+      method: 'POST',
+      headers: {
+        'token': localStorage.getItem('token') || '',
+        'id_usuario': usuario?.id_usuario?.toString() || ''
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      alert(`✅ ${data.mensaje || "Usuario reportado correctamente"}`);
+    } else {
+      const errorData = await response.json();
+      alert(`❌ Error: ${errorData.detail || "No se pudo reportar al usuario"}`);
+    }
+  } catch (error) {
+    console.error("Error al reportar usuario:", error);
+    alert("Error al reportar al usuario. Intenta nuevamente.");
+  }
+};
 
   // Funciones de comentarios
   const toggleComentarios = async (idPublicacion: number) => {
@@ -1004,6 +1057,7 @@ export default function PaginaPrincipal() {
     }
   };
 
+  
   const handleBloquearUsuario = async (userId: number, userName: string) => {
     if (!window.confirm(`¿Estás seguro de que quieres bloquear a ${userName}?`)) return;
 
@@ -1333,7 +1387,7 @@ export default function PaginaPrincipal() {
           </button>
         </div>
 
-        <div className="banner">NUEVOS POSTERS!!</div>
+        <div className="banner">NUEVOS POSTEOS!!</div>
 
         {/* Publicaciones */}
         <div className="posts">
@@ -1365,6 +1419,11 @@ export default function PaginaPrincipal() {
                           Eliminar publicación
                         </button>
                       )}
+                                        {/* Nueva opción: Reportar usuario */}
+                  <button className="menu-item report" onClick={() => handleReportarUsuario(post.usuario.id_usuario)}>
+                    Reportar usuario
+                  </button>
+                  
                       {post.usuario?.id_usuario !== usuario?.id_usuario && (
                         <button className="menu-item block" onClick={() => handleBloquearUsuario(post.usuario.id_usuario, post.usuario.nombre_usuario)}>
                           Bloquear usuario
