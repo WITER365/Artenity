@@ -1,4 +1,4 @@
-// src/components/NotificacionesPanel.tsx - VERSIÓN CORREGIDA
+// src/components/NotificacionesPanel.tsx 
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {

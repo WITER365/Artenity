@@ -1,4 +1,4 @@
-// frontend/components/Messages.tsx - VERSIÓN COMPLETA CORREGIDA
+// frontend/components/Messages.tsx 
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/Messages.css";
 import { useNavigate } from "react-router-dom";
@@ -401,7 +401,56 @@ const Messages: React.FC = () => {
 
   const renderMessageContent = (msg: MessageType) => {
     if (msg.tipo === "texto") {
-      return msg.text;
+      // 🔥 NUEVO: Procesar enlaces de compartidos
+      const texto = msg.text || "";
+      const enlaceRegex = /\[ENLACE_COMPARTIDO:(\d+)\](.*?)\[\/ENLACE_COMPARTIDO\]/g;
+      const partes: (string | React.ReactElement)[] = [];
+      let ultimoIndice = 0;
+      let match;
+      
+      while ((match = enlaceRegex.exec(texto)) !== null) {
+        // Agregar texto antes del enlace
+        if (match.index > ultimoIndice) {
+          partes.push(texto.substring(ultimoIndice, match.index));
+        }
+        
+        // Agregar el enlace como botón clicable
+        const idCompartido = parseInt(match[1]);
+        const textoEnlace = match[2] || "Ver publicación compartida";
+        
+        partes.push(
+          <button
+            key={`enlace-${idCompartido}-${match.index}`}
+            className="enlace-compartido-btn"
+            onClick={() => {
+              navigate("/compartidos", {
+                state: {
+                  idCompartido: idCompartido,
+                  fromNotification: true
+                }
+              });
+            }}
+            title="Ver publicación compartida"
+          >
+            {textoEnlace}
+          </button>
+        );
+        
+        ultimoIndice = match.index + match[0].length;
+      }
+      
+      // Agregar texto restante
+      if (ultimoIndice < texto.length) {
+        partes.push(texto.substring(ultimoIndice));
+      }
+      
+      // Si no hay enlaces, retornar texto normal
+      if (partes.length === 0) {
+        return <span style={{ whiteSpace: "pre-wrap" }}>{texto}</span>;
+      }
+      
+      return <span style={{ whiteSpace: "pre-wrap" }}>{partes}</span>;
+      
     } else if (msg.tipo === "imagen" && msg.archivo_url) {
       return (
         <div className="message-file">

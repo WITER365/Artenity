@@ -2123,6 +2123,8 @@ def compartir_publicacion(
             print(f"📤 Notificación creada para propietario: usuario {publicacion.id_usuario}")
         
         # 2. Si es compartir con amigos específicos, crear notificaciones para cada amigo
+        mensajes_enviados = 0
+        
         if tipo == "amigos" and amigos_ids:
             amigos_ids_list = [int(id_str) for id_str in amigos_ids.split(",") if id_str.strip()]
             print(f"👥 Compartiendo con amigos: {amigos_ids_list}")
@@ -2136,6 +2138,7 @@ def compartir_publicacion(
                 ).first()
                 
                 if amistad:
+                    # Crear notificación
                     notificacion_amigo = models.Notificacion(
                         id_usuario=amigo_id,
                         tipo="compartido_amigo", 
@@ -2146,17 +2149,80 @@ def compartir_publicacion(
                     db.add(notificacion_amigo)
                     notificaciones_creadas += 1
                     print(f"📤 Notificación creada para amigo: usuario {amigo_id}")
+                    
+                    # 🔥 NUEVO: Crear o obtener chat y enviar mensaje
+                    try:
+                        # Buscar chat existente
+                        chat_existente = db.query(models.Chat).filter(
+                            ((models.Chat.id_usuario1 == user_id) & (models.Chat.id_usuario2 == amigo_id)) |
+                            ((models.Chat.id_usuario1 == amigo_id) & (models.Chat.id_usuario2 == user_id))
+                        ).first()
+                        
+                        if not chat_existente:
+                            # Crear nuevo chat
+                            nuevo_chat = models.Chat(
+                                id_usuario1=user_id,
+                                id_usuario2=amigo_id
+                            )
+                            db.add(nuevo_chat)
+                            db.flush()  # Para obtener el ID sin commit
+                            chat_id = nuevo_chat.id_chat
+                            print(f"💬 Nuevo chat creado: {chat_id}")
+                        else:
+                            chat_id = chat_existente.id_chat
+                            print(f"💬 Chat existente encontrado: {chat_id}")
+                        
+                        # Crear mensaje con información del compartido y enlace directo
+                        mensaje_compartido = mensaje or "Te comparto esta publicación"
+                        contenido_mensaje = f"📤 {mensaje_compartido}\n\n"
+                        
+                        # Agregar enlace directo al compartido específico
+                        # Formato especial: [ENLACE_COMPARTIDO:id_compartido] que será procesado en el frontend
+                        contenido_mensaje += f"[ENLACE_COMPARTIDO:{nuevo_compartido.id_compartido}]🔗 Ver publicación compartida[/ENLACE_COMPARTIDO]"
+                        
+                        # Si hay contenido en la publicación, agregarlo al mensaje
+                        if publicacion.contenido:
+                            contenido_preview = publicacion.contenido[:120] + "..." if len(publicacion.contenido) > 120 else publicacion.contenido
+                            contenido_mensaje += f"\n\n📝 Vista previa:\n{contenido_preview}"
+                        
+                        # Si hay imagen, mencionarlo
+                        if publicacion.imagen:
+                            contenido_mensaje += "\n\n🖼️ Incluye imagen"
+                        
+                        nuevo_mensaje = models.Mensaje(
+                            id_chat=chat_id,
+                            id_emisor=user_id,
+                            contenido=contenido_mensaje,
+                            tipo="texto"
+                        )
+                        db.add(nuevo_mensaje)
+                        
+                        # Actualizar última actividad del chat
+                        if chat_existente:
+                            chat_existente.ultima_actividad = datetime.utcnow()
+                        else:
+                            nuevo_chat.ultima_actividad = datetime.utcnow()
+                        
+                        mensajes_enviados += 1
+                        print(f"💬 Mensaje enviado al chat con amigo {amigo_id}")
+                        
+                    except Exception as e:
+                        print(f"⚠️ Error enviando mensaje al chat con amigo {amigo_id}: {str(e)}")
+                        # Continuar con el siguiente amigo aunque falle el mensaje
+                        continue
                 else:
                     print(f"⚠️  Usuario {amigo_id} no es amigo o amistad no aceptada")
         
         db.commit()
         print(f"✅ Total notificaciones creadas: {notificaciones_creadas}")
+        print(f"✅ Total mensajes enviados al chat: {mensajes_enviados}")
         
         return {
             "mensaje": "Publicación compartida exitosamente", 
             "id_compartido": nuevo_compartido.id_compartido,
             "tipo": tipo,
             "notificaciones_creadas": notificaciones_creadas,
+            "mensajes_chat_enviados": mensajes_enviados,
             "expiracion": None
         }
     

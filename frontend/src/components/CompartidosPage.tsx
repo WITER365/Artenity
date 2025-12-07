@@ -177,6 +177,31 @@ export default function CompartidosPage() {
     }
   }, [compartidosLista, datosCargados]);
 
+  // 🔥 NUEVO: Escuchar evento de scroll desde notificaciones
+  useEffect(() => {
+    const handleScrollEvent = (event: CustomEvent) => {
+      const { idCompartido, fromNotification } = event.detail;
+      if (fromNotification && idCompartido) {
+        console.log("📤 Evento de scroll recibido, ID compartido:", idCompartido);
+        setCompartidoTarget(idCompartido);
+        setScrollCompletado(false);
+        
+        // Si ya tenemos los datos, hacer scroll inmediatamente
+        if (datosCargados && compartidosLista.length > 0) {
+          setTimeout(() => {
+            scrollToCompartido(idCompartido);
+          }, 300);
+        }
+      }
+    };
+
+    window.addEventListener('scrollToCompartido', handleScrollEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener('scrollToCompartido', handleScrollEvent as EventListener);
+    };
+  }, [datosCargados, compartidosLista, scrollToCompartido]);
+
   // Efecto principal - carga de datos
   useEffect(() => {
     const cargarCompartidos = async () => {
@@ -190,7 +215,20 @@ export default function CompartidosPage() {
         const compartidoFromState = location.state?.compartidoEspecifico;
         const idCompartidoFromState = location.state?.idCompartido;
         
-        if (fromNotification || compartidoFromState || idCompartidoFromState) {
+        // 🔥 CORREGIDO: Si viene de notificación, cargar la lista completa
+        // y luego hacer scroll al compartido específico del amigo
+        if (fromNotification && idCompartidoFromState) {
+          console.log("📤 Cargando desde notificación, ID compartido:", idCompartidoFromState);
+          setVista('lista');
+          setCompartidoTarget(idCompartidoFromState);
+          setScrollCompletado(false);
+          await cargarListaCompartidos();
+        } else if (compartidoFromState) {
+          // Si viene con compartido específico directo, mostrar solo ese
+          setVista('especifico');
+          await cargarCompartidoEspecifico();
+        } else if (idCompartidoFromState) {
+          // Si viene solo con ID, intentar cargar específico primero
           setVista('especifico');
           await cargarCompartidoEspecifico(idCompartidoFromState);
         } else {
@@ -215,13 +253,30 @@ export default function CompartidosPage() {
     if (!datosCargados || !compartidoTarget || scrollCompletado) return;
 
     if (vista === 'lista' && compartidosLista.length > 0) {
-      const timer = setTimeout(() => {
-        scrollToCompartido(compartidoTarget);
-      }, 400);
+      // Verificar que el compartido existe en la lista
+      const compartidoExiste = buscarCompartidoEnLista(compartidoTarget);
       
-      return () => clearTimeout(timer);
+      if (compartidoExiste) {
+        console.log("✅ Compartido encontrado en lista, haciendo scroll...");
+        // Esperar un poco más para asegurar que el DOM esté listo
+        const timer = setTimeout(() => {
+          scrollToCompartido(compartidoTarget);
+        }, 800);
+        
+        return () => clearTimeout(timer);
+      } else {
+        console.warn("⚠️ Compartido no encontrado en la lista:", compartidoTarget);
+        console.log("📋 Compartidos en lista:", compartidosLista.map(c => c.id_compartido));
+        // Si no se encuentra, intentar cargar el compartido específico
+        cargarCompartidoEspecifico(compartidoTarget).then(() => {
+          setVista('especifico');
+        }).catch(err => {
+          console.error("Error cargando compartido específico:", err);
+          setError("No se pudo encontrar la publicación compartida");
+        });
+      }
     }
-  }, [datosCargados, compartidoTarget, scrollCompletado, vista, compartidosLista, scrollToCompartido]);
+  }, [datosCargados, compartidoTarget, scrollCompletado, vista, compartidosLista, scrollToCompartido, buscarCompartidoEnLista]);
 
   // Carga de compartido específico
   const cargarCompartidoEspecifico = async (idCompartido?: number) => {
