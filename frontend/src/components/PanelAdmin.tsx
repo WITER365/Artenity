@@ -176,6 +176,21 @@ const PanelAdmin: React.FC = () => {
     cargarDatos();
   };
 
+  const limpiarBusqueda = () => {
+    setUsuariosBusqueda("");
+    setUsuariosSkip(0);
+    // Usar setTimeout para asegurar que el estado se actualice antes de recargar
+    setTimeout(() => {
+      // Forzar recarga con búsqueda vacía
+      obtenerUsuariosAdmin(0, limit, undefined).then((usuariosData) => {
+        setUsuarios(usuariosData.usuarios);
+        setUsuariosTotal(usuariosData.total);
+      }).catch((error: any) => {
+        mostrarMensaje("error", error.response?.data?.detail || "Error al cargar usuarios");
+      });
+    }, 50);
+  };
+
   if (!usuario?.es_admin) {
     return null;
   }
@@ -272,61 +287,110 @@ const PanelAdmin: React.FC = () => {
 
         {activeTab === "usuarios" && (
           <div className="tab-content">
-            <div className="busqueda-container">
-              <input
-                type="text"
-                placeholder="Buscar usuarios..."
-                value={usuariosBusqueda}
-                onChange={(e) => setUsuariosBusqueda(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && buscarUsuarios()}
-              />
+            <div className={`busqueda-container ${usuariosBusqueda ? "busqueda-activa" : ""}`}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, usuario, correo..."
+                  value={usuariosBusqueda}
+                  onChange={(e) => setUsuariosBusqueda(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && buscarUsuarios()}
+                  style={{ paddingRight: usuariosBusqueda ? "40px" : "1rem" }}
+                />
+                {usuariosBusqueda && (
+                  <button
+                    onClick={limpiarBusqueda}
+                    style={{
+                      position: "absolute",
+                      right: "8px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "transparent",
+                      border: "none",
+                      color: "rgba(255, 255, 255, 0.7)",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "4px",
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.color = "#ffffff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "rgba(255, 255, 255, 0.7)";
+                    }}
+                    title="Limpiar búsqueda"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
               <button onClick={buscarUsuarios}>
-                <Search />
+                <Search size={18} />
+                Buscar
               </button>
             </div>
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Correo</th>
-                    <th>Publicaciones</th>
-                    <th>Seguidores</th>
-                    <th>Admin</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuarios.map((u) => (
-                    <tr key={u.id_usuario}>
-                      <td>{u.id_usuario}</td>
-                      <td>{u.nombre_usuario}</td>
-                      <td>{u.correo_electronico}</td>
-                      <td>{u.total_publicaciones}</td>
-                      <td>{u.total_seguidores}</td>
-                      <td>
-                        <button
-                          className={`btn-rol ${u.es_admin ? "admin" : ""}`}
-                          onClick={() => handleCambiarRol(u.id_usuario, u.es_admin)}
-                        >
-                          {u.es_admin ? <CheckCircle /> : <XCircle />}
-                          {u.es_admin ? "Admin" : "Usuario"}
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-eliminar"
-                          onClick={() => handleEliminarUsuario(u.id_usuario, u.nombre_usuario)}
-                        >
-                          <Trash2 />
-                        </button>
-                      </td>
+            {usuarios.length > 0 ? (
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Usuario</th>
+                      <th>Correo</th>
+                      <th>Publicaciones</th>
+                      <th>Seguidores</th>
+                      <th>Admin</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {usuarios.map((u) => (
+                      <tr key={u.id_usuario}>
+                        <td>{u.id_usuario}</td>
+                        <td>{u.nombre_usuario || "-"}</td>
+                        <td>{u.correo_electronico}</td>
+                        <td>{u.total_publicaciones}</td>
+                        <td>{u.total_seguidores}</td>
+                        <td>
+                          <button
+                            className={`btn-rol ${u.es_admin ? "admin" : ""}`}
+                            onClick={() => handleCambiarRol(u.id_usuario, u.es_admin)}
+                          >
+                            {u.es_admin ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                            {u.es_admin ? "Admin" : "Usuario"}
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-eliminar"
+                            onClick={() => handleEliminarUsuario(u.id_usuario, u.nombre_usuario)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="no-results">
+                <strong>
+                  {usuariosBusqueda 
+                    ? `No se encontraron usuarios que coincidan con "${usuariosBusqueda}"`
+                    : "No hay usuarios para mostrar"}
+                </strong>
+                {usuariosBusqueda && (
+                  <p>Intenta con otro término de búsqueda o limpia el filtro</p>
+                )}
+              </div>
+            )}
             <div className="pagination">
               <button
                 disabled={usuariosSkip === 0}
