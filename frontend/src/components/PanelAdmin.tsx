@@ -73,7 +73,7 @@ const PanelAdmin: React.FC = () => {
 
   useEffect(() => {
     if (!usuario?.es_admin) {
-      navigate("/principal");
+      navigate("/paginaprincipal");
       return;
     }
 
@@ -187,7 +187,7 @@ const PanelAdmin: React.FC = () => {
           <Shield className="icon" />
           <h1>Panel de Administración</h1>
         </div>
-        <button className="btn-volver" onClick={() => navigate("/principal")}>
+        <button className="btn-volver" onClick={() => navigate("/perfil")}>
           <ChevronLeft /> Volver
         </button>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; // Añade esto
-import { ArrowLeft } from "lucide-react"; // Añade esto
+import { ArrowLeft, Shield } from "lucide-react"; // Añade esto
 import defaultProfile from "../assets/img/fotoperfildefault.jpg";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -1179,9 +1179,21 @@ const CompartidoCard = ({ compartido }: { compartido: any }) => {
             </button>
           </div>
 
-          <button onClick={() => setEditar(!editar)} className="btn-editar">
-            {editar ? "Cancelar Edición" : "Editar Perfil"}
-          </button>
+          <div className="perfil-botones">
+            <button onClick={() => setEditar(!editar)} className="btn-editar">
+              {editar ? "Cancelar Edición" : "Editar Perfil"}
+            </button>
+            {usuario?.es_admin && (
+              <button 
+                onClick={() => navigate("/admin")} 
+                className="btn-admin"
+                title="Panel de Administración"
+              >
+                <Shield size={18} />
+                Panel de Administrador
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Formulario de Edición */}
