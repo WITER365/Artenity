@@ -3720,21 +3720,18 @@ def reportar_problema(
 ):
     """Reportar un problema o solicitar soporte"""
     try:
-        # Aquí podrías guardar el reporte en la base de datos
-        # Por ahora solo retornamos un mensaje de confirmación
-        
-        # Ejemplo de guardado en la base de datos:
-        """
+        # Guardar el reporte en la base de datos
         nuevo_reporte = models.ReporteProblema(
             id_usuario=user_id,
             tipo_problema=reporte.tipo_problema,
             descripcion=reporte.descripcion,
             email_contacto=reporte.email_contacto,
-            fecha_reporte=datetime.utcnow()
+            fecha_reporte=datetime.utcnow(),
+            estado="pendiente"
         )
         db.add(nuevo_reporte)
         db.commit()
-        """
+        db.refresh(nuevo_reporte)
         
         # También podrías enviar un correo de notificación al equipo de soporte
         if conf:

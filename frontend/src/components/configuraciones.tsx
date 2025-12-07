@@ -364,7 +364,7 @@ useEffect(() => {
     }
   };
 
-  // Enviar reporte - VERSIÓN TEMPORAL SIN BACKEND
+  // Enviar reporte
   const enviarReporte = async () => {
     if (!reporteData.descripcion.trim()) {
       setMessage({ type: "error", text: "Por favor describe el problema" });
@@ -378,10 +378,16 @@ useEffect(() => {
     
     setSaving(true);
     try {
-      // TEMPORAL: Simular llamada a API hasta que tengas el backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Mapear los nombres de campos del frontend al backend
+      const reporteDataBackend = {
+        tipo_problema: reporteData.tipoProblema,
+        descripcion: reporteData.descripcion,
+        email_contacto: reporteData.emailContacto,
+      };
       
-      setMessage({ type: "success", text: "Reporte enviado. Te contactaremos pronto." });
+      await reportarProblema(reporteDataBackend);
+      
+      setMessage({ type: "success", text: "Reporte enviado correctamente. Te contactaremos pronto." });
       setReporteData({
         tipoProblema: "tecnico",
         descripcion: "",
@@ -390,7 +396,7 @@ useEffect(() => {
     } catch (error: any) {
       setMessage({ 
         type: "error", 
-        text: error.response?.data?.detail || "Error al enviar el reporte" 
+        text: error.response?.data?.detail || error.message || "Error al enviar el reporte" 
       });
     } finally {
       setSaving(false);
