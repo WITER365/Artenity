@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-12-2025 a las 23:22:31
+-- Tiempo de generación: 07-12-2025 a las 20:01:15
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -63,6 +63,29 @@ INSERT INTO `amistades` (`id_amistad`, `id_usuario1`, `id_usuario2`, `estado`) V
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `anuncios`
+--
+
+CREATE TABLE `anuncios` (
+  `id_anuncio` int(11) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `contenido` text DEFAULT NULL,
+  `activo` tinyint(1) DEFAULT NULL,
+  `fecha_creacion` datetime DEFAULT NULL,
+  `fecha_actualizacion` datetime DEFAULT NULL,
+  `id_usuario_admin` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `anuncios`
+--
+
+INSERT INTO `anuncios` (`id_anuncio`, `titulo`, `contenido`, `activo`, `fecha_creacion`, `fecha_actualizacion`, `id_usuario_admin`) VALUES
+(1, 'LO QUE SUCEDE CON EL MUNDO DEL ARTE', '**CONVOCATORIA ABIERTA: COMUNIDAD ARTÍSTICA Y TÉCNICA**\r\n\r\n¿Eres **artista, conservador-restaurador, historiador del arte, gestor cultural, técnico de museo, investigador, curador, artesano, escenógrafo o creador digital**?\r\n\r\nBuscamos profesionales y técnicos del sector para integrar una **base de datos especializada** y formar parte de una red colaborativa.\r\n\r\n\r\n\r\n\r\n', 1, '2025-12-07 00:56:18', '2025-12-07 17:42:04', 56);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `ayuda_reportes`
 --
 
@@ -89,6 +112,13 @@ CREATE TABLE `bloqueos_usuarios` (
   `id_bloqueado` int(11) DEFAULT NULL,
   `fecha_bloqueo` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `bloqueos_usuarios`
+--
+
+INSERT INTO `bloqueos_usuarios` (`id_bloqueo`, `id_bloqueador`, `id_bloqueado`, `fecha_bloqueo`) VALUES
+(31, 56, 61, '2025-12-07 17:40:25');
 
 -- --------------------------------------------------------
 
@@ -152,10 +182,10 @@ CREATE TABLE `chats` (
 --
 
 INSERT INTO `chats` (`id_chat`, `id_usuario1`, `id_usuario2`, `fecha_creacion`, `ultima_actividad`, `fondo_chat_usuario1`, `color_burbuja_usuario1`, `fondo_chat_usuario2`, `color_burbuja_usuario2`) VALUES
-(1, 56, 57, '2025-11-28 06:58:33', '2025-12-01 00:59:06', 'default', '#61ff88', 'default', '#6C63FF'),
-(4, 58, 1, '2025-12-01 03:01:52', '2025-12-01 03:02:23', 'default', '#ff00ea', 'default', '#6C63FF'),
-(5, 58, 57, '2025-12-01 03:01:54', '2025-12-01 03:02:27', 'default', '#6C63FF', 'default', '#6C63FF'),
-(6, 56, 58, '2025-12-01 03:14:10', '2025-12-04 06:35:24', 'blue', '#000000', 'default', '#6C63FF'),
+(1, 56, 57, '2025-11-28 06:58:33', '2025-12-07 22:41:12', 'default', '#61ff88', 'default', '#6C63FF'),
+(4, 58, 1, '2025-12-01 03:01:52', '2025-12-07 07:34:11', 'default', '#ff00ea', 'default', '#6C63FF'),
+(5, 58, 57, '2025-12-01 03:01:54', '2025-12-07 07:34:11', 'default', '#6C63FF', 'default', '#6C63FF'),
+(6, 56, 58, '2025-12-01 03:14:10', '2025-12-07 07:34:11', 'blue', '#000000', 'default', '#6C63FF'),
 (7, 56, 22, '2025-12-01 06:15:11', '2025-12-01 06:15:25', 'default', '#6C63FF', 'default', '#6C63FF');
 
 -- --------------------------------------------------------
@@ -335,7 +365,6 @@ INSERT INTO `comentarios` (`id_comentario`, `id_usuario`, `id_publicacion`, `id_
 (29, 56, 22, 1, 'dfvdfg', '2025-11-16 18:35:09'),
 (30, 56, 7, NULL, 'efefe', '2025-11-16 18:48:23'),
 (31, 56, 7, 30, 'fefef', '2025-11-16 18:48:26'),
-(33, 57, 1, NULL, 'x', '2025-11-24 16:15:38'),
 (34, 57, 22, NULL, 'cdcdcd', '2025-11-24 20:03:04'),
 (39, 56, 18, NULL, 'siii{', '2025-11-25 23:24:57'),
 (41, 56, 18, NULL, 'ccscsc', '2025-11-27 20:17:31'),
@@ -427,7 +456,9 @@ INSERT INTO `compartidos` (`id_compartido`, `id_usuario`, `id_publicacion`, `tip
 (60, 56, 16, 'amigos', '', '2025-11-25 23:55:19', NULL),
 (61, 56, 15, 'amigos', '', '2025-11-25 23:55:44', NULL),
 (62, 56, 14, 'perfil', '', '2025-11-25 23:56:03', NULL),
-(63, 56, 18, 'amigos', '', '2025-11-27 20:17:25', NULL);
+(63, 56, 18, 'amigos', '', '2025-11-27 20:17:25', NULL),
+(67, 56, 96, 'amigos', '', '2025-12-07 02:15:26', NULL),
+(68, 58, 92, 'amigos', '', '2025-12-07 02:34:11', NULL);
 
 -- --------------------------------------------------------
 
@@ -453,7 +484,7 @@ INSERT INTO `configuraciones_chat` (`id`, `id_chat`, `id_usuario`, `fondo_chat`,
 (1, 6, 56, 'pattern-grid', '#d06bff', NULL, '2025-12-01 00:11:55'),
 (2, 1, 56, 'pattern-dots', '#BB8FCE', NULL, '2025-12-01 01:17:28'),
 (3, 7, 56, 'gradient-sunset', '#e4a572', NULL, '2025-12-01 01:17:46'),
-(4, 6, 58, 'pink', '#BB8FCE', NULL, '2025-12-01 01:16:55');
+(4, 6, 58, 'pattern-grid', '#BB8FCE', NULL, '2025-12-07 02:25:52');
 
 -- --------------------------------------------------------
 
@@ -557,7 +588,8 @@ CREATE TABLE `galeria_archivos` (
 INSERT INTO `galeria_archivos` (`id_archivo`, `id_carpeta`, `id_usuario`, `nombre_original`, `nombre_archivo`, `tipo`, `extension`, `tamano`, `ruta`, `miniatura`, `duracion`, `resolucion`, `descripcion`, `etiquetas`, `es_publico`, `fecha_subida`, `fecha_actualizacion`) VALUES
 (12, 6, 56, '9.png', '56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', 'imagen', 'png', 379879, '/static/galeria\\imagenes\\56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', '/static/galeria\\imagenes\\56_a99356e5-e102-4e27-8706-4dac3464b0bf_9.png', NULL, '400x603', NULL, NULL, 0, '2025-12-05 21:53:50', '2025-12-05 21:53:50'),
 (13, 6, 56, '8.png', '56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', 'imagen', 'png', 479671, '/static/galeria/imagens/56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', '/static/galeria/imagens/56_e940851c-e3ef-46f1-8713-0255a5efd867_8.png', NULL, NULL, NULL, NULL, 0, '2025-12-05 22:17:03', '2025-12-05 22:17:03'),
-(15, 6, 56, 'video 1 pruebas.mp4', '56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', 'video', 'mp4', 2041358, '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', NULL, NULL, NULL, NULL, 0, '2025-12-05 22:19:50', '2025-12-05 22:19:50');
+(15, 6, 56, 'video 1 pruebas.mp4', '56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', 'video', 'mp4', 2041358, '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', '/static/galeria/videos/56_40f4a6b8-2c20-4359-aaa0-3f61b4eef9cf_video_1_pruebas.mp4', NULL, NULL, NULL, NULL, 0, '2025-12-05 22:19:50', '2025-12-05 22:19:50'),
+(16, 7, 56, '1.jpg', '56_bd09a27b-fc0d-449e-9434-f6b08bb791c8_1.jpg', 'imagen', 'jpg', 288871, '/static/galeria/imagens/56_bd09a27b-fc0d-449e-9434-f6b08bb791c8_1.jpg', '/static/galeria/imagens/56_bd09a27b-fc0d-449e-9434-f6b08bb791c8_1.jpg', NULL, NULL, NULL, NULL, 0, '2025-12-05 23:14:09', '2025-12-05 23:14:09');
 
 -- --------------------------------------------------------
 
@@ -582,7 +614,9 @@ CREATE TABLE `galeria_carpetas` (
 --
 
 INSERT INTO `galeria_carpetas` (`id_carpeta`, `id_usuario`, `nombre`, `descripcion`, `color`, `icono`, `es_publica`, `fecha_creacion`, `fecha_actualizacion`) VALUES
-(6, 56, 'musica', '', '#c20000', 'folder', 0, '2025-12-05 21:50:36', '2025-12-05 22:19:50');
+(6, 56, 'musica', '', '#c20000', 'folder', 0, '2025-12-05 21:50:36', '2025-12-05 22:19:50'),
+(7, 56, 'pintura', '', '#61ffdf', 'folder', 0, '2025-12-05 23:13:31', '2025-12-05 23:14:09'),
+(8, 58, 'ddd', '', '#ff6161', 'folder', 0, '2025-12-07 02:32:48', '2025-12-07 02:32:48');
 
 -- --------------------------------------------------------
 
@@ -629,7 +663,7 @@ INSERT INTO `guardados` (`id_guardado`, `id_usuario`, `id_publicacion`, `fecha`)
 (37, 56, 18, '2025-11-27 20:17:52'),
 (41, 56, 74, '2025-12-03 20:39:01'),
 (43, 56, 92, '2025-12-03 22:02:59'),
-(44, 56, 95, '2025-12-04 01:06:11');
+(45, 58, 18, '2025-12-07 02:25:28');
 
 -- --------------------------------------------------------
 
@@ -802,8 +836,6 @@ CREATE TABLE `mensajes` (
 --
 
 INSERT INTO `mensajes` (`id_mensaje`, `id_chat`, `id_emisor`, `contenido`, `tipo`, `archivo_url`, `fecha_envio`, `leido`) VALUES
-(1, 1, 56, 'siisi', 'texto', NULL, '2025-11-28 06:59:20', 0),
-(2, 1, 56, 'ffv', 'texto', NULL, '2025-11-28 07:07:16', 0),
 (5, 1, 56, 'si', 'texto', NULL, '2025-12-01 00:55:37', 0),
 (7, 1, 56, 'dccdc', 'texto', NULL, '2025-12-01 00:59:06', 0),
 (34, 4, 58, 'si', 'texto', NULL, '2025-12-01 03:02:23', 0),
@@ -814,7 +846,11 @@ INSERT INTO `mensajes` (`id_mensaje`, `id_chat`, `id_emisor`, `contenido`, `tipo
 (47, 7, 56, 'hola', 'texto', NULL, '2025-12-01 06:15:25', 0),
 (48, 6, 58, '📎 6.jpg', 'imagen', '/static/chat_files/images/8a84f21a-889a-4cfa-96c0-189659646f03.jpg', '2025-12-01 06:16:42', 1),
 (49, 6, 58, 'si', 'texto', NULL, '2025-12-01 06:16:42', 1),
-(50, 6, 56, 'fdff', 'texto', NULL, '2025-12-04 06:35:24', 0);
+(50, 6, 56, 'fdff', 'texto', NULL, '2025-12-04 06:35:24', 1),
+(51, 4, 58, '📤 Te comparto esta publicación\n\n🔗 He compartido una publicación contigo\n💬 Puedes verla en la sección de \'Publicaciones Compartidas\'\n\n📝 Vista previa:\nEn el corazón de la Ciénega Esmeralda, donde el aire erapeso y olía a tierra húmeda y flor de loto, vivía un joven caimán llamado Croco.\n\n🖼️ Incluye imagen', 'texto', NULL, '2025-12-07 07:34:11', 0),
+(52, 5, 58, '📤 Te comparto esta publicación\n\n🔗 He compartido una publicación contigo\n💬 Puedes verla en la sección de \'Publicaciones Compartidas\'\n\n📝 Vista previa:\nEn el corazón de la Ciénega Esmeralda, donde el aire erapeso y olía a tierra húmeda y flor de loto, vivía un joven caimán llamado Croco.\n\n🖼️ Incluye imagen', 'texto', NULL, '2025-12-07 07:34:11', 0),
+(53, 6, 58, '📤 Te comparto esta publicación\n\n🔗 He compartido una publicación contigo\n💬 Puedes verla en la sección de \'Publicaciones Compartidas\'\n\n📝 Vista previa:\nEn el corazón de la Ciénega Esmeralda, donde el aire erapeso y olía a tierra húmeda y flor de loto, vivía un joven caimán llamado Croco.\n\n🖼️ Incluye imagen', 'texto', NULL, '2025-12-07 07:34:11', 1),
+(55, 1, 56, '📎 8.png', 'imagen', '/static/chat_files/images/31a1de0f-e82d-4003-8043-57d48babcec4.png', '2025-12-07 22:41:12', 0);
 
 -- --------------------------------------------------------
 
@@ -840,7 +876,9 @@ INSERT INTO `mensajes_eliminados` (`id`, `id_mensaje`, `id_usuario`, `fecha_elim
 (7, 40, 56, '2025-11-30 22:34:49'),
 (11, 7, 56, '2025-12-01 01:15:59'),
 (12, 45, 58, '2025-12-01 01:16:59'),
-(13, 48, 56, '2025-12-04 01:35:26');
+(13, 48, 56, '2025-12-04 01:35:26'),
+(14, 53, 56, '2025-12-07 15:45:43'),
+(15, 5, 56, '2025-12-07 17:41:04');
 
 -- --------------------------------------------------------
 
@@ -875,7 +913,9 @@ INSERT INTO `me_gusta` (`id_megusta`, `id_usuario`, `id_publicacion`, `fecha`) V
 (46, 56, 16, '2025-12-01 00:05:08'),
 (47, 56, 74, '2025-12-03 20:39:00'),
 (49, 56, 92, '2025-12-03 22:02:59'),
-(50, 56, 95, '2025-12-04 01:06:10');
+(50, 56, 95, '2025-12-04 01:06:10'),
+(51, 58, 18, '2025-12-07 02:25:30'),
+(52, 56, 96, '2025-12-07 17:05:53');
 
 -- --------------------------------------------------------
 
@@ -1160,13 +1200,23 @@ INSERT INTO `notificaciones` (`id_notificacion`, `id_usuario`, `mensaje`, `leido
 (382, 58, 'Tienes un nuevo mensaje de and', 1, '2025-12-01 00:43:20', 'nuevo_mensaje', 6),
 (383, 22, 'Tienes un nuevo mensaje de and', 0, '2025-12-01 01:15:25', 'nuevo_mensaje', 7),
 (384, 56, 'Tienes un nuevo mensaje de laurapintora', 1, '2025-12-01 01:16:42', 'nuevo_mensaje', 6),
-(385, 58, 'Tienes un nuevo mensaje de and', 0, '2025-12-04 01:35:24', 'nuevo_mensaje', 6),
+(385, 58, 'Tienes un nuevo mensaje de and', 1, '2025-12-04 01:35:24', 'nuevo_mensaje', 6),
 (386, 49, 'and comenzó a seguirte', 0, '2025-12-04 02:13:10', 'nuevo_seguidor', 45),
 (387, 55, 'and comenzó a seguirte', 0, '2025-12-04 02:32:43', 'nuevo_seguidor', 46),
 (388, 51, 'and comenzó a seguirte', 0, '2025-12-04 02:32:47', 'nuevo_seguidor', 47),
 (389, 1, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 48),
 (390, 24, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 49),
-(391, 61, 'and comenzó a seguirte', 0, '2025-12-04 02:32:48', 'nuevo_seguidor', 50);
+(391, 61, 'and comenzó a seguirte', 1, '2025-12-04 02:32:48', 'nuevo_seguidor', 50),
+(392, 61, '@and compartió tu publicación', 1, '2025-12-07 02:15:26', 'compartido', 67),
+(393, 57, '@and te compartió una publicación', 0, '2025-12-07 02:15:26', 'compartido_amigo', 67),
+(394, 58, '@and te compartió una publicación', 1, '2025-12-07 02:15:26', 'compartido_amigo', 67),
+(395, 22, '@and te compartió una publicación', 0, '2025-12-07 02:15:26', 'compartido_amigo', 67),
+(396, 56, '@laurapintora compartió tu publicación', 1, '2025-12-07 02:34:11', 'compartido', 68),
+(397, 1, '@laurapintora te compartió una publicación', 0, '2025-12-07 02:34:11', 'compartido_amigo', 68),
+(398, 57, '@laurapintora te compartió una publicación', 0, '2025-12-07 02:34:11', 'compartido_amigo', 68),
+(399, 56, '@laurapintora te compartió una publicación', 1, '2025-12-07 02:34:11', 'compartido_amigo', 68),
+(400, 61, 'A and le gusta tu publicación', 0, '2025-12-07 17:05:53', 'me_gusta', 96),
+(401, 57, 'Tienes un nuevo mensaje de and', 0, '2025-12-07 17:40:59', 'nuevo_mensaje', 1);
 
 -- --------------------------------------------------------
 
@@ -1180,6 +1230,13 @@ CREATE TABLE `no_me_interesa` (
   `id_publicacion` int(11) DEFAULT NULL,
   `fecha` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `no_me_interesa`
+--
+
+INSERT INTO `no_me_interesa` (`id_no_me_interesa`, `id_usuario`, `id_publicacion`, `fecha`) VALUES
+(27, 56, 95, '2025-12-07 17:40:27');
 
 -- --------------------------------------------------------
 
@@ -1202,7 +1259,6 @@ CREATE TABLE `perfiles` (
 INSERT INTO `perfiles` (`id_perfil`, `id_usuario`, `descripcion`, `foto_perfil`, `biografia`) VALUES
 (1, 1, NULL, 'http://localhost:8000/static/perfiles/perfil_1.jpg', NULL),
 (2, 2, NULL, 'http://localhost:8000/static/perfiles/perfil_2.jpg', NULL),
-(3, 3, NULL, NULL, NULL),
 (4, 4, NULL, NULL, NULL),
 (5, 5, NULL, NULL, NULL),
 (6, 6, NULL, NULL, NULL),
@@ -1251,7 +1307,9 @@ INSERT INTO `perfiles` (`id_perfil`, `id_usuario`, `descripcion`, `foto_perfil`,
 (51, 58, '\"Artista digital especializado en surrealismo moderno.\"', 'http://localhost:8000/static/perfiles/perfil_58_1761516762.jpg', '\"Desde 2015 exploro el arte digital fusionando elementos de fantasía y tecnología.\"'),
 (52, 59, NULL, NULL, NULL),
 (53, 60, NULL, NULL, NULL),
-(54, 61, '', '', '');
+(54, 61, '', '', ''),
+(55, 62, '', '', ''),
+(56, 63, '', '', '');
 
 -- --------------------------------------------------------
 
@@ -1332,7 +1390,6 @@ CREATE TABLE `publicaciones` (
 --
 
 INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `imagen`, `fecha_creacion`, `tipo_medio`, `etiquetas`) VALUES
-(1, 1, 'Esta es una publicación de prueba', 'imagen1.jpg', '2025-10-05 15:00:28', 'texto', NULL),
 (2, 1, 'hola', NULL, '2025-10-05 20:09:32', 'texto', NULL),
 (3, 1, 'hola', NULL, '2025-10-05 20:11:58', 'texto', NULL),
 (4, 1, '', 'http://localhost:8000/static/posts\\1_1.png', '2025-10-05 20:12:19', 'texto', NULL),
@@ -1349,58 +1406,8 @@ INSERT INTO `publicaciones` (`id_publicacion`, `id_usuario`, `contenido`, `image
 (22, 58, 'AHI HAMBRE GENTE ', NULL, '2025-11-01 22:38:01', 'texto', NULL),
 (74, 56, 'un video de prueba', 'http://localhost:8000/static/videos/3649fc88-3147-47ff-8e65-17ec62557cc4_video 1 pruebas.mp4', '2025-12-03 18:51:35', 'video', NULL),
 (92, 56, 'En el corazón de la Ciénega Esmeralda, donde el aire erapeso y olía a tierra húmeda y flor de loto, vivía un joven caimán llamado Croco.', 'http://localhost:8000/static/posts/8ea273e1-66e4-46d9-85a9-d457dfff4ba3_9.png', '2025-12-03 22:02:54', 'imagen', '[\"Literatura\"]'),
-(93, 56, 'si la literatura', NULL, '2025-12-03 22:22:01', 'texto', '[\"Literatura\"]'),
 (95, 56, 'si', 'http://localhost:8000/static/posts/e2bcd45c-7cb5-4727-b8c1-117325b1f08b_6.jpg', '2025-12-04 01:06:03', 'imagen', '[\"Pintura\"]'),
 (96, 61, 'ffff', 'http://localhost:8000/static/videos/76246312-bb42-4276-a62b-d2dc266a428e_video 1 pruebas.mp4', '2025-12-04 01:06:56', 'video', '[\"Cine\"]');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `registro_actividad`
---
-
-CREATE TABLE `registro_actividad` (
-  `id_actividad` int(11) NOT NULL,
-  `id_usuario` int(11) NOT NULL,
-  `accion` varchar(255) DEFAULT NULL,
-  `fecha` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `registro_actividad`
---
-
-INSERT INTO `registro_actividad` (`id_actividad`, `id_usuario`, `accion`, `fecha`) VALUES
-(1, 1, 'Inicio de sesión', '2025-01-08 05:05:31'),
-(2, 2, 'Edición de perfil', '2025-01-09 11:43:12'),
-(3, 3, 'Publicación de obra', '2025-01-10 08:23:44'),
-(4, 4, 'Comentario en obra', '2025-01-11 14:01:09'),
-(5, 5, 'Cierre de sesión', '2025-01-12 17:45:22'),
-(6, 6, 'Cambio de contraseña', '2025-01-13 20:33:15'),
-(7, 7, 'Exploración de galería', '2025-01-14 10:10:05'),
-(8, 8, 'Guardado de obra', '2025-01-15 09:09:45'),
-(9, 9, 'Reacción a publicación', '2025-01-16 18:30:21'),
-(10, 10, 'Edición de configuración', '2025-01-17 06:55:11'),
-(11, 11, 'Inicio de sesión', '2025-01-18 12:25:03'),
-(12, 12, 'Eliminación de comentario', '2025-01-19 16:14:37'),
-(13, 13, 'Publicación en blog', '2025-01-20 19:00:00'),
-(14, 14, 'Visualización de perfil', '2025-01-21 21:30:14'),
-(15, 15, 'Reinicio de contraseña', '2025-01-22 23:10:45'),
-(16, 16, 'Suscripción a taller', '2025-01-23 13:14:28'),
-(17, 17, 'Inicio de sesión', '2025-01-24 08:48:36'),
-(18, 18, 'Cambio de idioma', '2025-01-25 10:20:52'),
-(19, 19, 'Edición de biografía', '2025-01-26 11:15:09'),
-(20, 20, 'Reacción a comentario', '2025-01-27 13:33:17'),
-(21, 21, 'Guardado de obra', '2025-01-28 17:45:25'),
-(22, 22, 'Envío de mensaje privado', '2025-01-29 19:19:00'),
-(23, 23, 'Exploración de comunidades', '2025-01-30 15:40:08'),
-(24, 24, 'Cambio de foto de perfil', '2025-02-01 07:08:47'),
-(25, 25, 'Edición de obra', '2025-02-02 09:15:20'),
-(26, 26, 'Comentario en obra', '2025-02-03 20:32:45'),
-(27, 27, 'Bloqueo de usuario', '2025-02-04 18:17:12'),
-(28, 28, 'Denuncia de contenido', '2025-02-05 16:05:30'),
-(29, 29, 'Publicación de obra', '2025-02-06 14:59:01'),
-(30, 30, 'Inicio de sesión', '2025-02-07 06:25:48');
 
 -- --------------------------------------------------------
 
@@ -1417,6 +1424,15 @@ CREATE TABLE `reportes_problemas` (
   `fecha_reporte` datetime DEFAULT NULL,
   `estado` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `reportes_problemas`
+--
+
+INSERT INTO `reportes_problemas` (`id_reporte`, `id_usuario`, `tipo_problema`, `descripcion`, `email_contacto`, `fecha_reporte`, `estado`) VALUES
+(1, 56, 'otro', 'ddddddd', 'anderson.17cardenas@gmail.com', '2025-12-07 01:17:14', 'resuelto'),
+(2, 56, 'tecnico', 'fffvfv', 'anderson.17cardenas@gmail.com', '2025-12-07 01:30:57', 'en_proceso'),
+(3, 56, 'tecnico', 'ddcdcdc', 'anderson.17cardenas@gmail.com', '2025-12-07 03:09:42', 'resuelto');
 
 -- --------------------------------------------------------
 
@@ -1446,7 +1462,8 @@ INSERT INTO `reportes_usuarios` (`id_reporte`, `id_reportante`, `id_reportado`, 
 (6, 57, 58, '🔞 Contenido obsceno o inapropiado', 'http://localhost:8000/static/reportes/reporte_57_58_1762036616.jpg', '2025-11-01 17:36:56'),
 (7, 56, 58, 'xsxsxsxsx', 'http://localhost:8000/static/reportes/reporte_56_58_1762389172.jpg', '2025-11-05 19:32:52'),
 (8, 57, 56, '🎭 Suplantación de identidad', NULL, '2025-11-06 14:52:17'),
-(9, 56, 58, '🧠 Acoso o comportamiento abusivo', NULL, '2025-11-12 16:14:05');
+(9, 56, 58, '🧠 Acoso o comportamiento abusivo', NULL, '2025-11-12 16:14:05'),
+(10, 56, 58, '1', NULL, '2025-12-07 13:50:05');
 
 -- --------------------------------------------------------
 
@@ -1468,7 +1485,7 @@ CREATE TABLE `reset_password_tokens` (
 INSERT INTO `reset_password_tokens` (`id`, `id_usuario`, `token`, `expiracion`) VALUES
 (18, 59, '224ccb4f-211b-47e2-a3d4-c0cc1900337f', '2025-11-01 23:15:25'),
 (31, 57, 'a8b1c4b8-a305-4875-9d2b-3175b8b6cdf1', '2025-11-14 02:02:35'),
-(38, 56, '96161c70-e234-485d-93e6-04ea2e0be23f', '2025-12-04 03:34:15');
+(40, 56, '3785b85c-f403-490c-b15f-9e62ca06a50c', '2025-12-07 04:09:15');
 
 -- --------------------------------------------------------
 
@@ -1552,66 +1569,68 @@ CREATE TABLE `usuarios` (
   `genero` varchar(20) DEFAULT NULL,
   `tipo_arte_preferido` varchar(100) DEFAULT NULL,
   `telefono` varchar(50) NOT NULL,
-  `nombre_usuario` varchar(100) DEFAULT NULL
+  `nombre_usuario` varchar(100) DEFAULT NULL,
+  `es_admin` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo_electronico`, `contrasena`, `fecha_nacimiento`, `genero`, `tipo_arte_preferido`, `telefono`, `nombre_usuario`) VALUES
-(1, 'Adelaida Arregui ', 'Anglada', 'user1@correo.com', 'nVQdhWXb^2E)', '1989-08-19', 'Otro', 'Danza', '+34 741 783 162', 'ozuna el real'),
-(2, 'Faustino Vallejo ', 'Real', 'user2@correo.com', 'pLqHtVn#7aFX', '1987-10-12', 'Masculino', 'Teatro', '+34 607 215 905', 'nose'),
-(3, 'Ignacio Figueroa Gomariz', '', 'user3@correo.com', 'byGuAFm*3uLn', '1979-06-21', 'Masculino', 'Música', '+34 625 349 764', 'sida\r\n'),
-(4, 'Sebastián Almagro Vico', '', 'user4@correo.com', 'Vh*qfY$UJ2j1', '1988-07-01', 'Masculino', 'Pintura', '+34 612 137 508', ''),
-(5, 'Aurelia Utrera Castañón', '', 'user5@correo.com', 'NL8suYgx+Fj%', '1971-12-30', 'Femenino', 'Literatura', '+34 686 733 265', ''),
-(6, 'Bartolomé Gallego Torrente', '', 'user6@correo.com', 'E&M4dWY!kPKc', '1982-02-24', 'Masculino', 'Danza', '+34 688 415 310', ''),
-(7, 'Álvaro Ibáñez Martos', '', 'user7@correo.com', 'ZX2F%bt8qae#', '1986-05-06', 'Masculino', 'Teatro', '+34 639 938 370', ''),
-(8, 'Gabriela Collado Lara', '', 'user8@correo.com', '2Tvg+!hC5Vje', '1984-11-13', 'Femenino', 'Pintura', '+34 642 748 855', ''),
-(9, 'Bautista Velasco Montalt', '', 'user9@correo.com', 'mK9AKnH@P47Y', '1976-04-10', 'Masculino', 'Música', '+34 690 825 418', 'hay hambre\r\n'),
-(10, 'Elena Baeza Andrada', '', 'user10@correo.com', 'J2+eZLGU38pn', '1985-01-19', 'Femenino', 'Literatura', '+34 622 434 504', ''),
-(11, 'Isidro Monforte Bravo', '', 'user11@correo.com', 'YvKx@eLMg7rT', '1983-10-07', 'Masculino', 'Teatro', '+34 678 695 273', ''),
-(12, 'Rosaura Viana Villegas', '', 'user12@correo.com', 'sAqX$wK3EYN!', '1990-09-05', 'Femenino', 'Pintura', '+34 655 171 391', ''),
-(13, 'Benjamín Arrieta Sanjuan', '', 'user13@correo.com', '9!HtUMpvycAe', '1978-03-27', 'Masculino', 'Danza', '+34 684 130 920', ''),
-(14, 'Rocío Oltra Pascual', '', 'user14@correo.com', 'L!Eex5tzRMm7', '1991-11-02', 'Femenino', 'Literatura', '+34 609 582 423', 'no hay hambre\r\n'),
-(15, 'Julián Cardiel Peñalver', '', 'user15@correo.com', 'AQ6bZMpE&9Xu', '1975-08-15', 'Masculino', 'Música', '+34 615 978 350', ''),
-(16, 'Daniela Pizarro Sempere', '', 'user16@correo.com', 'TwR*fqgUz23!', '1986-03-17', 'Femenino', 'Pintura', '+34 664 357 229', ''),
-(17, 'Eugenio Balsalobre Cánovas', '', 'user17@correo.com', 'eMv&k3UcBN#d', '1980-05-29', 'Masculino', 'Teatro', '+34 695 382 590', ''),
-(18, 'Jimena Carreras Roca', '', 'user18@correo.com', 'x5B$dnMAZ4^f', '1992-06-10', 'Femenino', 'Música', '+34 670 981 472', ''),
-(19, 'Fernando Monasterio Cuesta', '', 'user19@correo.com', '93TwzE8!gHVu', '1983-09-09', 'Masculino', 'Danza', '+34 648 751 340', ''),
-(20, 'Tatiana Rojano Sáenz', '', 'user20@correo.com', 'fbvZHt$4MXq3', '1987-02-03', 'Femenino', 'Literatura', '+34 691 389 712', ''),
-(21, 'Ulises Naranjo Goicoechea', '', 'user21@correo.com', 'cJZW@yEL8N5*', '1989-04-22', 'Masculino', 'Teatro', '+34 618 451 913', ''),
-(22, 'Beatriz Luján Ochoa', '', 'user22@correo.com', 'F!qgTpbvWY7u', '1990-10-08', 'Femenino', 'Pintura', '+34 684 252 472', 'si'),
-(23, 'Guillermo Lerín Santamaría', '', 'user23@correo.com', 'A@cvKz4YM3uP', '1981-06-03', 'Masculino', 'Danza', '+34 625 783 145', ''),
-(24, 'Natalia Cevallos Muñiz', '', 'user24@correo.com', 'Mf^yPzGu9EAK', '1993-01-25', 'Femenino', 'Música', '+34 672 423 987', 'sueño 201'),
-(25, 'Lázaro Fonseca Viñas', '', 'user25@correo.com', 'NctKv@pmW3R$', '1979-07-11', 'Masculino', 'Literatura', '+34 637 705 199', ''),
-(26, 'Inés Moyano del Río', '', 'user26@correo.com', 'XR#nFbPW3a&L', '1985-09-17', 'Femenino', 'Pintura', '+34 633 201 843', ''),
-(27, 'Ángel Domenech Cotilla', '', 'user27@correo.com', 'eZ9WyEXr!J6q', '1984-11-23', 'Masculino', 'Teatro', '+34 694 852 137', ''),
-(28, 'Leticia Mínguez Paredes', '', 'user28@correo.com', 'rG&uJc93NAv*', '1982-02-06', 'Femenino', 'Música', '+34 676 428 099', ''),
-(29, 'Fidel Robledo Garijo', '', 'user29@correo.com', '7Tf$VqgkXuNp', '1986-06-20', 'Masculino', 'Literatura', '+34 689 375 842', ''),
-(30, 'Melina Pardo Revilla', '', 'user30@correo.com', 'UnqPw4&eXB2$', '1991-05-14', 'Femenino', 'Danza', '+34 649 172 356', ''),
-(31, 'Ana Torres', '', 'ana.torres@example.com', 'pass123', '1995-04-12', 'Femenino', 'Pintura', '3001112233', ''),
-(32, 'Carlos Gómez', '', 'carlos.gomez@example.com', 'pass123', '1990-07-22', 'Masculino', 'Escultura', '3002223344', ''),
-(33, 'María López', '', 'maria.lopez@example.com', 'pass123', '1998-02-18', 'Femenino', 'Fotografía', '3003334455', ''),
-(35, 'Lucía Fernández', '', 'lucia.fernandez@example.com', 'pass123', '1993-06-30', 'Femenino', 'Danza', '3005556677', ''),
-(36, 'David Morales', '', 'david.morales@example.com', 'pass123', '1992-01-15', 'Masculino', 'Poesía', '3006667788', ''),
-(37, 'Paula Ramírez', '', 'paula.ramirez@example.com', 'pass123', '1997-12-09', 'Femenino', 'Teatro', '3007778899', ''),
-(38, 'Sofía Herrera', '', 'sofia.herrera@example.com', 'pass123', '2000-09-20', 'Femenino', 'Cine', '3008889900', ''),
-(39, 'Andrés Ríos', '', 'andres.rios@example.com', 'pass123', '1994-03-25', 'Masculino', 'Diseño', '3009990011', ''),
-(40, 'Valentina Cruz', '', 'valentina.cruz@example.com', 'pass123', '1996-05-17', 'Femenino', 'Arte digital', '3011112233', ''),
-(46, 'ozuna', 'Roldán', 'ozuna@test.com', '123456', '2000-05-20', 'femenino', 'pintura', '3201234567', 'ozunaR'),
-(49, 'nolan', 'sin ', 'wrf@gmail.com', '1234ewrt', '2025-09-15', 'Delfin', 'rock', '31431735', '57'),
-(51, 'artenity', 'sexo v', 'wtr.falso1@gmail.com', 'qa1122222', '2007-06-20', 'Hombre', 'jazz', '31232303546', 'wtr123'),
-(52, 'sebastian', 'reduro', 'sbd@gmail.com', 'sbd44', '2006-07-21', 'Hombre', 'jazz', '31232303543333', 'sbd33'),
-(53, 'anderson', 'dcdcdcd', 'cdcdcdcdc@gmail.com', 'cscscscsc', '2025-10-13', 'Hombre', 'circo', '3197255375', 'cscs'),
-(54, 'anderson', 'roldan', 'roldan@gmail.com', '12345', '2018-05-30', 'Hombre', 'dibujo', '314315545445', 'roldan'),
-(55, 'seba', 'rodriguez', 'seba@gmail.com', '123456', '2018-06-12', 'Hombre', 'circo', '65365436546354364', 'seba'),
-(56, 'witer el verdadero', 'sena2', 'anderson.17cardenas@gmail.com', '1234', '2010-10-06', 'Personalizado', 'circo', '454 588 7447', 'and'),
-(57, 'witer365', 'real', 'anderson@gmail.com', '12345', '2006-07-09', 'Hombre', 'dibujo', '653654365463543645', 'witer365'),
-(58, 'Laura', 'Pérez', 'laura.perez@example.com', 'Laura123*', '1998-05-10', 'Mujer', 'pintura', '3005678910', 'laurapintora'),
-(59, 'artenity', 'agirre', 'w59345907@gmail.com', 'wtr#56789', '2009-02-18', 'Hombre', 'escultura', '3232025652', 'wtr856'),
-(60, 'erca', 'asassa', 'and@gmail.com', 'and3', '2007-09-11', 'Hombre', 'ballet', '321455698225', 'and2'),
-(61, 'cadymartinezcardenas1234', '', 'cadymartinezcardenas1234@gmail.com', '', NULL, '', '', '', 'cadymartinezcardenas1234');
+INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo_electronico`, `contrasena`, `fecha_nacimiento`, `genero`, `tipo_arte_preferido`, `telefono`, `nombre_usuario`, `es_admin`) VALUES
+(1, 'Adelaida Arregui ', 'Anglada', 'user1@correo.com', 'nVQdhWXb^2E)', '1989-08-19', 'Otro', 'Danza', '+34 741 783 162', 'ozuna el real', 0),
+(2, 'Faustino Vallejo ', 'Real', 'user2@correo.com', 'pLqHtVn#7aFX', '1987-10-12', 'Masculino', 'Teatro', '+34 607 215 905', 'nose', 0),
+(4, 'Sebastián Almagro Vico', '', 'user4@correo.com', 'Vh*qfY$UJ2j1', '1988-07-01', 'Masculino', 'Pintura', '+34 612 137 508', '', 0),
+(5, 'Aurelia Utrera Castañón', '', 'user5@correo.com', 'NL8suYgx+Fj%', '1971-12-30', 'Femenino', 'Literatura', '+34 686 733 265', '', 0),
+(6, 'Bartolomé Gallego Torrente', '', 'user6@correo.com', 'E&M4dWY!kPKc', '1982-02-24', 'Masculino', 'Danza', '+34 688 415 310', '', 0),
+(7, 'Álvaro Ibáñez Martos', '', 'user7@correo.com', 'ZX2F%bt8qae#', '1986-05-06', 'Masculino', 'Teatro', '+34 639 938 370', '', 0),
+(8, 'Gabriela Collado Lara', '', 'user8@correo.com', '2Tvg+!hC5Vje', '1984-11-13', 'Femenino', 'Pintura', '+34 642 748 855', '', 0),
+(9, 'Bautista Velasco Montalt', '', 'user9@correo.com', 'mK9AKnH@P47Y', '1976-04-10', 'Masculino', 'Música', '+34 690 825 418', 'hay hambre\r\n', 0),
+(10, 'Elena Baeza Andrada', '', 'user10@correo.com', 'J2+eZLGU38pn', '1985-01-19', 'Femenino', 'Literatura', '+34 622 434 504', '', 0),
+(11, 'Isidro Monforte Bravo', '', 'user11@correo.com', 'YvKx@eLMg7rT', '1983-10-07', 'Masculino', 'Teatro', '+34 678 695 273', '', 0),
+(12, 'Rosaura Viana Villegas', '', 'user12@correo.com', 'sAqX$wK3EYN!', '1990-09-05', 'Femenino', 'Pintura', '+34 655 171 391', '', 0),
+(13, 'Benjamín Arrieta Sanjuan', '', 'user13@correo.com', '9!HtUMpvycAe', '1978-03-27', 'Masculino', 'Danza', '+34 684 130 920', '', 0),
+(14, 'Rocío Oltra Pascual', '', 'user14@correo.com', 'L!Eex5tzRMm7', '1991-11-02', 'Femenino', 'Literatura', '+34 609 582 423', 'no hay hambre\r\n', 0),
+(15, 'Julián Cardiel Peñalver', '', 'user15@correo.com', 'AQ6bZMpE&9Xu', '1975-08-15', 'Masculino', 'Música', '+34 615 978 350', '', 0),
+(16, 'Daniela Pizarro Sempere', '', 'user16@correo.com', 'TwR*fqgUz23!', '1986-03-17', 'Femenino', 'Pintura', '+34 664 357 229', '', 0),
+(17, 'Eugenio Balsalobre Cánovas', '', 'user17@correo.com', 'eMv&k3UcBN#d', '1980-05-29', 'Masculino', 'Teatro', '+34 695 382 590', '', 0),
+(18, 'Jimena Carreras Roca', '', 'user18@correo.com', 'x5B$dnMAZ4^f', '1992-06-10', 'Femenino', 'Música', '+34 670 981 472', '', 0),
+(19, 'Fernando Monasterio Cuesta', '', 'user19@correo.com', '93TwzE8!gHVu', '1983-09-09', 'Masculino', 'Danza', '+34 648 751 340', '', 0),
+(20, 'Tatiana Rojano Sáenz', '', 'user20@correo.com', 'fbvZHt$4MXq3', '1987-02-03', 'Femenino', 'Literatura', '+34 691 389 712', '', 0),
+(21, 'Ulises Naranjo Goicoechea', '', 'user21@correo.com', 'cJZW@yEL8N5*', '1989-04-22', 'Masculino', 'Teatro', '+34 618 451 913', '', 0),
+(22, 'Beatriz Luján Ochoa', '', 'user22@correo.com', 'F!qgTpbvWY7u', '1990-10-08', 'Femenino', 'Pintura', '+34 684 252 472', 'si', 0),
+(23, 'Guillermo Lerín Santamaría', '', 'user23@correo.com', 'A@cvKz4YM3uP', '1981-06-03', 'Masculino', 'Danza', '+34 625 783 145', '', 0),
+(24, 'Natalia Cevallos Muñiz', '', 'user24@correo.com', 'Mf^yPzGu9EAK', '1993-01-25', 'Femenino', 'Música', '+34 672 423 987', 'sueño 201', 0),
+(25, 'Lázaro Fonseca Viñas', '', 'user25@correo.com', 'NctKv@pmW3R$', '1979-07-11', 'Masculino', 'Literatura', '+34 637 705 199', '', 0),
+(26, 'Inés Moyano del Río', '', 'user26@correo.com', 'XR#nFbPW3a&L', '1985-09-17', 'Femenino', 'Pintura', '+34 633 201 843', '', 0),
+(27, 'Ángel Domenech Cotilla', '', 'user27@correo.com', 'eZ9WyEXr!J6q', '1984-11-23', 'Masculino', 'Teatro', '+34 694 852 137', '', 0),
+(28, 'Leticia Mínguez Paredes', '', 'user28@correo.com', 'rG&uJc93NAv*', '1982-02-06', 'Femenino', 'Música', '+34 676 428 099', '', 0),
+(29, 'Fidel Robledo Garijo', '', 'user29@correo.com', '7Tf$VqgkXuNp', '1986-06-20', 'Masculino', 'Literatura', '+34 689 375 842', '', 0),
+(30, 'Melina Pardo Revilla', '', 'user30@correo.com', 'UnqPw4&eXB2$', '1991-05-14', 'Femenino', 'Danza', '+34 649 172 356', '', 0),
+(31, 'Ana Torres', '', 'ana.torres@example.com', 'pass123', '1995-04-12', 'Femenino', 'Pintura', '3001112233', '', 0),
+(32, 'Carlos Gómez', '', 'carlos.gomez@example.com', 'pass123', '1990-07-22', 'Masculino', 'Escultura', '3002223344', '', 0),
+(33, 'María López', '', 'maria.lopez@example.com', 'pass123', '1998-02-18', 'Femenino', 'Fotografía', '3003334455', '', 0),
+(35, 'Lucía Fernández', '', 'lucia.fernandez@example.com', 'pass123', '1993-06-30', 'Femenino', 'Danza', '3005556677', '', 0),
+(36, 'David Morales', '', 'david.morales@example.com', 'pass123', '1992-01-15', 'Masculino', 'Poesía', '3006667788', '', 0),
+(37, 'Paula Ramírez', '', 'paula.ramirez@example.com', 'pass123', '1997-12-09', 'Femenino', 'Teatro', '3007778899', '', 0),
+(38, 'Sofía Herrera', '', 'sofia.herrera@example.com', 'pass123', '2000-09-20', 'Femenino', 'Cine', '3008889900', '', 0),
+(39, 'Andrés Ríos', '', 'andres.rios@example.com', 'pass123', '1994-03-25', 'Masculino', 'Diseño', '3009990011', '', 0),
+(40, 'Valentina Cruz', '', 'valentina.cruz@example.com', 'pass123', '1996-05-17', 'Femenino', 'Arte digital', '3011112233', '', 0),
+(46, 'ozuna', 'Roldán', 'ozuna@test.com', '123456', '2000-05-20', 'femenino', 'pintura', '3201234567', 'ozunaR', 0),
+(49, 'nolan', 'sin ', 'wrf@gmail.com', '1234ewrt', '2025-09-15', 'Delfin', 'rock', '31431735', '57', 0),
+(51, 'artenity', 'sexo v', 'wtr.falso1@gmail.com', 'qa1122222', '2007-06-20', 'Hombre', 'jazz', '31232303546', 'wtr123', 0),
+(52, 'sebastian', 'reduro', 'sbd@gmail.com', 'sbd44', '2006-07-21', 'Hombre', 'jazz', '31232303543333', 'sbd33', 0),
+(53, 'anderson', 'dcdcdcd', 'cdcdcdcdc@gmail.com', 'cscscscsc', '2025-10-13', 'Hombre', 'circo', '3197255375', 'cscs', 0),
+(54, 'anderson', 'roldan', 'roldan@gmail.com', '12345', '2018-05-30', 'Hombre', 'dibujo', '314315545445', 'roldan', 0),
+(55, 'seba', 'rodriguez', 'seba@gmail.com', '123456', '2018-06-12', 'Hombre', 'circo', '65365436546354364', 'seba', 0),
+(56, 'witer el verdadero', 'sena2', 'anderson.17cardenas@gmail.com', '1234', '2010-10-06', 'Personalizado', 'circo', '454 588 744', 'and', 1),
+(57, 'witer365', 'real', 'anderson@gmail.com', '12345', '2006-07-09', 'Hombre', 'dibujo', '653654365463543645', 'witer365', 0),
+(58, 'Laura', 'Pérez', 'laura.perez@example.com', 'Laura123*', '1998-05-10', 'Mujer', 'pintura', '3005678910', 'laurapintora', 0),
+(59, 'artenity', 'agirre', 'w59345907@gmail.com', 'wtr#56789', '2009-02-18', 'Hombre', 'escultura', '3232025652', 'wtr856', 0),
+(60, 'erca', 'asassa', 'and@gmail.com', 'and3', '2007-09-11', 'Hombre', 'ballet', '321455698225', 'and2', 0),
+(61, 'cadymartinezcardenas1234', '', 'cadymartinezcardenas1234@gmail.com', '', NULL, '', '', '', 'cadymartinezcardenas1234', 0),
+(62, 'lm3671707', '', 'lm3671707@gmail.com', '', NULL, '', '', '', 'lm3671707', 0),
+(63, 'si4548504', '', 'si4548504@gmail.com', '', NULL, '', '', '', 'si4548504', 0);
 
 --
 -- Índices para tablas volcadas
@@ -1632,6 +1651,14 @@ ALTER TABLE `amistades`
   ADD PRIMARY KEY (`id_amistad`),
   ADD KEY `id_usuario1` (`id_usuario1`),
   ADD KEY `id_usuario2` (`id_usuario2`);
+
+--
+-- Indices de la tabla `anuncios`
+--
+ALTER TABLE `anuncios`
+  ADD PRIMARY KEY (`id_anuncio`),
+  ADD KEY `id_usuario_admin` (`id_usuario_admin`),
+  ADD KEY `ix_anuncios_id_anuncio` (`id_anuncio`);
 
 --
 -- Indices de la tabla `ayuda_reportes`
@@ -1878,13 +1905,6 @@ ALTER TABLE `publicaciones`
   ADD KEY `id_usuario` (`id_usuario`);
 
 --
--- Indices de la tabla `registro_actividad`
---
-ALTER TABLE `registro_actividad`
-  ADD PRIMARY KEY (`id_actividad`),
-  ADD KEY `id_usuario` (`id_usuario`);
-
---
 -- Indices de la tabla `reportes_problemas`
 --
 ALTER TABLE `reportes_problemas`
@@ -1957,6 +1977,12 @@ ALTER TABLE `amistades`
   MODIFY `id_amistad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
+-- AUTO_INCREMENT de la tabla `anuncios`
+--
+ALTER TABLE `anuncios`
+  MODIFY `id_anuncio` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT de la tabla `ayuda_reportes`
 --
 ALTER TABLE `ayuda_reportes`
@@ -1966,7 +1992,7 @@ ALTER TABLE `ayuda_reportes`
 -- AUTO_INCREMENT de la tabla `bloqueos_usuarios`
 --
 ALTER TABLE `bloqueos_usuarios`
-  MODIFY `id_bloqueo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id_bloqueo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT de la tabla `categorias`
@@ -1996,7 +2022,7 @@ ALTER TABLE `comentarios`
 -- AUTO_INCREMENT de la tabla `compartidos`
 --
 ALTER TABLE `compartidos`
-  MODIFY `id_compartido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `id_compartido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT de la tabla `configuraciones_chat`
@@ -2014,43 +2040,43 @@ ALTER TABLE `configuraciones_sistema`
 -- AUTO_INCREMENT de la tabla `galeria_archivos`
 --
 ALTER TABLE `galeria_archivos`
-  MODIFY `id_archivo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id_archivo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `galeria_carpetas`
 --
 ALTER TABLE `galeria_carpetas`
-  MODIFY `id_carpeta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_carpeta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `galeria_publicaciones`
 --
 ALTER TABLE `galeria_publicaciones`
-  MODIFY `id_galeria_publicacion` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_galeria_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `guardados`
 --
 ALTER TABLE `guardados`
-  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id_guardado` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT de la tabla `mensajes`
 --
 ALTER TABLE `mensajes`
-  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT de la tabla `mensajes_eliminados`
 --
 ALTER TABLE `mensajes_eliminados`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta`
 --
 ALTER TABLE `me_gusta`
-  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id_megusta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT de la tabla `me_gusta_comentarios`
@@ -2062,43 +2088,43 @@ ALTER TABLE `me_gusta_comentarios`
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=392;
+  MODIFY `id_notificacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=402;
 
 --
 -- AUTO_INCREMENT de la tabla `no_me_interesa`
 --
 ALTER TABLE `no_me_interesa`
-  MODIFY `id_no_me_interesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id_no_me_interesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT de la tabla `perfiles`
 --
 ALTER TABLE `perfiles`
-  MODIFY `id_perfil` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `id_perfil` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT de la tabla `publicaciones`
 --
 ALTER TABLE `publicaciones`
-  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
+  MODIFY `id_publicacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=98;
 
 --
 -- AUTO_INCREMENT de la tabla `reportes_problemas`
 --
 ALTER TABLE `reportes_problemas`
-  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `reportes_usuarios`
 --
 ALTER TABLE `reportes_usuarios`
-  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id_reporte` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `reset_password_tokens`
 --
 ALTER TABLE `reset_password_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT de la tabla `seguir_usuario`
@@ -2122,7 +2148,7 @@ ALTER TABLE `suspensiones_usuarios`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- Restricciones para tablas volcadas
@@ -2140,6 +2166,12 @@ ALTER TABLE `advertencias_usuarios`
 ALTER TABLE `amistades`
   ADD CONSTRAINT `amistades_ibfk_1` FOREIGN KEY (`id_usuario1`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
   ADD CONSTRAINT `amistades_ibfk_2` FOREIGN KEY (`id_usuario2`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `anuncios`
+--
+ALTER TABLE `anuncios`
+  ADD CONSTRAINT `anuncios_ibfk_1` FOREIGN KEY (`id_usuario_admin`) REFERENCES `usuarios` (`id_usuario`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `ayuda_reportes`
