@@ -1264,3 +1264,36 @@ export const actualizarEstadoReporte = async (id_reporte: number, estado: string
   });
   return res.data;
 };
+
+// ================== ANUNCIOS ==================
+
+export interface Anuncio {
+  id_anuncio: number;
+  titulo: string;
+  contenido: string | null;
+  activo: boolean;
+  fecha_creacion: string;
+  fecha_actualizacion: string;
+}
+
+// Obtener anuncio (público)
+export const obtenerAnuncio = async (): Promise<Anuncio> => {
+  const res = await api.get("/anuncio");
+  return res.data;
+};
+
+// Actualizar anuncio (solo administradores)
+export const actualizarAnuncio = async (titulo: string, contenido: string): Promise<Anuncio> => {
+  const formData = new FormData();
+  formData.append("titulo", titulo);
+  formData.append("contenido", contenido);
+  formData.append("activo", "true");
+  
+  const res = await api.put("/anuncio", formData, {
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};

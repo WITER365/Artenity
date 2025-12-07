@@ -432,3 +432,18 @@ class GaleriaPublicacion(Base):
     archivo = relationship("GaleriaArchivo")
     publicacion = relationship("Publicacion")
     usuario = relationship("Usuario")
+
+# ------------------ ANUNCIO ------------------
+class Anuncio(Base):
+    __tablename__ = "anuncios"
+    
+    id_anuncio = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String(255), nullable=False, default="LO QUE SUCEDE CON EL MUNDO DEL ARTE")
+    contenido = Column(Text, nullable=True)
+    activo = Column(Boolean, default=True)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id_usuario_admin = Column(Integer, ForeignKey("usuarios.id_usuario", ondelete="SET NULL"), nullable=True)
+    
+    # Relaciones
+    usuario_admin = relationship("Usuario")

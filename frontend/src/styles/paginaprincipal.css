@@ -192,6 +192,135 @@ body.pagina-principal {
   box-sizing: border-box; /* padding incluido en tamaño */
 }
 
+/* Estilos para el anuncio */
+.anuncio-card {
+  position: relative;
+  min-height: auto;
+  height: auto;
+}
+
+.anuncio-card h2 {
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.anuncio-contenido {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.btn-editar-anuncio {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(147, 51, 234, 0.3);
+  border: 1px solid rgba(147, 51, 234, 0.5);
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-editar-anuncio:hover {
+  background: rgba(147, 51, 234, 0.5);
+  border-color: #9333ea;
+  transform: translateY(-2px);
+}
+
+.anuncio-edicion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.anuncio-input-titulo {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.anuncio-input-titulo:focus {
+  outline: none;
+  border-color: #9333ea;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.anuncio-textarea {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.anuncio-textarea:focus {
+  outline: none;
+  border-color: #9333ea;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.anuncio-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.anuncio-botones {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-guardar-anuncio,
+.btn-cancelar-anuncio {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btn-guardar-anuncio {
+  background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+  color: white;
+}
+
+.btn-guardar-anuncio:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+}
+
+.btn-cancelar-anuncio {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-cancelar-anuncio:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Posiciones personalizables */
 .right-sidebar .card:nth-child(1) { top: 90px; left: 1380px; }
 .right-sidebar .card:nth-child(2) { top: 400px; left: 1380px; }

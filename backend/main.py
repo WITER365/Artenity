@@ -4792,6 +4792,58 @@ def actualizar_estado_reporte(
         }
     }
 
+# ------------------ ANUNCIOS ------------------
+
+@app.get("/anuncio", response_model=schemas.AnuncioResponse)
+def obtener_anuncio(db: Session = Depends(get_db)):
+    """Obtiene el anuncio activo (público, todos pueden verlo)"""
+    anuncio = db.query(models.Anuncio).filter(models.Anuncio.activo == True).first()
+    
+    if not anuncio:
+        # Crear anuncio por defecto si no existe
+        anuncio = models.Anuncio(
+            titulo="LO QUE SUCEDE CON EL MUNDO DEL ARTE",
+            contenido="",
+            activo=True
+        )
+        db.add(anuncio)
+        db.commit()
+        db.refresh(anuncio)
+    
+    return anuncio
+
+@app.put("/anuncio", response_model=schemas.AnuncioResponse)
+def actualizar_anuncio(
+    titulo: str = Form(None),
+    contenido: str = Form(None),
+    activo: bool = Form(True),
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Actualiza el anuncio (solo administradores)"""
+    anuncio = db.query(models.Anuncio).filter(models.Anuncio.activo == True).first()
+    
+    if not anuncio:
+        anuncio = models.Anuncio(
+            titulo=titulo or "LO QUE SUCEDE CON EL MUNDO DEL ARTE",
+            contenido=contenido or "",
+            activo=activo,
+            id_usuario_admin=admin.id_usuario
+        )
+        db.add(anuncio)
+    else:
+        if titulo is not None:
+            anuncio.titulo = titulo
+        if contenido is not None:
+            anuncio.contenido = contenido
+        anuncio.activo = activo
+        anuncio.id_usuario_admin = admin.id_usuario
+        anuncio.fecha_actualizacion = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(anuncio)
+    return anuncio
+
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

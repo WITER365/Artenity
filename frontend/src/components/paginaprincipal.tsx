@@ -43,7 +43,9 @@ import {
   obtenerAmigos,
   buscarUsuarios,
   seguirUsuario,
-  obtenerSugerenciasUsuarios
+  obtenerSugerenciasUsuarios,
+  obtenerAnuncio,
+  actualizarAnuncio
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import NotificacionesPanel from "../components/NotificacionesPanel";
@@ -353,6 +355,15 @@ export default function PaginaPrincipal() {
   const [amigos, setAmigos] = useState<Amigo[]>([]);
   const [amigosSeleccionados, setAmigosSeleccionados] = useState<number[]>([]);
   const [mostrarSeleccionAmigos, setMostrarSeleccionAmigos] = useState(false);
+  
+  // Estados para anuncio
+  const [anuncio, setAnuncio] = useState<{titulo: string; contenido: string | null}>({
+    titulo: "LO QUE SUCEDE CON EL MUNDO DEL ARTE",
+    contenido: null
+  });
+  const [editandoAnuncio, setEditandoAnuncio] = useState(false);
+  const [anuncioTitulo, setAnuncioTitulo] = useState("");
+  const [anuncioContenido, setAnuncioContenido] = useState("");
 
   // ✅ Efectos
   useEffect(() => {
@@ -377,6 +388,10 @@ export default function PaginaPrincipal() {
       cargarSugerenciasUsuarios();
     }
   }, [usuario]);
+
+  useEffect(() => {
+    cargarAnuncio();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -426,6 +441,59 @@ export default function PaginaPrincipal() {
       });
       window.dispatchEvent(notificacionEvent);
     }
+  };
+
+  // FUNCIÓN PARA CARGAR ANUNCIO
+  const cargarAnuncio = async () => {
+    try {
+      const anuncioData = await obtenerAnuncio();
+      setAnuncio({
+        titulo: anuncioData.titulo || "LO QUE SUCEDE CON EL MUNDO DEL ARTE",
+        contenido: anuncioData.contenido
+      });
+    } catch (error) {
+      console.error("Error cargando anuncio:", error);
+    }
+  };
+
+  // FUNCIÓN PARA GUARDAR ANUNCIO (solo admin)
+  const guardarAnuncio = async () => {
+    try {
+      await actualizarAnuncio(anuncioTitulo, anuncioContenido);
+      setAnuncio({
+        titulo: anuncioTitulo,
+        contenido: anuncioContenido
+      });
+      setEditandoAnuncio(false);
+      
+      const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+        detail: { mensaje: 'Anuncio actualizado exitosamente', tipo: 'exito' }
+      });
+      window.dispatchEvent(notificacionEvent);
+    } catch (error: any) {
+      console.error("Error guardando anuncio:", error);
+      const notificacionEvent = new CustomEvent('nuevaNotificacion', {
+        detail: { 
+          mensaje: error.response?.data?.detail || 'Error al guardar anuncio', 
+          tipo: 'error' 
+        }
+      });
+      window.dispatchEvent(notificacionEvent);
+    }
+  };
+
+  // FUNCIÓN PARA INICIAR EDICIÓN DE ANUNCIO
+  const iniciarEdicionAnuncio = () => {
+    setAnuncioTitulo(anuncio.titulo);
+    setAnuncioContenido(anuncio.contenido || "");
+    setEditandoAnuncio(true);
+  };
+
+  // FUNCIÓN PARA CANCELAR EDICIÓN DE ANUNCIO
+  const cancelarEdicionAnuncio = () => {
+    setEditandoAnuncio(false);
+    setAnuncioTitulo("");
+    setAnuncioContenido("");
   };
 
   // FUNCIÓN PARA AGREGAR ETIQUETA
@@ -1606,7 +1674,57 @@ export default function PaginaPrincipal() {
 
       {/* Sidebar derecha */}
       <aside className="right-sidebar">
-        <div className="card"><h2>LO QUE SUCEDE CON EL MUNDO DEL ARTE</h2></div>
+        <div className="card anuncio-card">
+          {!editandoAnuncio ? (
+            <>
+              <h2>{anuncio.titulo}</h2>
+              {anuncio.contenido && (
+                <p className="anuncio-contenido">{anuncio.contenido}</p>
+              )}
+              {usuario?.es_admin && (
+                <button 
+                  className="btn-editar-anuncio"
+                  onClick={iniciarEdicionAnuncio}
+                  title="Editar anuncio"
+                >
+                  <Settings size={16} />
+                  Editar
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="anuncio-edicion">
+              <input
+                type="text"
+                className="anuncio-input-titulo"
+                value={anuncioTitulo}
+                onChange={(e) => setAnuncioTitulo(e.target.value)}
+                placeholder="Título del anuncio"
+              />
+              <textarea
+                className="anuncio-textarea"
+                value={anuncioContenido}
+                onChange={(e) => setAnuncioContenido(e.target.value)}
+                placeholder="Contenido del anuncio..."
+                rows={4}
+              />
+              <div className="anuncio-botones">
+                <button 
+                  className="btn-guardar-anuncio"
+                  onClick={guardarAnuncio}
+                >
+                  Guardar
+                </button>
+                <button 
+                  className="btn-cancelar-anuncio"
+                  onClick={cancelarEdicionAnuncio}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* SECCIÓN "A QUIÉN SEGUIR" */}
      <div className="card sugerencias-seguir">

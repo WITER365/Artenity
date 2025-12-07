@@ -397,3 +397,20 @@ class EstadisticasGaleria(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ------------------ ANUNCIO ------------------
+class AnuncioBase(BaseModel):
+    titulo: Optional[str] = "LO QUE SUCEDE CON EL MUNDO DEL ARTE"
+    contenido: Optional[str] = None
+
+class AnuncioResponse(AnuncioBase):
+    id_anuncio: int
+    activo: bool
+    fecha_creacion: datetime
+    fecha_actualizacion: datetime
+
+    class Config:
+        from_attributes = True
+
+class AnuncioUpdate(AnuncioBase):
+    activo: Optional[bool] = True
