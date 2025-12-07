@@ -3198,8 +3198,6 @@ def obtener_categorias_populares(
             status_code=500, 
             detail=f"Error interno del servidor: {str(e)}"
         )
-# Agrega en tu main.py, después de los otros endpoints pero antes de if __name__ == "__main__"
-
 # ================== ENDPOINTS PÚBLICOS SIN AUTENTICACIÓN ==================
 
 @app.get("/public/categorias")

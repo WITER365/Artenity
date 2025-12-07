@@ -123,6 +123,7 @@ const Configuraciones: React.FC = () => {
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string>("");
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   // Cargar datos iniciales
 useEffect(() => {
@@ -465,7 +466,7 @@ useEffect(() => {
             <div className="section-header">
               <h2 className="section-title">
                 <div className="section-icon blue">
-                  <User className="icon" size={24} />
+                  <User className="icon" size={16} />
                 </div>
                 Tu Cuenta
               </h2>
@@ -476,7 +477,7 @@ useEffect(() => {
             
             <div className="info-card blue-gradient">
               <h3 className="card-title">
-                <User size={18} />
+                <User size={14} />
                 Información Personal
               </h3>
               <div className="form-grid">
@@ -497,7 +498,7 @@ useEffect(() => {
                       className={`form-input ${validationErrors.correo_electronico ? 'input-error' : ''}`}
                       placeholder="tu@email.com"
                     />
-                    <Mail className="input-icon" size={18} />
+                    <Mail className="input-icon" size={14} />
                   </div>
                   {validationErrors.correo_electronico && (
                     <p className="error-message">
@@ -520,7 +521,7 @@ useEffect(() => {
                       className="form-input"
                       placeholder="+34 123 456 789"
                     />
-                    <Phone className="input-icon" size={18} />
+                    <Phone className="input-icon" size={14} />
                   </div>
                 </div>
                 
@@ -578,7 +579,7 @@ useEffect(() => {
                     </>
                   ) : (
                     <>
-                      <Save size={18} />
+                      <Save size={14} />
                       Guardar Cambios
                     </>
                   )}
@@ -593,7 +594,7 @@ useEffect(() => {
           <div className="settings-section animate-fadeIn">
             <h2 className="section-title">
               <div className="section-icon purple">
-                <Globe className="icon" size={24} />
+                <Globe className="icon" size={16} />
               </div>
               Pantalla e Idiomas
             </h2>
@@ -603,8 +604,8 @@ useEffect(() => {
                 <div className="setting-content">
                   <div className="setting-icon">
                     {modoOscuro ? 
-                      <Moon className="moon-icon" size={22} /> : 
-                      <Sun className="sun-icon" size={22} />
+                      <Moon className="moon-icon" size={16} /> : 
+                      <Sun className="sun-icon" size={16} />
                     }
                   </div>
                   <div className="setting-info">
@@ -665,11 +666,11 @@ useEffect(() => {
                       </div>
                       {idioma.codigo === 'es' ? (
                         <div className="language-selected">
-                          <Check size={14} />
+                          <Check size={12} />
                           <span>Seleccionado</span>
                         </div>
                       ) : (
-                        <ChevronRight size={18} className="language-chevron" />
+                        <ChevronRight size={14} className="language-chevron" />
                       )}
                     </button>
                   ))}
@@ -684,7 +685,7 @@ useEffect(() => {
           <div className="settings-section animate-fadeIn">
             <h2 className="section-title">
               <div className="section-icon green">
-                <Shield className="icon" size={24} />
+                <Shield className="icon" size={16} />
               </div>
               Privacidad y Seguridad
             </h2>
@@ -693,7 +694,7 @@ useEffect(() => {
               <div className="security-card green-gradient">
                 <h3 className="card-title">
                   <div className="card-icon">
-                    <Key className="icon" size={20} />
+                    <Key className="icon" size={14} />
                   </div>
                   Cambiar Contraseña
                 </h3>
@@ -737,7 +738,7 @@ useEffect(() => {
                           onClick={field.toggle}
                           className="password-toggle"
                         >
-                          {field.show ? <EyeOff size={20} /> : <Eye size={20} />}
+                          {field.show ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                       {field.name === "newPassword" && passwordErrors.length > 0 && (
@@ -768,7 +769,7 @@ useEffect(() => {
                     </>
                   ) : (
                     <>
-                      <Key size={18} />
+                      <Key size={14} />
                       Cambiar Contraseña
                     </>
                   )}
@@ -778,7 +779,7 @@ useEffect(() => {
               <div className="danger-card">
                 <div className="danger-content">
                   <div className="danger-icon">
-                    <Trash2 className="icon" size={24} />
+                    <Trash2 className="icon" size={16} />
                   </div>
                   <div className="danger-info">
                     <h3 className="danger-title">
@@ -791,7 +792,7 @@ useEffect(() => {
                       onClick={() => setShowDeleteModal(true)}
                       className="btn-danger"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={14} />
                       Eliminar Mi Cuenta
                     </button>
                   </div>
@@ -806,7 +807,7 @@ useEffect(() => {
           <div className="settings-section animate-fadeIn">
             <h2 className="section-title">
               <div className="section-icon orange">
-                <HelpCircle className="icon" size={24} />
+                <HelpCircle className="icon" size={16} />
               </div>
               Centro de Ayuda
             </h2>
@@ -822,10 +823,14 @@ useEffect(() => {
                     { q: "¿Cómo recupero mi contraseña?", a: "En la página de login, haz clic en 'Olvidé mi contraseña' y sigue las instrucciones." },
                     { q: "¿Cómo elimino mi cuenta?", a: "Ve a Configuración → Privacidad y Seguridad → Eliminar Cuenta." },
                   ].map((item, index) => (
-                    <div key={index} className="faq-item">
+                    <div 
+                      key={index} 
+                      className={`faq-item ${activeFaq === index ? 'active' : ''}`}
+                      onClick={() => setActiveFaq(activeFaq === index ? null : index)}
+                    >
                       <div className="faq-question">
                         <span>{item.q}</span>
-                        <ChevronRight size={18} className="faq-chevron" />
+                        <ChevronRight size={14} className="faq-chevron" />
                       </div>
                       <div className="faq-answer">
                         <p>{item.a}</p>
@@ -838,7 +843,7 @@ useEffect(() => {
               <div className="help-card">
                 <h3 className="card-title">
                   <div className="card-icon blue">
-                    <Mail className="icon" size={20} />
+                    <Mail className="icon" size={14} />
                   </div>
                   Reportar un Problema
                 </h3>
@@ -903,7 +908,7 @@ useEffect(() => {
                     </>
                   ) : (
                     <>
-                      <Mail size={18} />
+                      <Mail size={14} />
                       Enviar Reporte
                     </>
                   )}
@@ -915,7 +920,7 @@ useEffect(() => {
                 <div className="support-contacts">
                   <div className="contact-item">
                     <div className="contact-icon blue">
-                      <Mail className="icon" size={18} />
+                      <Mail className="icon" size={14} />
                     </div>
                     <div className="contact-info">
                       <div className="contact-type">Email</div>
@@ -924,7 +929,7 @@ useEffect(() => {
                   </div>
                   <div className="contact-item">
                     <div className="contact-icon green">
-                      <Phone className="icon" size={18} />
+                      <Phone className="icon" size={14} />
                     </div>
                     <div className="contact-info">
                       <div className="contact-type">Teléfono</div>
@@ -945,7 +950,7 @@ useEffect(() => {
           <div className="settings-section animate-fadeIn">
             <h2 className="section-title">
               <div className="section-icon pink">
-                <Bell className="icon" size={24} />
+                <Bell className="icon" size={16} />
               </div>
               Notificaciones
             </h2>
@@ -1004,7 +1009,7 @@ useEffect(() => {
         <div className="modal-content animate-slideUp">
           <div className="modal-header">
             <div className="modal-icon">
-              <AlertCircle className="icon" size={28} />
+              <AlertCircle className="icon" size={18} />
             </div>
             <div>
               <h3 className="modal-title">Eliminar Cuenta</h3>
@@ -1028,7 +1033,7 @@ useEffect(() => {
                 placeholder='Escribe "ELIMINAR" aquí'
               />
               {deleteConfirm === "ELIMINAR" && (
-                <Check className="modal-check" size={20} />
+                <Check className="modal-check" size={14} />
               )}
             </div>
             
@@ -1062,7 +1067,7 @@ useEffect(() => {
                 </>
               ) : (
                 <>
-                  <Trash2 size={18} />
+                  <Trash2 size={14} />
                   Eliminar Permanentemente
                 </>
               )}
@@ -1078,7 +1083,7 @@ useEffect(() => {
       <div className="loading-container">
         <div className="loading-spinner">
           <div className="spinner-circle"></div>
-          <Settings className="spinner-icon" size={24} />
+          <Settings className="spinner-icon" size={18} />
         </div>
         <p className="loading-text">
           Cargando configuración...
@@ -1097,7 +1102,7 @@ useEffect(() => {
               onClick={() => navigate(-1)}
               className="back-button"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
             </button>
             <div className="header-title">
               <h1 className="main-title">Configuración</h1>
@@ -1107,9 +1112,9 @@ useEffect(() => {
           
           {message && (
             <div className={`message-alert ${message.type}`}>
-              {message.type === 'success' && <Check size={20} />}
-              {message.type === 'error' && <X size={20} />}
-              {message.type === 'info' && <Info size={20} />}
+              {message.type === 'success' && <Check size={16} />}
+              {message.type === 'error' && <X size={16} />}
+              {message.type === 'info' && <Info size={16} />}
               <span className="message-text">{message.text}</span>
             </div>
           )}
@@ -1135,11 +1140,11 @@ useEffect(() => {
                 >
                   <div className="sidebar-item-content">
                     <div className={`sidebar-icon ${activeSection === item.id ? item.color : ''}`}>
-                      <item.icon size={20} />
+                      <item.icon size={14} />
                     </div>
                     <span className="sidebar-label">{item.label}</span>
                   </div>
-                  <ChevronRight size={18} className={`sidebar-chevron ${activeSection === item.id ? 'active' : ''}`} />
+                  <ChevronRight size={14} className={`sidebar-chevron ${activeSection === item.id ? 'active' : ''}`} />
                 </button>
               ))}
               
@@ -1154,11 +1159,11 @@ useEffect(() => {
               >
                 <div className="sidebar-item-content">
                   <div className="sidebar-icon logout">
-                    <LogOut size={20} />
+                    <LogOut size={14} />
                   </div>
                   <span className="sidebar-label">Cerrar Sesión</span>
                 </div>
-                <LogOut size={18} className="logout-icon" />
+                <LogOut size={14} className="logout-icon" />
               </button>
             </div>
           </div>
