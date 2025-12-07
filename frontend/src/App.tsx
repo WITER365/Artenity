@@ -15,6 +15,7 @@ import ResetPassword from "./components/ResetPassword";
 import CompartidosPage from "./components/CompartidosPage";
 import CategoriasPage from "./components/CategoriasPage";
 import Configuraciones from "./components/configuraciones";
+import PanelAdmin from "./components/PanelAdmin";
 function App() {
   const { token } = useAuth();
 
@@ -42,6 +43,7 @@ function App() {
       <Route path="/galeria" element={<GaleriaDeArte />} />
 
 <Route path="/configuraciones" element={token ? <Configuraciones /> : <Navigate to="/login" />} />
+      <Route path="/admin" element={token ? <PanelAdmin /> : <Navigate to="/login" />} />
       {/* Ruta fallback */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

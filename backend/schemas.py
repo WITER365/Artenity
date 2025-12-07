@@ -34,6 +34,7 @@ class UsuarioCreate(UsuarioBase):
 
 class UsuarioResponse(UsuarioBase):
     id_usuario: int
+    es_admin: Optional[bool] = False
     perfil: Optional[PerfilResponse] = None
 
     class Config:

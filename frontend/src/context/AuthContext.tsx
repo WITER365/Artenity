@@ -13,6 +13,7 @@ export interface Usuario {
   nombre_usuario: string;
   correo_electronico: string;
   foto_perfil?: string | null;
+  es_admin?: boolean;
   perfil?: {
     foto_perfil?: string | null;
     descripcion?: string;

@@ -100,6 +100,33 @@ def get_current_user_id(
     
     return usuario.id_usuario
 
+# ------------------ VERIFICACIÓN DE ADMIN ------------------
+def get_current_admin(
+    token: str = Header(None, alias="token"),
+    user_id: str = Header(None, alias="id_usuario"),
+    db: Session = Depends(get_db)
+) -> models.Usuario:
+    """Verifica que el usuario sea administrador"""
+    if not token or token == "" or token == "null" or token == "undefined":
+        raise HTTPException(status_code=401, detail="Token requerido o inválido")
+    
+    if not user_id or user_id == "" or user_id == "null" or user_id == "undefined":
+        raise HTTPException(status_code=400, detail="ID de usuario no proporcionado")
+    
+    try:
+        user_id_int = int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="ID de usuario inválido")
+    
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == user_id_int).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if not usuario.es_admin:
+        raise HTTPException(status_code=403, detail="Acceso denegado. Se requieren permisos de administrador")
+    
+    return usuario
+
 # ------------------ FUNCIONES AUXILIARES PARA ARCHIVOS ------------------
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "webp"}
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "avi", "mov", "wmv", "flv", "webm"}
@@ -279,6 +306,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             "tipo_arte_preferido": usuario.tipo_arte_preferido,
             "telefono": usuario.telefono,
             "nombre_usuario": usuario.nombre_usuario,
+            "es_admin": usuario.es_admin if hasattr(usuario, 'es_admin') else False,
             "perfil": {
                 "id_perfil": usuario.perfil.id_perfil,
                 "descripcion": usuario.perfil.descripcion,
@@ -4470,6 +4498,300 @@ def obtener_galeria_publica(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error obteniendo galería pública: {str(e)}")
+
+# ------------------ PANEL DE ADMINISTRADOR ------------------
+
+@app.get("/admin/estadisticas")
+def obtener_estadisticas_admin(
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Obtiene estadísticas generales de la plataforma"""
+    total_usuarios = db.query(func.count(models.Usuario.id_usuario)).scalar()
+    total_publicaciones = db.query(func.count(models.Publicacion.id_publicacion)).scalar()
+    total_comentarios = db.query(func.count(models.Comentario.id_comentario)).scalar()
+    total_reportes = db.query(func.count(models.ReporteUsuario.id_reporte)).scalar()
+    total_reportes_problemas = db.query(func.count(models.ReporteProblema.id_reporte)).scalar()
+    
+    # Usuarios activos (con publicaciones en los últimos 30 días)
+    fecha_limite = datetime.utcnow() - timedelta(days=30)
+    usuarios_activos = db.query(func.count(func.distinct(models.Publicacion.id_usuario))).filter(
+        models.Publicacion.fecha_creacion >= fecha_limite
+    ).scalar()
+    
+    return {
+        "total_usuarios": total_usuarios,
+        "total_publicaciones": total_publicaciones,
+        "total_comentarios": total_comentarios,
+        "total_reportes": total_reportes,
+        "total_reportes_problemas": total_reportes_problemas,
+        "usuarios_activos_30_dias": usuarios_activos or 0
+    }
+
+@app.get("/admin/usuarios")
+def obtener_usuarios_admin(
+    skip: int = 0,
+    limit: int = 50,
+    busqueda: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Obtiene lista de usuarios para administración"""
+    query = db.query(models.Usuario)
+    
+    if busqueda:
+        query = query.filter(
+            (models.Usuario.nombre.contains(busqueda)) |
+            (models.Usuario.apellido.contains(busqueda)) |
+            (models.Usuario.correo_electronico.contains(busqueda)) |
+            (models.Usuario.nombre_usuario.contains(busqueda))
+        )
+    
+    total = query.count()
+    usuarios = query.offset(skip).limit(limit).all()
+    
+    usuarios_data = []
+    for usuario in usuarios:
+        # Contar publicaciones, seguidores, etc.
+        total_publicaciones = db.query(func.count(models.Publicacion.id_publicacion)).filter(
+            models.Publicacion.id_usuario == usuario.id_usuario
+        ).scalar()
+        
+        total_seguidores = db.query(func.count(models.SeguirUsuario.id_seguimiento)).filter(
+            models.SeguirUsuario.id_seguido == usuario.id_usuario
+        ).scalar()
+        
+        usuarios_data.append({
+            "id_usuario": usuario.id_usuario,
+            "nombre": usuario.nombre,
+            "apellido": usuario.apellido,
+            "correo_electronico": usuario.correo_electronico,
+            "nombre_usuario": usuario.nombre_usuario,
+            "es_admin": usuario.es_admin,
+            "fecha_registro": usuario.fecha_nacimiento.isoformat() if usuario.fecha_nacimiento else None,
+            "total_publicaciones": total_publicaciones or 0,
+            "total_seguidores": total_seguidores or 0,
+            "foto_perfil": usuario.perfil.foto_perfil if usuario.perfil else None
+        })
+    
+    return {
+        "usuarios": usuarios_data,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@app.put("/admin/usuarios/{usuario_id}/rol")
+def cambiar_rol_usuario(
+    usuario_id: int,
+    es_admin: bool = Form(...),
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Cambia el rol de administrador de un usuario"""
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    usuario.es_admin = es_admin
+    db.commit()
+    db.refresh(usuario)
+    
+    return {
+        "mensaje": f"Rol de administrador {'activado' if es_admin else 'desactivado'} correctamente",
+        "usuario": {
+            "id_usuario": usuario.id_usuario,
+            "nombre_usuario": usuario.nombre_usuario,
+            "es_admin": usuario.es_admin
+        }
+    }
+
+@app.delete("/admin/usuarios/{usuario_id}")
+def eliminar_usuario_admin(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Elimina un usuario (solo administradores)"""
+    if usuario_id == admin.id_usuario:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta desde el panel de administración")
+    
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Eliminar perfil si existe
+    perfil = db.query(models.Perfil).filter(models.Perfil.id_usuario == usuario_id).first()
+    if perfil:
+        db.delete(perfil)
+    
+    db.delete(usuario)
+    db.commit()
+    
+    return {"mensaje": "Usuario eliminado correctamente"}
+
+@app.get("/admin/publicaciones")
+def obtener_publicaciones_admin(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Obtiene todas las publicaciones para administración"""
+    total = db.query(func.count(models.Publicacion.id_publicacion)).scalar()
+    publicaciones = (
+        db.query(models.Publicacion)
+        .options(joinedload(models.Publicacion.usuario).joinedload(models.Usuario.perfil))
+        .order_by(models.Publicacion.fecha_creacion.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    return {
+        "publicaciones": publicaciones,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@app.delete("/admin/publicaciones/{id_publicacion}")
+def eliminar_publicacion_admin(
+    id_publicacion: int,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Elimina una publicación (solo administradores)"""
+    publicacion = db.query(models.Publicacion).filter(models.Publicacion.id_publicacion == id_publicacion).first()
+    if not publicacion:
+        raise HTTPException(status_code=404, detail="Publicación no encontrada")
+    
+    db.delete(publicacion)
+    db.commit()
+    
+    return {"mensaje": "Publicación eliminada correctamente"}
+
+@app.get("/admin/reportes")
+def obtener_reportes_admin(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Obtiene todos los reportes de usuarios"""
+    total = db.query(func.count(models.ReporteUsuario.id_reporte)).scalar()
+    reportes = (
+        db.query(models.ReporteUsuario)
+        .options(
+            joinedload(models.ReporteUsuario.reportante),
+            joinedload(models.ReporteUsuario.reportado)
+        )
+        .order_by(models.ReporteUsuario.fecha.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    reportes_data = []
+    for reporte in reportes:
+        reportes_data.append({
+            "id_reporte": reporte.id_reporte,
+            "motivo": reporte.motivo,
+            "evidencia_url": reporte.evidencia_url,
+            "fecha": reporte.fecha.isoformat() if reporte.fecha else None,
+            "reportante": {
+                "id_usuario": reporte.reportante.id_usuario,
+                "nombre_usuario": reporte.reportante.nombre_usuario,
+                "nombre": reporte.reportante.nombre
+            },
+            "reportado": {
+                "id_usuario": reporte.reportado.id_usuario,
+                "nombre_usuario": reporte.reportado.nombre_usuario,
+                "nombre": reporte.reportado.nombre
+            }
+        })
+    
+    return {
+        "reportes": reportes_data,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@app.get("/admin/reportes-problemas")
+def obtener_reportes_problemas_admin(
+    skip: int = 0,
+    limit: int = 50,
+    estado: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Obtiene todos los reportes de problemas"""
+    query = db.query(models.ReporteProblema)
+    
+    if estado:
+        query = query.filter(models.ReporteProblema.estado == estado)
+    
+    total = query.count()
+    reportes = (
+        query
+        .options(joinedload(models.ReporteProblema.usuario))
+        .order_by(models.ReporteProblema.fecha_reporte.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    reportes_data = []
+    for reporte in reportes:
+        reportes_data.append({
+            "id_reporte": reporte.id_reporte,
+            "tipo_problema": reporte.tipo_problema,
+            "descripcion": reporte.descripcion,
+            "email_contacto": reporte.email_contacto,
+            "estado": reporte.estado,
+            "fecha_reporte": reporte.fecha_reporte.isoformat() if reporte.fecha_reporte else None,
+            "usuario": {
+                "id_usuario": reporte.usuario.id_usuario,
+                "nombre_usuario": reporte.usuario.nombre_usuario,
+                "nombre": reporte.usuario.nombre
+            } if reporte.usuario else None
+        })
+    
+    return {
+        "reportes": reportes_data,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@app.put("/admin/reportes-problemas/{id_reporte}/estado")
+def actualizar_estado_reporte(
+    id_reporte: int,
+    estado: str = Form(...),
+    db: Session = Depends(get_db),
+    admin: models.Usuario = Depends(get_current_admin)
+):
+    """Actualiza el estado de un reporte de problema"""
+    if estado not in ["pendiente", "en_proceso", "resuelto"]:
+        raise HTTPException(status_code=400, detail="Estado inválido")
+    
+    reporte = db.query(models.ReporteProblema).filter(models.ReporteProblema.id_reporte == id_reporte).first()
+    if not reporte:
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
+    
+    reporte.estado = estado
+    db.commit()
+    db.refresh(reporte)
+    
+    return {
+        "mensaje": "Estado actualizado correctamente",
+        "reporte": {
+            "id_reporte": reporte.id_reporte,
+            "estado": reporte.estado
+        }
+    }
+
 # ------------------ HOME ------------------
 @app.get("/home")
 def home():

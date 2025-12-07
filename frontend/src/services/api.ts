@@ -1095,3 +1095,172 @@ export const obtenerGaleriaPublica = async (idUsuario: number): Promise<GaleriaP
   const res = await api.get(`/galeria/public/${idUsuario}`);
   return res.data;
 };
+
+// ================== PANEL DE ADMINISTRADOR ==================
+
+export interface EstadisticasAdmin {
+  total_usuarios: number;
+  total_publicaciones: number;
+  total_comentarios: number;
+  total_reportes: number;
+  total_reportes_problemas: number;
+  usuarios_activos_30_dias: number;
+}
+
+export interface UsuarioAdmin {
+  id_usuario: number;
+  nombre: string;
+  apellido: string;
+  correo_electronico: string;
+  nombre_usuario: string;
+  es_admin: boolean;
+  fecha_registro: string | null;
+  total_publicaciones: number;
+  total_seguidores: number;
+  foto_perfil: string | null;
+}
+
+export interface PublicacionAdmin {
+  id_publicacion: number;
+  id_usuario: number;
+  contenido: string;
+  fecha_creacion: string;
+  usuario: {
+    id_usuario: number;
+    nombre_usuario: string;
+    nombre: string;
+  };
+}
+
+export interface ReporteAdmin {
+  id_reporte: number;
+  motivo: string;
+  evidencia_url: string | null;
+  fecha: string | null;
+  reportante: {
+    id_usuario: number;
+    nombre_usuario: string;
+    nombre: string;
+  };
+  reportado: {
+    id_usuario: number;
+    nombre_usuario: string;
+    nombre: string;
+  };
+}
+
+export interface ReporteProblemaAdmin {
+  id_reporte: number;
+  tipo_problema: string;
+  descripcion: string;
+  email_contacto: string;
+  estado: string;
+  fecha_reporte: string | null;
+  usuario: {
+    id_usuario: number;
+    nombre_usuario: string;
+    nombre: string;
+  } | null;
+}
+
+// Obtener estadísticas del panel de administrador
+export const obtenerEstadisticasAdmin = async (): Promise<EstadisticasAdmin> => {
+  const res = await api.get("/admin/estadisticas", { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Obtener usuarios para administración
+export const obtenerUsuariosAdmin = async (
+  skip: number = 0,
+  limit: number = 50,
+  busqueda?: string
+): Promise<{ usuarios: UsuarioAdmin[]; total: number; skip: number; limit: number }> => {
+  const params = new URLSearchParams();
+  params.append("skip", skip.toString());
+  params.append("limit", limit.toString());
+  if (busqueda) params.append("busqueda", busqueda);
+  
+  const res = await api.get(`/admin/usuarios?${params.toString()}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Cambiar rol de administrador de un usuario
+export const cambiarRolUsuario = async (usuario_id: number, es_admin: boolean): Promise<any> => {
+  const formData = new FormData();
+  formData.append("es_admin", es_admin.toString());
+  
+  const res = await api.put(`/admin/usuarios/${usuario_id}/rol`, formData, {
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
+
+// Eliminar usuario (solo administradores)
+export const eliminarUsuarioAdmin = async (usuario_id: number): Promise<any> => {
+  const res = await api.delete(`/admin/usuarios/${usuario_id}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Obtener publicaciones para administración
+export const obtenerPublicacionesAdmin = async (
+  skip: number = 0,
+  limit: number = 50
+): Promise<{ publicaciones: PublicacionAdmin[]; total: number; skip: number; limit: number }> => {
+  const params = new URLSearchParams();
+  params.append("skip", skip.toString());
+  params.append("limit", limit.toString());
+  
+  const res = await api.get(`/admin/publicaciones?${params.toString()}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Eliminar publicación (solo administradores)
+export const eliminarPublicacionAdmin = async (id_publicacion: number): Promise<any> => {
+  const res = await api.delete(`/admin/publicaciones/${id_publicacion}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Obtener reportes de usuarios
+export const obtenerReportesAdmin = async (
+  skip: number = 0,
+  limit: number = 50
+): Promise<{ reportes: ReporteAdmin[]; total: number; skip: number; limit: number }> => {
+  const params = new URLSearchParams();
+  params.append("skip", skip.toString());
+  params.append("limit", limit.toString());
+  
+  const res = await api.get(`/admin/reportes?${params.toString()}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Obtener reportes de problemas
+export const obtenerReportesProblemasAdmin = async (
+  skip: number = 0,
+  limit: number = 50,
+  estado?: string
+): Promise<{ reportes: ReporteProblemaAdmin[]; total: number; skip: number; limit: number }> => {
+  const params = new URLSearchParams();
+  params.append("skip", skip.toString());
+  params.append("limit", limit.toString());
+  if (estado) params.append("estado", estado);
+  
+  const res = await api.get(`/admin/reportes-problemas?${params.toString()}`, { headers: getAuthHeaders() });
+  return res.data;
+};
+
+// Actualizar estado de reporte de problema
+export const actualizarEstadoReporte = async (id_reporte: number, estado: string): Promise<any> => {
+  const formData = new FormData();
+  formData.append("estado", estado);
+  
+  const res = await api.put(`/admin/reportes-problemas/${id_reporte}/estado`, formData, {
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
