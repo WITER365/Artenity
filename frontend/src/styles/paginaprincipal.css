@@ -10,6 +10,7 @@
 body {
   overflow: hidden;   /* 🚫 bloquea el scroll */
 }
+
 body.pagina-principal {
   margin: 0;
   font-family: 'Poppins', sans-serif;
@@ -42,7 +43,7 @@ body.pagina-principal {
 
   /* 🔥 Lo nuevo para que puedas manipularlo */
   position: fixed;              /* se mantiene fijo en pantalla */
-  top: 0px;                    /* cámbialo por un número: ej. 20px */
+  top: 10px;                    /* cámbialo por un número: ej. 20px */
   left: 70px;                   /* cámbialo por un número: ej. 30px */
   right: auto;                  /* si lo quieres mover a la derecha */
   bottom: auto;                 /* si lo quieres mover abajo */
@@ -60,22 +61,17 @@ body.pagina-principal {
 
 /* Sección central */
 .center-section {
-  flex: 1;                        /* se expande dentro del contenedor padre */
-  background: rgba(20, 20, 40, 0.85);
-  border-radius: 24px;
-  padding: 32px 24px;
-  box-shadow: 0 4px 32px 0 #0006;
 
   /* 🔥 Lo nuevo para manipular tamaño y posición */
-  width: 810px;                    /* cámbialo a un valor fijo, ej. 800px */
-  height: 160px;                   /* cámbialo a un valor fijo, ej. 600px */
+  width: 930px;                    /* cámbialo a un valor fijo, ej. 800px */
+  height: 360px;                   /* cámbialo a un valor fijo, ej. 600px */
   min-width: 100px;               /* mínimo permitido */
   min-height: 100px;              /* mínimo permitido */
   
   position: relative;             /* puedes cambiar a fixed/absolute para moverlo */
-  top: -350px;                      /* ejemplo: 50px */
+  top: -305px;                      /* ejemplo: 50px */
   left: auto;                     /* ejemplo: 100px */
-  right: -225px;
+  right: -220px;
   bottom: auto;
   margin: auto;                   /* puedes usar margin para centrar */
   transform: none;                /* puedes usar transform: translate(-50%, -50%) para centrar */
@@ -109,8 +105,14 @@ body.pagina-principal {
 /* Input de post */
 .post-input {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 24px;
+  background: rgba(20, 20, 40, 0.85);
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 .post-input input {
   flex: 1;
@@ -139,7 +141,7 @@ body.pagina-principal {
 }
 .banner {
   margin-top: 20px;      /* separación del cuadro de post */
-  width: 800px;          /* ancho */
+  width: 900px;          /* ancho */
   height: 50px;          /* alto */
   line-height: 60px;
   text-align: center;
@@ -152,9 +154,9 @@ body.pagina-principal {
   box-shadow: 0 2px 8px 0 #0003;
 
   /* mover dentro de la sección */
-  margin-left: -20px;
+  margin-left: 16px;
   margin-right: auto; 
-  margin-top: 130px;
+  margin-top: 0px;
 }
 .right-sidebar {
   position: relative; /* contenedor base para posicionar tarjetas absolutas */
@@ -322,8 +324,8 @@ body.pagina-principal {
 }
 
 /* Posiciones personalizables */
-.right-sidebar .card:nth-child(1) { top: 90px; left: 1380px; }
-.right-sidebar .card:nth-child(2) { top: 400px; left: 1380px; }
+.right-sidebar .card:nth-child(1) { top: 90px; left: 1400px; }
+.right-sidebar .card:nth-child(2) { top: 400px; left: 1400px; }
 .right-sidebar .card:nth-child(3) { top: 1710px; left: 230px; }
 
 
@@ -1851,8 +1853,9 @@ nav ul {
 
 /* Estilos para el sistema de etiquetas */
 .etiquetas-container {
-  margin: 12px 0;
+  margin: 0;
   width: 100%;
+  padding: 0;
 }
 
 .etiquetas-input-wrapper {
@@ -1860,6 +1863,7 @@ nav ul {
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .input-with-icon {
@@ -1915,11 +1919,14 @@ nav ul {
 }
 
 .etiquetas-seleccionadas {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  padding: 8px;
   background-color: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  max-height: 80px;
+  overflow-y: auto;
 }
 
 .etiquetas-header {
@@ -2023,14 +2030,191 @@ nav ul {
   resize: vertical;
   min-height: 80px;
   max-height: 200px;
-  margin-bottom: 12px;
   background-color: #f9f9f9;
+  box-sizing: border-box;
 }
 
 .post-textarea:focus {
   outline: none;
   border-color: #6c63ff;
   background-color: #fff;
+}
+
+/* Botón POST */
+.post-button {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(90deg, #9333ea, #ec4899);
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.post-button:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.post-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Sección de carga de archivos */
+.file-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.file-upload-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Contenedor de archivos seleccionados */
+.selected-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.files-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+  gap: 8px;
+}
+
+.file-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  border-color: #999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.file-preview {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.video-preview {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+}
+
+.video-preview .file-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.video-indicator {
+  position: absolute;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.file-name {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  word-break: break-all;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: rgba(255, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  padding: 0;
+  transition: background-color 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background-color: rgba(255, 0, 0, 0.9);
+}
+
+.files-count {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  padding: 8px;
+  background-color: #e8e8e8;
+  border-radius: 6px;
 }
 
 /* Estilos para etiquetas en los posts */

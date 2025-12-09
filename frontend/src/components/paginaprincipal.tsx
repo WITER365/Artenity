@@ -1364,11 +1364,11 @@ const reportarUsuario = async (idReportado: number, motivo: string) => {
                           <div className="video-indicator">🎥</div>
                         </div>
                       )}
+                      <button type="button" onClick={() => removeFile(index)} className="remove-file-btn" title="Eliminar archivo">
+                        ×
+                      </button>
                       <div className="file-info">
                         <span className="file-name">{file.name}</span>
-                        <button type="button" onClick={() => removeFile(index)} className="remove-file-btn">
-                          <CloseIcon size={12} />
-                        </button>
                       </div>
                     </div>
                   ))}
