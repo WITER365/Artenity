@@ -1,0 +1,81 @@
+repos:
+  # Hooks generales
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of file
+      - id: check-yaml
+        name: Check YAML
+      - id: check-json
+        name: Check JSON
+      - id: check-merge-conflict
+        name: Check merge conflicts
+      - id: check-added-large-files
+        name: Check large files
+        args: ['--maxkb=1000']
+      - id: detect-private-key
+        name: Detect private keys
+
+  # Black para Python
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        name: Format code with Black
+        language_version: python3
+        args: ['--line-length=100']
+
+  # isort para Python imports
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Sort imports with isort
+        args: ['--profile=black', '--line-length=100']
+
+  # Flake8 para Python linting
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        name: Lint Python with flake8
+        args: ['--max-line-length=100', '--extend-ignore=E203,W503']
+
+  # Prettier para JavaScript/TypeScript
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: Format with Prettier
+        types_or: [javascript, typescript, jsx, tsx, json, yaml, markdown]
+        args: ['--write', '--print-width=100', '--single-quote']
+
+  # ESLint para JavaScript/TypeScript
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.55.0
+    hooks:
+      - id: eslint
+        name: Lint JavaScript/TypeScript with ESLint
+        types: [javascript, typescript, jsx, tsx]
+        args: ['--fix']
+        additional_dependencies:
+          - 'eslint'
+          - 'eslint-config-react-app'
+          - 'eslint-plugin-react'
+          - 'eslint-plugin-react-hooks'
+          - '@typescript-eslint/eslint-plugin'
+          - '@typescript-eslint/parser'
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

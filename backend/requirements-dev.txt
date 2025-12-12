@@ -1,0 +1,26 @@
+# Herramientas de desarrollo y linting para Artenity Backend
+
+# Formateo de código
+black==23.12.1
+isort==5.13.2
+
+# Linting
+pylint==3.0.3
+flake8==6.1.0
+flake8-docstrings==1.7.0
+
+# Análisis estático
+mypy==1.7.1
+bandit==1.7.5
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
+
+# Pre-commit hooks
+pre-commit==3.5.0
+
+# Herramientas útiles
+autopep8==2.0.4
+yapf==0.40.1

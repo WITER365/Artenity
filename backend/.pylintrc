@@ -1,0 +1,36 @@
+[MASTER]
+load-plugins=pylint_django
+django-settings-module=backend.config
+
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    too-many-arguments,
+    protected-access,
+    too-many-lines,
+    line-too-long,
+    no-member,
+    unused-import,
+    unused-variable,
+    import-error,
+    attribute-defined-outside-init,
+
+[VARIABLES]
+ignored-argument-names=_.*
+
+[FORMAT]
+max-line-length=100
+indent-string='    '
+
+[DESIGN]
+max-attributes=10
+max-arguments=8
+
+[BASIC]
+good-names=i,j,k,ex,Run,_,id,x,y,z,df,ax,fig,plt,db,app
+
+[LOGGING]
+logging-format-style=new
+
+[REPORTS]
+output-format=colorized

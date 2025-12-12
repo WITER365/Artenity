@@ -1,0 +1,48 @@
+# EditorConfig es útil para mantener estilos de código consistentes
+# para múltiples desarrolladores trabajando en el mismo proyecto
+# entre diferentes editores e IDEs.
+# editorconfig.org
+
+root = true
+
+# Configuración por defecto
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Archivos JavaScript/TypeScript/JSON
+[*.{js,jsx,ts,tsx,json}]
+indent_style = space
+indent_size = 2
+
+# Archivos Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Archivos CSS/SCSS
+[*.{css,scss,sass}]
+indent_style = space
+indent_size = 2
+
+# Archivos HTML
+[*.{html,vue}]
+indent_style = space
+indent_size = 2
+
+# Archivos YAML/TOML
+[*.{yml,yaml,toml}]
+indent_style = space
+indent_size = 2
+
+# Archivos Markdown
+[*.md]
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+# Archivos de configuración
+[{.eslintrc,.prettierrc,package.json,tsconfig.json}]
+indent_style = space
+indent_size = 2
