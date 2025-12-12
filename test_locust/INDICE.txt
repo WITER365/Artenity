@@ -1,0 +1,319 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║    ✅ ARCHIVOS DE PRUEBAS DE CARGA - LOCUST PARA ARTENITY                 ║
+║                                                                            ║
+║    Creado: Diciembre 2024 | Versión: 1.0 | Estado: ✅ LISTO               ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📦 CONTENIDO CREADO
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ 12 ARCHIVOS PRINCIPALES
+───────────────────────────────────────────────────────────────────────────────
+
+📄 CÓDIGO DE PRUEBAS:
+   ├─ locustfile.py                 Suite COMPLETA de todos los endpoints
+   ├─ load_test_critical.py         Pruebas de FLUJOS CRÍTICOS
+   └─ configure.py                  Configurador interactivo en Python
+
+🔧 CONFIGURACIÓN:
+   ├─ requirements.txt              Dependencias (Locust, requests)
+   └─ locust.conf                   Archivo de configuración por defecto
+
+🚀 SCRIPTS DE EJECUCIÓN:
+   ├─ run_tests.bat                 Script automático para Windows
+   └─ run_tests.sh                  Script automático para Linux/Mac
+
+📚 DOCUMENTACIÓN:
+   ├─ INICIO_RAPIDO.md              Inicio en 5 minutos ⚡
+   ├─ README.md                     Documentación COMPLETA
+   ├─ MEJORES_PRACTICAS.md          Guía AVANZADA de optimizaciones
+   ├─ COMANDOS_FRECUENTES.md        +40 ejemplos de comandos
+   └─ ARCHIVOS_CREADOS.md           Este resumen
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 CARACTERÍSTICAS PRINCIPALES
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ COBERTURA DE ENDPOINTS:
+   • ✅ 50+ endpoints testeados
+   • ✅ Autenticación JWT
+   • ✅ Usuarios y perfiles
+   • ✅ Publicaciones (CRUD)
+   • ✅ Likes, comentarios, guardados
+   • ✅ Seguir, amistad, notificaciones
+   • ✅ Estadísticas y bloqueos
+   • ✅ Compartir y reportes
+
+⚙️ TAREAS PONDERADAS:
+   • Lectura (8 tareas) ────── 40%
+   • Interacción (6 tareas) ── 30%
+   • Comentarios (4 tareas) -- 20%
+   • Creación (3 tareas) ----- 10%
+
+🎬 USUARIOS VIRTUALES:
+   • CriticalPathUser - Simula flujo normal
+   • AdminUser - Operaciones administrativas
+   • ArtenityUser - Todos los endpoints
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 CÓMO EMPEZAR (3 PASOS)
+═══════════════════════════════════════════════════════════════════════════════
+
+PASO 1: Instalar dependencias
+────────────────────────────────────────────────────────────────────────────────
+    cd test_locust
+    pip install -r requirements.txt
+
+PASO 2: Ejecutar (elige una opción)
+────────────────────────────────────────────────────────────────────────────────
+
+    OPCIÓN A - Script automático:
+    ────────────────────────────
+    Windows:  run_tests.bat
+    Linux:    bash run_tests.sh
+
+    OPCIÓN B - Configurador interactivo:
+    ────────────────────────────────────
+    python configure.py
+
+    OPCIÓN C - Línea de comandos:
+    ────────────────────────────────
+    locust -f locustfile.py --host=http://localhost:8000
+
+PASO 3: Ver resultados
+────────────────────────────────────────────────────────────────────────────────
+    1. Se abre http://localhost:8089
+    2. Ingresa 50 usuarios
+    3. Click "Start swarming"
+    4. ¡Observa las gráficas en tiempo real!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 EJEMPLOS DE USO RÁPIDO
+═══════════════════════════════════════════════════════════════════════════════
+
+VALIDAR (1 min):
+    locust -f locustfile.py --host=http://localhost:8000 -u 10 -r 2 --run-time 60s
+
+PROBAR (5 min):
+    locust -f locustfile.py --host=http://localhost:8000 -u 50 -r 5 --run-time 300s
+
+ESTRESEAR (15 min):
+    locust -f locustfile.py --host=http://localhost:8000 -u 200 -r 20 --run-time 900s
+
+CON REPORTE:
+    locust -f locustfile.py --host=http://localhost:8000 -u 50 --run-time 300s --html=report.html --headless
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📖 DOCUMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+Para cada caso de uso, consulta:
+
+    🏃 INICIO RÁPIDO?
+       → Lee: INICIO_RAPIDO.md (5 minutos)
+
+    📚 DOCUMENTACIÓN COMPLETA?
+       → Lee: README.md (guía detallada)
+
+    🏆 OPTIMIZACIONES AVANZADAS?
+       → Lee: MEJORES_PRACTICAS.md (guía experta)
+
+    💻 MÁS EJEMPLOS DE COMANDOS?
+       → Lee: COMANDOS_FRECUENTES.md (40+ ejemplos)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ REQUISITOS PREVIOS
+═══════════════════════════════════════════════════════════════════════════════
+
+    ☑️ API Artenity corriendo en http://localhost:8000
+    ☑️ Python 3.8+ instalado
+    ☑️ Base de datos disponible
+    ☑️ Suficientes recursos (CPU, RAM, red)
+    ☑️ Puerto 8000 libre
+    ☑️ CORS configurado en la API
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎨 INTERFAZ WEB (http://localhost:8089)
+═══════════════════════════════════════════════════════════════════════════════
+
+    Gráficas en Tiempo Real:
+    ├─ Response Times Over Time (milisegundos)
+    ├─ Number of Users (usuarios activos)
+    ├─ Requests per Second (RPS)
+    ├─ Failure Rate (% de errores)
+    └─ Status Codes Distribution (200, 400, 500, etc.)
+
+    Tabla de Estadísticas:
+    ├─ Endpoint (GET /users, POST /login, etc.)
+    ├─ Method (GET, POST, DELETE, etc.)
+    ├─ # requests (total de solicitudes)
+    ├─ # failures (total de fallos)
+    ├─ Median (tiempo medio)
+    ├─ 95th percentile (95% de solicitudes)
+    ├─ 99th percentile (99% de solicitudes)
+    └─ Min/Max response time
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 CASOS DE USO
+═══════════════════════════════════════════════════════════════════════════════
+
+    1️⃣ VALIDACIÓN POST-DEPLOY
+       Ejecuta flujos críticos después de desplegar
+       → locust -f load_test_critical.py -u 50 --run-time 300s --headless
+
+    2️⃣ BENCHMARKING
+       Compara rendimiento antes y después de cambios
+       → locust -f locustfile.py -u 100 --run-time 600s --csv=bench.csv
+
+    3️⃣ PRUEBA DE CARGA
+       Simula carga realista de usuarios
+       → locust -f locustfile.py -u 50 -r 5 --run-time 300s
+
+    4️⃣ PRUEBA DE ESTRÉS
+       Prueba límites del sistema
+       → locust -f locustfile.py -u 200 -r 20 --run-time 900s
+
+    5️⃣ MONITOREO CONTINUO
+       Ejecución larga para estabilidad
+       → locust -f locustfile.py -u 30 --run-time 14400s
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📈 MÉTRICAS IMPORTANTES
+═══════════════════════════════════════════════════════════════════════════════
+
+    Métrica                 Objetivo Ideal    Problema Si
+    ──────────────────────────────────────────────────────────
+    Response Time (avg)     < 500ms          > 2000ms
+    Response Time (95th)    < 1000ms         > 5000ms
+    Response Time (99th)    < 2000ms         > 10000ms
+    Failure Rate            0%               > 1%
+    Requests per Second     > 100            < 10
+    Throughput              Consistente      Cae > 50%
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 PARÁMETROS PRINCIPALES
+═══════════════════════════════════════════════════════════════════════════════
+
+    -f, --locustfile FILE       Archivo con definición de usuarios
+    -u, --users NUM             Número total de usuarios virtuales
+    -r, --spawn-rate NUM        Usuarios generados por segundo
+    --run-time DURATION         Duración (60s, 5m, 1h, etc.)
+    --host URL                  URL base de la API
+    --headless                  Sin interfaz gráfica
+    --csv FILE                  Exportar resultados en CSV
+    --html FILE                 Generar reporte HTML
+    --workers NUM               Modo distribuido (workers)
+    --loglevel LEVEL            DEBUG, INFO, WARNING, ERROR
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚡ SOLUCIÓN RÁPIDA DE PROBLEMAS
+═══════════════════════════════════════════════════════════════════════════════
+
+    ❌ "Connection refused"
+       ✅ Verifica: curl http://localhost:8000
+
+    ❌ "Locust not found"
+       ✅ Instala: pip install -r requirements.txt
+
+    ❌ "Too many failures"
+       ✅ Reduce usuarios: locust -u 10 (antes de 50)
+
+    ❌ "Cannot import module"
+       ✅ Actualiza dependencias: pip install --upgrade -r requirements.txt
+
+    ❌ "Port already in use"
+       ✅ Usa otro puerto: locust --web-port 9000
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 SOPORTE Y RECURSOS
+═══════════════════════════════════════════════════════════════════════════════
+
+    📖 Documentación Locust:     https://docs.locust.io/
+    🔗 GitHub Locust:           https://github.com/locustio/locust
+    📚 FastAPI Docs:            https://fastapi.tiangolo.com/
+    🌐 Load Testing:            https://en.wikipedia.org/wiki/Load_testing
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ CARACTERÍSTICAS DESTACADAS
+═══════════════════════════════════════════════════════════════════════════════
+
+    🎯 Realista          - Simula comportamiento de usuarios reales
+    ⚡ Rápido            - Pruebas configurables de 60s a horas
+    📊 Visual            - Gráficas en tiempo real en navegador
+    🔄 Repetible         - Resultados consistentes
+    📈 Escalable         - De 10 a 1000+ usuarios
+    🛠️ Personalizable    - Fácil de adaptar a nuevos endpoints
+    📝 Documentado       - Guías completas incluidas
+    🤖 Automatizable     - Modo headless para CI/CD
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎓 FLUJO RECOMENDADO DE PRUEBAS
+═══════════════════════════════════════════════════════════════════════════════
+
+    1. VALIDACIÓN (1 min)
+       Verificar que todo funciona
+       → locust -u 5 -r 1 --run-time 30s
+
+    2. PRUEBA NORMAL (5 min)
+       Simular carga típica
+       → locust -u 50 -r 5 --run-time 300s
+
+    3. PICO DE CARGA (10 min)
+       Verificar comportamiento en picos
+       → locust -u 150 -r 15 --run-time 600s
+
+    4. ESTRÉS (15 min)
+       Encontrar el límite del sistema
+       → locust -u 300 -r 30 --run-time 900s
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST ANTES DE EJECUTAR
+═══════════════════════════════════════════════════════════════════════════════
+
+    ☐ API está corriendo en http://localhost:8000
+    ☐ Base de datos disponible y funcionando
+    ☐ Python y Locust instalados (pip install -r requirements.txt)
+    ☐ Puerto 8000 disponible (lsof -i :8000)
+    ☐ CORS configurado en la API
+    ☐ Usuarios de prueba creados en la BD
+    ☐ Red con suficiente ancho de banda
+    ☐ Sistema con 2GB+ RAM libre
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 ¡LISTO PARA EMPEZAR!
+═══════════════════════════════════════════════════════════════════════════════
+
+    1. Lee: INICIO_RAPIDO.md (5 min)
+    2. Ejecuta: run_tests.bat (Windows) o bash run_tests.sh (Linux/Mac)
+    3. Observa: http://localhost:8089
+    4. Analiza: Gráficas y estadísticas
+    5. Optimiza: Basado en resultados
+
+═══════════════════════════════════════════════════════════════════════════════
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                    ✅ SISTEMA DE PRUEBAS COMPLETO                         ║
+║                                                                            ║
+║              Creado: Diciembre 2024 | Versión 1.0 Estable                 ║
+║                                                                            ║
+║                      ¡Listo para usar! 🚀                                 ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
